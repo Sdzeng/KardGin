@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "LaunchGo",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${fileDirname}",
+            "env": {
+                "GOPATH": "D:\\GitRepository\\GoPath",
+                "GOROOT": "D:\\Program Files\\Go"
+            },
+            "args": ["-q","海绵宝宝"],
+            //"showLog": true
+            "dlvLoadConfig": {
+                "followPointers": true,
+                //"maxVariableRecurse": 1,
+                "maxStringLen": 1000, //字符串最大长度
+                "maxArrayValues": 64,
+                "maxStructFields": -1
+            }
+        }
+    ]
+}

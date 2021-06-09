@@ -1,0 +1,26 @@
+{
+    "editor.wordWrap": "on",
+    "editor.minimap.renderCharacters": false,
+    "editor.minimap.enabled": false,
+    "terminal.external.osxExec": "iTerm.app",
+    "go.docsTool": "gogetdoc",
+    "go.testFlags": [
+        "-v",
+        "-count=1"
+    ],
+    "go.buildTags": "",
+    "go.buildFlags": [],
+    "go.lintFlags": [],
+    "go.vetFlags": [],
+    "go.coverOnSave": false,
+    "go.useCodeSnippetsOnFunctionSuggest": false,
+    "go.formatTool": "goreturns",
+    "go.gocodeAutoBuild": false,
+    "go.goroot": "D:\\Program Files\\Go",
+    "go.gopath": "D:\\GitRepository\\GoPath",
+    "go.autocompleteUnimportedPackages": true,
+    "go.formatOnSave": true,
+
+    "debug.console.fontSize": 16,
+    "debug.console.lineHeight": 30,
+}
