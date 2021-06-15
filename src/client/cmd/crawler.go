@@ -351,7 +351,10 @@ func getRequest(url, refer string) (*http.Request, error) {
 	}
 	req.Header.Set("cookie", `__cfduid=d363ed555c72ebcef60b1aaeaf2e30b361620608582; __51cke__=; __gads=ID=81fcef958ed24ce0-22cb596c12c800e6:T=1620608584:RT=1620608584:S=ALNI_MZlepN6HPtflySi9nlVoOx07OFGVg; Hm_lvt_22aa5d46d8019d57f41bac7a4d290998=1620608586,1620609452; Hm_lpvt_22aa5d46d8019d57f41bac7a4d290998=1620609490; __tins__19749253={"sid": 1620608585546, "vd": 11, "expires": 1620611296279}; __51laig__=11`)
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36")
+	req.Header.Set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36")
+
+	req.Header.Set("accept-language", "zh-CN,zh;q=0.9")
+	// req.Header.Set("accept-encoding", "gzip, deflate, br")
 
 	return req, nil
 }

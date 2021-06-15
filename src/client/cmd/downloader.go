@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/mholt/archiver"
@@ -66,7 +67,7 @@ func Download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) error {
 	}
 
 	dto.FileName = ToUtf8Str(fileName)
-	checkErrorName(fileName)
+	//checkErrorName(fileName)
 	dto.FilePaths = downloadFiles(dto.FileName, res.Body, dto.DownloadUrl)
 
 	for _, v := range dto.FilePaths {
@@ -154,25 +155,24 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 		for _, f := range zipReader.File {
 			//fpath := filepath.Join(destDir, f.Name)
 			if f.FileInfo().IsDir() {
-				// rc2, err := f.Open()
-				// if err != nil {
-				// 	break
-				// }
-
-				// body2, err := ioutil.ReadAll(rc2)
-				// if err != nil {
-				// 	break
-				// }
-
-				// zipReader2, err := zip.NewReader(bytes.NewReader(body2), int64(len(body2)))
-				// if err != nil {
-				// 	break
-				// }
-				// for _, f2 := range zipReader2.File {
-				// 	fmt.Printf("%v", f2)
-				// }
-
 				continue
+			}
+
+			//如果标致位是0  则是默认的本地编码   默认为gbk
+			//如果标志为是 1 << 11也就是 2048  则是utf-8编码
+			if f.Flags != 2048 {
+				i := bytes.NewReader([]byte(f.Name))
+				decoder := transform.NewReader(i, simplifiedchinese.GB18030.NewDecoder())
+				content, _ := ioutil.ReadAll(decoder)
+				fileName = strconv.Itoa(int(f.Flags)) + "_" + string(content)
+
+			} else {
+				fileName = "2048_" + f.Name
+			}
+
+			if strings.Contains(fileName, "/") || strings.Contains(fileName, "\\") {
+
+				fileName = getFileName(fileName)
 			}
 
 			inFile, err := f.Open()
@@ -180,13 +180,6 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 				continue
 			}
 			defer inFile.Close()
-
-			fileName = f.Name
-			//checkErrorName(fileName)
-			if strings.Contains(fileName, "/") || strings.Contains(fileName, "\\") {
-
-				fileName = getFileName(fileName)
-			}
 
 			childFilePath := downloadFiles(fileName, inFile, "")
 			result = append(result, childFilePath...)
