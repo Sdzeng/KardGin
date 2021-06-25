@@ -18,6 +18,7 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/nwaples/rardecode"
+	"github.com/saracen/go7z"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 	//"github.com/sony/sonyflake"
@@ -150,7 +151,6 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 		if err != nil {
 			break
 		}
-		//defer zipReader.Close()
 
 		for _, f := range zipReader.File {
 			//fpath := filepath.Join(destDir, f.Name)
@@ -184,27 +184,62 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 			childFilePath := downloadFiles(fileName, inFile, "")
 			result = append(result, childFilePath...)
 
-			// outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-			// if err != nil {
-			// 	return err
-			// }
-			// defer outFile.Close()
-
-			// _, err = io.Copy(outFile, inFile)
-			// if err != nil {
-			// 	return err
-			// }
-
 		}
 
 	case "7z":
 
-	case "rar":
-		// body, err := ioutil.ReadAll(rc)
-		// if err != nil {
-		// 	break
-		// }
+		//todo
+		body, err := ioutil.ReadAll(rc)
+		if err != nil {
+			break
+		}
+		go7zReader, err := go7z.NewReader(bytes.NewReader(body), int64(len(body)))
+		if err != nil {
+			panic(err)
+		}
 
+		for {
+			hdr, err := go7zReader.Next()
+			if err == io.EOF {
+				break // End of archive
+			}
+			if err != nil {
+				panic(err)
+			}
+
+			// If empty stream (no contents) and isn't specifically an empty file...
+			// then it's a directory.
+			if hdr.IsEmptyStream && !hdr.IsEmptyFile {
+				// if err := os.MkdirAll(hdr.Name, os.ModePerm); err != nil {
+				// 	panic(err)
+				// }
+				continue
+			}
+
+			// Create file
+			fileName := hdr.Name
+			if strings.Contains(fileName, "/") || strings.Contains(fileName, "\\") {
+
+				fileName = getFileName(fileName)
+			}
+
+			rc := io.NopCloser(go7zReader)
+			childFilePath := downloadFiles(fileName, rc, "")
+			result = append(result, childFilePath...)
+
+			// f, err := os.Create(hdr.Name)
+			// if err != nil {
+			// 	panic(err)
+			// }
+			// defer f.Close()
+
+			// if _, err := io.Copy(f, go7zReader); err != nil {
+			// 	panic(err)
+			// }
+		}
+
+		break
+	case "rar":
 		r := archiver.NewRar()
 		err := r.Open(rc, 0)
 		if err != nil {
