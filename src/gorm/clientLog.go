@@ -24,7 +24,7 @@ func createCustomGormLog(sqlType string, options ...Options) gormLog.Interface {
 	)
 	logConf := gormLog.Config{
 		SlowThreshold: time.Second * variable.GormYml.GetDuration("Gormv2."+sqlType+"."+".SlowThreshold"),
-		LogLevel:      gormLog.Warn,
+		LogLevel:      gormLog.Silent,
 		Colorful:      false,
 	}
 	log := &logger{
@@ -37,6 +37,7 @@ func createCustomGormLog(sqlType string, options ...Options) gormLog.Interface {
 		traceWarnStr: traceWarnStr,
 		traceErrStr:  traceErrStr,
 	}
+
 	for _, val := range options {
 		val.apply(log)
 	}

@@ -22,19 +22,26 @@ func (repository *DownloadFileRepository) Save(dto *dto.UrlDto) error {
 	}
 
 	trans := Db.Begin()
-	result := trans.Create(df)
+	result := trans.FirstOrCreate(df, model.Downloads{DownloadUrl: dto.DownloadUrl})
 
 	if result.Error != nil {
 		trans.Rollback()
 		return result.Error
 	}
 
+	if result.RowsAffected <= 0 {
+		trans.Commit()
+		return nil
+	} else {
+		fmt.Printf("数据库新加：%v \n", dto.Name)
+	}
+
 	if len(dto.FilePaths) > 0 {
 		for _, filePath := range dto.FilePaths {
 			downloadPath := &model.DownloadPaths{
-				BaseModel:      model.BaseModel{CreateTime: df.CreateTime},
-				DownloadFileId: df.Id,
-				FilePath:       filePath,
+				BaseModel:  model.BaseModel{CreateTime: df.CreateTime},
+				DownloadId: df.Id,
+				FilePath:   filePath,
 			}
 
 			result = trans.Create(downloadPath)
@@ -57,7 +64,7 @@ func (repository *DownloadFileRepository) Save(dto *dto.UrlDto) error {
 			valueArgs = append(valueArgs, sort)
 			valueArgs = append(valueArgs, df.CreateTime)
 		}
-		stmt := fmt.Sprintf("INSERT INTO `kard_gin`.`download_refers` ( `download_file_id`, `refer`,`sort`, `create_time`) VALUES %s", strings.Join(valueStrings, ","))
+		stmt := fmt.Sprintf("INSERT INTO `kard_gin`.`download_refers` ( `download_id`, `refer`,`sort`, `create_time`) VALUES %s", strings.Join(valueStrings, ","))
 		result = trans.Exec(stmt, valueArgs...)
 		if result.Error != nil {
 			trans.Rollback()
