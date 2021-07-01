@@ -3,6 +3,8 @@ module kard
 go 1.16
 
 require (
+	github.com/asticode/go-astisub v0.14.0
+	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9

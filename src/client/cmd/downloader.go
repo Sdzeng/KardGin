@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/axgle/mahonia"
 	"github.com/mholt/archiver"
 	"github.com/nwaples/rardecode"
 	"github.com/saracen/go7z"
@@ -71,10 +72,10 @@ func Download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) error {
 	//checkErrorName(fileName)
 	dto.FilePaths = downloadFiles(dto.FileName, res.Body, dto.DownloadUrl)
 
-	for _, v := range dto.FilePaths {
-		checkErrorName(v)
+	// for _, v := range dto.FilePaths {
+	// 	checkErrorName(v)
 
-	}
+	// }
 	err = downloadFileRepository.Save(dto)
 	if err != nil {
 		return err
@@ -115,13 +116,13 @@ func getDownloadFileName(url string, resp *http.Response) (string, error) {
 	return "", errors.New("不支持下载的文件" + fileName)
 }
 
-func checkErrorName(fileName string) {
+// func checkErrorName(fileName string) {
 
-	if strings.Contains(fileName, "fffd") || strings.Contains(fileName, "\\x") {
+// 	if strings.Contains(fileName, "fffd") || strings.Contains(fileName, "\\x") {
 
-		_ = "出错"
-	}
-}
+// 		_ = "出错"
+// 	}
+// }
 
 func getFileName(url string) string {
 	reqPathSlice := strings.Split(url, "/")
@@ -308,9 +309,10 @@ func SaveFile(fileName string, reader io.Reader) string {
 		return ""
 	}
 	defer out.Close()
-
-	wc := &WriterCounter{FileName: fileName}
-	_, err = io.Copy(out, io.TeeReader(reader, wc))
+	decoder := mahonia.NewDecoder("utf8")
+	// wc := &WriterCounter{FileName: fileName}
+	// _, err = io.Copy(out, io.TeeReader(reader, wc))
+	_, err = io.Copy(out, decoder.NewReader(reader))
 	if err != nil {
 		return ""
 	}
