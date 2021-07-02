@@ -24,7 +24,7 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 				continue
 			}
 			defer file.Close()
-
+			// simplifiedchinese.GBK.NewDecoder().Bytes(data)
 			subtitles, err = astisub.ReadFromSRT(decoder.NewReader(file))
 			if err != nil {
 				continue
@@ -38,6 +38,7 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 			defer file.Close()
 
 			subtitles, err = astisub.ReadFromSRT(decoder.NewReader(file))
+			// subtitles, err = astisub.ReadFromSRT(file)
 			if err != nil {
 				continue
 			}

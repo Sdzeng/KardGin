@@ -11,6 +11,7 @@ import (
 	"kard/src/repository"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -68,7 +69,7 @@ func Download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) error {
 		return errors.New("getDownloadFileName:获取不到文件名")
 	}
 
-	dto.FileName = ToUtf8Str(fileName)
+	dto.FileName = fileName
 	//checkErrorName(fileName)
 	dto.FilePaths = downloadFiles(dto.FileName, res.Body, dto.DownloadUrl)
 
@@ -86,8 +87,8 @@ func Download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) error {
 	return nil
 }
 
-func getDownloadFileName(url string, resp *http.Response) (string, error) {
-	fileName := getFileName(url)
+func getDownloadFileName(httpUrl string, resp *http.Response) (string, error) {
+	fileName := getFileName(httpUrl)
 	fileNameLower := strings.ToLower(fileName)
 	urlRp := regexp.MustCompile(`\d+.html`)
 
@@ -103,7 +104,7 @@ func getDownloadFileName(url string, resp *http.Response) (string, error) {
 		items := headerRp.FindAllStringSubmatch(contentDisposition, -1)
 
 		if len(items) == 1 {
-			fileName = items[0][1]
+			fileName = url.QueryEscape(items[0][1])
 			return fileName, nil
 		}
 
@@ -124,11 +125,11 @@ func getDownloadFileName(url string, resp *http.Response) (string, error) {
 // 	}
 // }
 
-func getFileName(url string) string {
-	reqPathSlice := strings.Split(url, "/")
+func getFileName(httpUrl string) string {
+	reqPathSlice := strings.Split(httpUrl, "/")
 	fileUrl := reqPathSlice[len(reqPathSlice)-1]
 	fileName := strings.Split(fileUrl, "?")[0]
-	return fileName
+	return url.QueryEscape(fileName)
 }
 
 func getFileNameExtension(fileName string) string {
@@ -309,22 +310,30 @@ func SaveFile(fileName string, reader io.Reader) string {
 		return ""
 	}
 	defer out.Close()
-	decoder := mahonia.NewDecoder("utf8")
+	// decoder := mahonia.NewDecoder("utf8")
 	// wc := &WriterCounter{FileName: fileName}
 	// _, err = io.Copy(out, io.TeeReader(reader, wc))
-	_, err = io.Copy(out, decoder.NewReader(reader))
+	_, err = io.Copy(out, ConvertToUTF8(reader))
 	if err != nil {
 		return ""
 	}
 	return filePath
 }
 
-func ToUtf8Str(fileName string) string {
-	i := bytes.NewReader([]byte(fileName))
-	decoder := transform.NewReader(i, simplifiedchinese.GB18030.NewDecoder())
-	content, _ := ioutil.ReadAll(decoder)
-	return string(content)
+//GBK转utf8的方法
+func ConvertToUTF8(src io.Reader) io.Reader {
+	srcCoder := mahonia.NewDecoder("GBK")
+	srcResult := srcCoder.NewReader(src)
+	tagCoder := mahonia.NewDecoder("UTF8")
+	return tagCoder.NewReader(srcResult)
 }
+
+// func ToUtf8Str(fileName string) string {
+// 	i := bytes.NewReader([]byte(fileName))
+// 	decoder := transform.NewReader(i, simplifiedchinese.GB18030.NewDecoder())
+// 	content, _ := ioutil.ReadAll(decoder)
+// 	return string(content)
+// }
 
 // func genSonyflake() uint64 {
 
