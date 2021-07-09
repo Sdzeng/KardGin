@@ -7,13 +7,12 @@ import (
 	"strings"
 
 	"github.com/asticode/go-astisub"
-	"github.com/axgle/mahonia"
 )
 
 func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 	filePathLower := ""
 	var subtitles *astisub.Subtitles
-	decoder := mahonia.NewDecoder("utf8")
+	//decoder := mahonia.NewDecoder("utf8")
 	for _, filePath := range urlDto.FilePaths {
 
 		filePathLower = strings.ToLower(filePath)
@@ -24,8 +23,8 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 				continue
 			}
 			defer file.Close()
-			// simplifiedchinese.GBK.NewDecoder().Bytes(data)
-			subtitles, err = astisub.ReadFromSRT(decoder.NewReader(file))
+
+			subtitles, err = astisub.ReadFromSSA(file)
 			if err != nil {
 				continue
 			}
@@ -37,8 +36,7 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 			}
 			defer file.Close()
 
-			subtitles, err = astisub.ReadFromSRT(decoder.NewReader(file))
-			// subtitles, err = astisub.ReadFromSRT(file)
+			subtitles, err = astisub.ReadFromSRT(file)
 			if err != nil {
 				continue
 			}
