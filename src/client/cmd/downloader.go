@@ -329,7 +329,7 @@ func SaveFile(fileName string, reader io.Reader) string {
 	if charset.Charset == "UTF-8" {
 		targetStr = string(bytes)
 	} else {
-		targetStr = Convert(string(bytes), charset.Charset, "utf8")
+		targetStr = Convert(string(bytes), charset.Charset, "utf-8")
 	}
 	_, err = out.WriteString(targetStr)
 	// _, err = io.Copy(out, decoder.NewReader(reader))
