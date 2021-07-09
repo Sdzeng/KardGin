@@ -11,7 +11,7 @@
                 "GOPATH": "D:\\GitRepository\\GoPath",
                 "GOROOT": "D:\\Program Files\\Go"
             },
-            "args": ["-q","海贼王"],
+            "args": ["-q",""],
             //"showLog": true
             "dlvLoadConfig": {
                 "followPointers": true,
