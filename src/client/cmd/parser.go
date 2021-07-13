@@ -3,48 +3,49 @@ package main
 import (
 	"fmt"
 	"kard/src/dto"
-	"os"
-	"strings"
 
 	"github.com/asticode/go-astisub"
 )
 
 func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
-	filePathLower := ""
-	var subtitles *astisub.Subtitles
+	// filePathLower := ""
+	// var subtitles *astisub.Subtitles
 	//decoder := mahonia.NewDecoder("utf8")
 	for _, filePath := range urlDto.FilePaths {
-
-		filePathLower = strings.ToLower(filePath)
-		switch {
-		case strings.HasSuffix(filePathLower, ".ass"):
-			file, err := os.Open(filePath)
-			if err != nil {
-				continue
-			}
-			defer file.Close()
-
-			subtitles, err = astisub.ReadFromSSA(file)
-			if err != nil {
-				continue
-			}
-
-		case strings.HasSuffix(filePathLower, ".srt"):
-			file, err := os.Open(filePath)
-			if err != nil {
-				continue
-			}
-			defer file.Close()
-
-			subtitles, err = astisub.ReadFromSRT(file)
-			if err != nil {
-				continue
-			}
-
-		default:
-			fmt.Println("未识别的文件" + urlDto.FileName)
+		subtitles, err := astisub.Open(astisub.Options{Filename: filePath})
+		if err != nil {
 			continue
 		}
+		// filePathLower = strings.ToLower(filePath)
+		// switch {
+		// case strings.HasSuffix(filePathLower, ".ass"):
+		// 	file, err := os.Open(filePath)
+		// 	if err != nil {
+		// 		continue
+		// 	}
+		// 	defer file.Close()
+
+		// 	subtitles, err = astisub.Open(file)
+		// 	if err != nil {
+		// 		continue
+		// 	}
+
+		// case strings.HasSuffix(filePathLower, ".srt"):
+		// 	file, err := os.Open(filePath)
+		// 	if err != nil {
+		// 		continue
+		// 	}
+		// 	defer file.Close()
+
+		// 	subtitles, err = astisub.ReadFromSRT(file)
+		// 	if err != nil {
+		// 		continue
+		// 	}
+
+		// default:
+		// 	fmt.Println("未识别的文件" + urlDto.FileName)
+		// 	continue
+		// }
 
 		for _, item := range subtitles.Items {
 			for _, line := range item.Lines {

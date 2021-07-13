@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/asticode/go-astisub v0.14.0
-	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394 // indirect
+	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
@@ -15,7 +15,7 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/nwaples/rardecode v1.1.0
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
-	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
+	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
 	github.com/saracen/go7z v0.0.0-20191010121135-9c09b6bd7fda
 	github.com/saracen/go7z-fixtures v0.0.0-20190623165746-aa6b8fba1d2f // indirect
 	github.com/saracen/solidblock v0.0.0-20190426153529-45df20abab6f // indirect
