@@ -4,18 +4,23 @@ import (
 	"context"
 	"fmt"
 	"kard/src/dto"
+	"strconv"
+	"time"
 
 	"github.com/asticode/go-astisub"
 	"github.com/olivere/elastic/v7"
 )
 
+const (
+	indexId = iota + 1
+)
+
 var es *elastic.Client
-var ctx = context.Background()
 var esUrl string = "http://localhost:9200"
 
 func init() {
 	var err error
-	es, err = elastic.NewClient(elastic.SetURL(esUrl), elastic.SetSniff(false))
+	es, err = elastic.NewClient(elastic.SetURL(esUrl), elastic.SetSniff(false), elastic.SetBasicAuth("elastic", "123456"))
 
 	if err != nil {
 		fmt.Println("初始化es客户端连接失败", err)
@@ -63,27 +68,36 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		// 	continue
 		// }
 
+		indexType := time.Now().Format("2006-01-02")
+		bulkRequest := es.Bulk()
 		for _, item := range subtitles.Items {
 			for _, line := range item.Lines {
 				lineText := line.VoiceName + "："
 				for _, lineItem := range line.Items {
 					lineText += lineItem.Text + "\n"
 
-					e1 := Employee{"Jane", "Smith", 32, "I like to collect rock albums", []string{"music"}}
-					put1, err := es.Index().
-						Index("subtitles").
-						Type("employee").
-						Id(strings.i).
-						BodyJson(e1).
-						Do(context.Background())
-					if err != nil {
-						panic(err)
-					}
+					indexDto := dto.SubtitlesIndexDto{Title: urlDto.Name, SubTitle: urlDto.FileName, Text: lineItem.Text, Lan: urlDto.Lan}
+
+					indexReq := elastic.NewBulkIndexRequest().Index("subtitles").Type(indexType).Id(strconv.Itoa(indexId)).Doc(indexDto)
+
+					bulkRequest = bulkRequest.Add(indexReq)
 
 				}
 				fmt.Println(lineText)
 			}
 
+		}
+
+		if bulkRequest.NumberOfActions() != indexId {
+			fmt.Printf("expected bulkRequest.NumberOfActions %d; got %d", indexId, bulkRequest.NumberOfActions())
+		}
+
+		bulkResponse, err := bulkRequest.Do(context.TODO())
+		if err != nil {
+			fmt.Printf("批量插入es失败：%v", err)
+		}
+		if bulkResponse == nil {
+			fmt.Printf("批量插入es：expected bulkResponse to be != nil; got nil")
 		}
 
 	}
