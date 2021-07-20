@@ -11,14 +11,17 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
-const (
-	indexId = iota + 1
-)
+var indexId = 0
 
 var es *elastic.Client
 var esUrl string = "http://localhost:9200"
 
 func init() {
+	ps := es.Ping(esUrl)
+	if ps == nil {
+		fmt.Println("初始化es客户端连接失败")
+	}
+
 	var err error
 	es, err = elastic.NewClient(elastic.SetURL(esUrl), elastic.SetSniff(false), elastic.SetBasicAuth("elastic", "123456"))
 
@@ -67,29 +70,36 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		// 	fmt.Println("未识别的文件" + urlDto.FileName)
 		// 	continue
 		// }
-
-		indexType := time.Now().Format("2006-01-02")
+		numberOfActions := 0
+		indexType := time.Now().Format("20060102")
 		bulkRequest := es.Bulk()
 		for _, item := range subtitles.Items {
 			for _, line := range item.Lines {
-				lineText := line.VoiceName + "："
+				//lineText := line.VoiceName + "："
 				for _, lineItem := range line.Items {
-					lineText += lineItem.Text + "\n"
+					//lineText += lineItem.Text + "\n"
 
 					indexDto := dto.SubtitlesIndexDto{Title: urlDto.Name, SubTitle: urlDto.FileName, Text: lineItem.Text, Lan: urlDto.Lan}
-
+					indexId++
+					numberOfActions++
 					indexReq := elastic.NewBulkIndexRequest().Index("subtitles").Type(indexType).Id(strconv.Itoa(indexId)).Doc(indexDto)
 
 					bulkRequest = bulkRequest.Add(indexReq)
 
 				}
-				fmt.Println(lineText)
+				//fmt.Println(lineText)
 			}
 
 		}
 
-		if bulkRequest.NumberOfActions() != indexId {
-			fmt.Printf("expected bulkRequest.NumberOfActions %d; got %d", indexId, bulkRequest.NumberOfActions())
+		if numberOfActions <= 0 {
+
+			return
+		}
+
+		if bulkRequest.NumberOfActions() != numberOfActions {
+			fmt.Printf("expected bulkRequest.NumberOfActions %d; got %d", numberOfActions, bulkRequest.NumberOfActions())
+			return
 		}
 
 		bulkResponse, err := bulkRequest.Do(context.TODO())
@@ -98,6 +108,18 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		}
 		if bulkResponse == nil {
 			fmt.Printf("批量插入es：expected bulkResponse to be != nil; got nil")
+		}
+		if bulkRequest.NumberOfActions() != 0 {
+			fmt.Printf("expected bulkRequest.NumberOfActions %d; got %d", 0, bulkRequest.NumberOfActions())
+		}
+
+		// Document with Id="1" should not exist
+		exists, err := es.Exists().Index("subtitles").Id("1").Do(context.TODO())
+		if err != nil {
+			fmt.Println(err)
+		}
+		if exists {
+			fmt.Printf("expected exists %v; got %v", false, exists)
 		}
 
 	}
