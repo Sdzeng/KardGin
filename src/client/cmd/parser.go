@@ -71,7 +71,8 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		// 	continue
 		// }
 		numberOfActions := 0
-		indexType := time.Now().Format("20060102")
+		indexName := "kard_" + time.Now().Format("20060102")
+		indexType := "subtitles" // time.Now().Format("20060102")
 		bulkRequest := es.Bulk()
 		for _, item := range subtitles.Items {
 			for _, line := range item.Lines {
@@ -82,7 +83,7 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 					indexDto := dto.SubtitlesIndexDto{Title: urlDto.Name, SubTitle: urlDto.FileName, Text: lineItem.Text, Lan: urlDto.Lan}
 					indexId++
 					numberOfActions++
-					indexReq := elastic.NewBulkIndexRequest().Index("subtitles").Type(indexType).Id(strconv.Itoa(indexId)).Doc(indexDto)
+					indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(strconv.Itoa(indexId)).Doc(indexDto)
 
 					bulkRequest = bulkRequest.Add(indexReq)
 
@@ -114,13 +115,13 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		}
 
 		// Document with Id="1" should not exist
-		exists, err := es.Exists().Index("subtitles").Id("1").Do(context.TODO())
-		if err != nil {
-			fmt.Println(err)
-		}
-		if exists {
-			fmt.Printf("expected exists %v; got %v", false, exists)
-		}
+		// exists, err := es.Exists().Index("subtitles").Id("1").Do(context.TODO())
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+		// if exists {
+		// 	fmt.Printf("expected exists %v; got %v", false, exists)
+		// }
 
 	}
 

@@ -1,8 +1,8 @@
 package dto
 
 type SubtitlesIndexDto struct {
-	Title    string
-	SubTitle string
-	Text     string
-	Lan      string
+	Title    string `json:"title"`
+	SubTitle string `json:"subtitle"`
+	Text     string `json:"text"`
+	Lan      string `json:"lan"`
 }

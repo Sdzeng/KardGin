@@ -15,3 +15,4 @@
 # vendor/
 assert
 wwwroot
+__debug_bin
