@@ -75,21 +75,22 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		indexType := "subtitles" // time.Now().Format("20060102")
 		bulkRequest := es.Bulk()
 		for _, item := range subtitles.Items {
+			lineText := []string{}
 			for _, line := range item.Lines {
 				//lineText := line.VoiceName + "："
 				for _, lineItem := range line.Items {
-					//lineText += lineItem.Text + "\n"
-
-					indexDto := dto.SubtitlesIndexDto{Title: urlDto.Name, SubTitle: urlDto.FileName, Text: lineItem.Text, Lan: urlDto.Lan}
-					indexId++
-					numberOfActions++
-					indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(strconv.Itoa(indexId)).Doc(indexDto)
-
-					bulkRequest = bulkRequest.Add(indexReq)
+					lineText = append(lineText, lineItem.Text)
 
 				}
 				//fmt.Println(lineText)
 			}
+
+			indexDto := dto.SubtitlesIndexDto{Title: urlDto.Name, SubTitle: urlDto.FileName, Text: lineText, TimeDuration: item.StartAt.String(), Lan: urlDto.Lan}
+			indexId++
+			numberOfActions++
+			indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(strconv.Itoa(indexId)).Doc(indexDto)
+
+			bulkRequest = bulkRequest.Add(indexReq)
 
 		}
 
