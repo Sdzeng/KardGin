@@ -73,14 +73,16 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		// 	continue
 		// }
 		numberOfActions := 0
+		batchNum := 10
+		timeDuration := ""
 		subTitle := getPathFileName(filePath)
+		itemLen := len(subtitles.Items)
 		indexName := "subtitles_" + time.Now().Format("20060102")
 		indexType := "_doc" // time.Now().Format("20060102")
 		bulkRequest := es.Bulk()
+		lineTextSlice := []string{}
+		for itemIndex, item := range subtitles.Items {
 
-		for _, item := range subtitles.Items {
-
-			lineTextSlice := []string{}
 			for _, line := range item.Lines {
 				//lineText := line.VoiceName + "："
 				for _, lineItem := range line.Items {
@@ -90,21 +92,26 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 				//fmt.Println(lineText)
 			}
 
-			if len(lineTextSlice) <= 0 {
-				continue
+			if itemIndex%batchNum == 0 {
+				timeDuration = item.StartAt.String()
 			}
 
-			indexDto := dto.SubtitlesIndexDto{Title: urlDto.Name, SubTitle: subTitle, Text: lineTextSlice, TimeDuration: item.StartAt.String(), Lan: urlDto.Lan}
-			indexId++
-			numberOfActions++
-			indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(strconv.Itoa(indexId)).Doc(indexDto)
+			if ((itemIndex+1)%batchNum == 0 || (itemIndex+1) == itemLen) && len(lineTextSlice) > 0 {
 
-			bulkRequest = bulkRequest.Add(indexReq)
+				indexDto := dto.SubtitlesIndexDto{Title: urlDto.Name, SubTitle: subTitle, Text: lineTextSlice, TimeDuration: timeDuration, Lan: urlDto.Lan}
+				indexId++
+				numberOfActions++
+				indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(strconv.Itoa(indexId)).Doc(indexDto)
+
+				bulkRequest = bulkRequest.Add(indexReq)
+
+				lineTextSlice = lineTextSlice[0:0]
+				timeDuration = ""
+			}
 
 		}
 
 		if numberOfActions <= 0 {
-
 			return
 		}
 
