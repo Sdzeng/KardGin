@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"kard/src/dto"
+	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/asticode/go-astisub"
@@ -71,21 +73,28 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		// 	continue
 		// }
 		numberOfActions := 0
-		indexName := "kard_" + time.Now().Format("20060102")
-		indexType := "subtitles" // time.Now().Format("20060102")
+		subTitle := getPathFileName(filePath)
+		indexName := "subtitles_" + time.Now().Format("20060102")
+		indexType := "_doc" // time.Now().Format("20060102")
 		bulkRequest := es.Bulk()
+
 		for _, item := range subtitles.Items {
-			lineText := []string{}
+
+			lineTextSlice := []string{}
 			for _, line := range item.Lines {
 				//lineText := line.VoiceName + "："
 				for _, lineItem := range line.Items {
-					lineText = append(lineText, lineItem.Text)
+					lineTextSlice = append(lineTextSlice, lineItem.Text)
 
 				}
 				//fmt.Println(lineText)
 			}
 
-			indexDto := dto.SubtitlesIndexDto{Title: urlDto.Name, SubTitle: urlDto.FileName, Text: lineText, TimeDuration: item.StartAt.String(), Lan: urlDto.Lan}
+			if len(lineTextSlice) <= 0 {
+				continue
+			}
+
+			indexDto := dto.SubtitlesIndexDto{Title: urlDto.Name, SubTitle: subTitle, Text: lineTextSlice, TimeDuration: item.StartAt.String(), Lan: urlDto.Lan}
 			indexId++
 			numberOfActions++
 			indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(strconv.Itoa(indexId)).Doc(indexDto)
@@ -115,8 +124,8 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 			fmt.Printf("expected bulkRequest.NumberOfActions %d; got %d", 0, bulkRequest.NumberOfActions())
 		}
 
-		// Document with Id="1" should not exist
-		// exists, err := es.Exists().Index("subtitles").Id("1").Do(context.TODO())
+		// // Document with Id="1" should not exist
+		// exists, err := es.Exists().Index(indexName).Id("1").Do(context.TODO())
 		// if err != nil {
 		// 	fmt.Println(err)
 		// }
@@ -126,4 +135,13 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 
 	}
 
+}
+
+func getPathFileName(filePath string) string {
+
+	filePathSlice := strings.Split(filePath, "\\")
+	fileFullName := filePathSlice[len(filePathSlice)-1]
+	fileSuffix := path.Ext(fileFullName)
+
+	return strings.TrimSuffix(fileFullName, fileSuffix)
 }
