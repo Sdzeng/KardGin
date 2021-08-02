@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"kard/src/dto"
+	"kard/src/global/variable"
 	"path"
 	"strconv"
 	"strings"
@@ -14,24 +15,6 @@ import (
 )
 
 var indexId = 0
-
-var es *elastic.Client
-var esUrl string = "http://localhost:9200"
-
-func init() {
-	ps := es.Ping(esUrl)
-	if ps == nil {
-		fmt.Println("初始化es客户端连接失败")
-	}
-
-	var err error
-	es, err = elastic.NewClient(elastic.SetURL(esUrl), elastic.SetSniff(false), elastic.SetBasicAuth("elastic", "123456"))
-
-	if err != nil {
-		fmt.Println("初始化es客户端连接失败", err)
-	}
-
-}
 
 func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 	// filePathLower := ""
@@ -79,7 +62,7 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		itemLen := len(subtitles.Items)
 		indexName := "subtitles_" + time.Now().Format("20060102")
 		indexType := "_doc" // time.Now().Format("20060102")
-		bulkRequest := es.Bulk()
+		bulkRequest := variable.ES.Bulk()
 		lineTextSlice := []string{}
 		for itemIndex, item := range subtitles.Items {
 
@@ -105,7 +88,7 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 
 				bulkRequest = bulkRequest.Add(indexReq)
 
-				lineTextSlice = lineTextSlice[0:0]
+				lineTextSlice = []string{}
 				timeDuration = ""
 			}
 

@@ -14,6 +14,11 @@ Token:
   JwtTokenRefreshExpireAt: 36000      #对于过期的token，支持从相关接口刷新获取新的token，默认有效期为10个小时，3600*10=36000 等于10小时
   BindContextKeyName: "userToken"     #用户在 header 头部提交的token绑定到上下文时的键名，方便直接从上下文(gin.context)直接获取每个用户的id等信息
 
+ElasticSearch:
+  Url: "http://localhost:9200"
+  UserName: "elastic"
+  Password: "123456"
+
 Redis:
   Host: "127.0.0.1"
   Port: 6379

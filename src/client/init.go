@@ -9,6 +9,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/olivere/elastic/v7"
 )
 
 func init() {
@@ -34,6 +36,21 @@ func init() {
 	// config>gorm.yml 启动文件变化监听事件
 	variable.GormYml = variable.WebYml.Clone("gorm")
 	variable.GormYml.ConfigFileChangeListen()
+
+	esUrl := variable.WebYml.GetString("ElasticSearch.Url")
+	ps := variable.ES.Ping(esUrl)
+	if ps == nil {
+		log.Fatal("初始化es客户端ping失败")
+	}
+
+	userName := variable.WebYml.GetString("ElasticSearch.UserName")
+	password := variable.WebYml.GetString("ElasticSearch.Password")
+	es, err := elastic.NewClient(elastic.SetURL(esUrl), elastic.SetSniff(false), elastic.SetBasicAuth(userName, password))
+
+	if err != nil {
+		log.Fatal("初始化es客户端连接失败" + err.Error())
+	}
+	variable.ES = es
 
 	// 5.初始化全局日志句柄，并载入日志钩子处理函数
 	variable.ZapLog = kardLog.CreateZapFactory(kardLog.ZapLogHandler)
