@@ -51,8 +51,7 @@ func (wc *WriterCounter) Write(p []byte) (int, error) {
 
 func Download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) error {
 	//请求资源
-	refer := dto.Refers[len(dto.Refers)-1]
-	req, err := getRequest(dto.DownloadUrl, refer)
+	req, err := getRequest(dto)
 	if err != nil {
 		return err
 	}
