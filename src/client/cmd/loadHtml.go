@@ -5,13 +5,27 @@ import (
 	"fmt"
 	"io/ioutil"
 	"kard/src/dto"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
 )
 
 var (
-	client = &http.Client{Timeout: 6 * time.Second}
+	client = &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			Dial: (&net.Dialer{
+				Timeout:  2 * time.Second,
+				Deadline: time.Now().Add(3 * time.Second),
+				//KeepAlive: 2 * time.Second,
+			}).Dial,
+			MaxIdleConns:          100,              //client对与所有host最大空闲连接数总和
+			IdleConnTimeout:       90 * time.Second, //空闲连接在连接池中的超时时间
+			TLSHandshakeTimeout:   10 * time.Second, //TLS安全连接握手超时时间
+			ExpectContinueTimeout: 1 * time.Second,  //发送完请求到接收到响应头的超时时间
+		},
+		Timeout: 6 * time.Second}
 )
 
 func loadHtml(urlDto *dto.UrlDto) (*string, []*http.Cookie, error) {
