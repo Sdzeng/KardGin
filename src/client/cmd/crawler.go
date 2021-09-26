@@ -71,7 +71,7 @@ func work(q string) {
 		reqUrl = "https://www.zimutiantang.com"
 	}
 
-	workerQueue := make(chan *dto.UrlDto, 50)
+	workerQueue := make(chan *dto.UrlDto, 1)
 
 	workerQueue <- &dto.UrlDto{WorkType: variable.FecthPage, DownloadUrl: reqUrl}
 	for urlDto := range workerQueue {
@@ -254,7 +254,11 @@ func download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 
 	err := Download(dto, workerQueue)
 	if err != nil {
-		fmt.Printf("\n下载失败：%s %s", dto.DownloadUrl, err.Error())
+		// fmt.Printf("\n下载失败：%s %s", dto.DownloadUrl, err.Error())
+		fmt.Printf("\n下载失败：%s", err.Error())
+	} else {
+		fmt.Printf("\n下载成功：%s", dto.DownloadUrl)
+
 	}
 }
 

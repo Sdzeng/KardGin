@@ -37,27 +37,30 @@ func init() {
 	variable.GormYml = variable.WebYml.Clone("gorm")
 	variable.GormYml.ConfigFileChangeListen()
 
-	esUrl := variable.WebYml.GetString("ElasticSearch.Url")
-	ps := variable.ES.Ping(esUrl)
-	if ps == nil {
-		log.Fatal("初始化es客户端ping失败")
+	//5. 初始化ES
+	esEnable := variable.WebYml.GetBool("ElasticSearch.Enable")
+	if esEnable {
+		esUrl := variable.WebYml.GetString("ElasticSearch.Url")
+		ps := variable.ES.Ping(esUrl)
+		if ps == nil {
+			log.Fatal("初始化es客户端ping失败")
+		}
+
+		userName := variable.WebYml.GetString("ElasticSearch.UserName")
+		password := variable.WebYml.GetString("ElasticSearch.Password")
+		es, err := elastic.NewClient(elastic.SetURL(esUrl), elastic.SetSniff(false), elastic.SetBasicAuth(userName, password))
+
+		if err != nil {
+			log.Fatal("初始化es客户端连接失败" + err.Error())
+		}
+		variable.ES = es
 	}
-
-	userName := variable.WebYml.GetString("ElasticSearch.UserName")
-	password := variable.WebYml.GetString("ElasticSearch.Password")
-	es, err := elastic.NewClient(elastic.SetURL(esUrl), elastic.SetSniff(false), elastic.SetBasicAuth(userName, password))
-
-	if err != nil {
-		log.Fatal("初始化es客户端连接失败" + err.Error())
-	}
-	variable.ES = es
-
-	// 5.初始化全局日志句柄，并载入日志钩子处理函数
+	// 6.初始化全局日志句柄，并载入日志钩子处理函数
 	variable.ZapLog = kardLog.CreateZapFactory(kardLog.ZapLogHandler)
 
 	variable.UseDbType = variable.GormYml.GetString("Gormv2.UseDbType")
 
-	// 6.根据配置初始化 gorm mysql 全局 *gorm.Db
+	// 7.根据配置初始化 gorm mysql 全局 *gorm.Db
 	if variable.GormYml.GetInt("Gormv2.Mysql.IsInitGolobalGormMysql") == 1 {
 		if dbMysql, err := gorm.GetOneMysqlClient(); err != nil {
 			log.Fatal(kardError.ErrorsGormInitFail + err.Error())
@@ -66,7 +69,7 @@ func init() {
 		}
 	}
 
-	// 根据配置初始化 gorm sqlserver 全局 *gorm.Db
+	// 8.根据配置初始化 gorm sqlserver 全局 *gorm.Db
 	if variable.GormYml.GetInt("Gormv2.Sqlserver.IsInitGolobalGormSqlserver") == 1 {
 		if dbSqlserver, err := gorm.GetOneSqlserverClient(); err != nil {
 			log.Fatal(kardError.ErrorsGormInitFail + err.Error())
@@ -74,7 +77,7 @@ func init() {
 			variable.GormDbSqlserver = dbSqlserver
 		}
 	}
-	// 根据配置初始化 gorm postgresql 全局 *gorm.Db
+	// 9.根据配置初始化 gorm postgresql 全局 *gorm.Db
 	if variable.GormYml.GetInt("Gormv2.PostgreSql.IsInitGolobalGormPostgreSql") == 1 {
 		if dbPostgre, err := gorm.GetOnePostgreSqlClient(); err != nil {
 			log.Fatal(kardError.ErrorsGormInitFail + err.Error())

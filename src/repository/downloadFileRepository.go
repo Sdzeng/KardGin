@@ -33,7 +33,7 @@ func (repository *DownloadFileRepository) Save(dto *dto.UrlDto) error {
 		trans.Commit()
 		return nil
 	} else {
-		fmt.Printf("数据库新加：%v \n", dto.Name)
+		fmt.Printf("\n数据库新加：%v", dto.Name)
 	}
 
 	if len(dto.FilePaths) > 0 {

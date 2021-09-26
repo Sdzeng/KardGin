@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/asticode/go-astisub"
-	"github.com/olivere/elastic/v7"
+	"github.com/olivere/elastic"
 )
 
 var (
@@ -32,48 +32,75 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 			continue
 		}
 
-		timeDuration := ""
 		subTitle := getPathFileName(filePath)
-		itemLen := len(subtitles.Items)
+
 		lineTextSlice := []string{}
+		lineTextSliceLen := 0
+		timeDuration := ""
 
-		for itemIndex, item := range subtitles.Items {
-
+		for _, item := range subtitles.Items {
 			for _, line := range item.Lines {
 				//lineText := line.VoiceName + "："
 				for _, lineItem := range line.Items {
+					if len(strings.Trim(lineItem.Text, " ")) <= 0 {
+						continue
+					}
+
 					lineTextSlice = append(lineTextSlice, lineItem.Text)
+					lineTextSliceLen := len(lineTextSlice)
+
+					if (lineTextSliceLen-1)%batchNum == 0 {
+						timeDuration = item.StartAt.String()
+					}
+
+					if lineTextSliceLen%batchNum == 0 {
+
+						indexDto := &dto.SubtitlesIndexDto{
+							IndexId:      strconv.Itoa(ai.Id()),
+							Title:        urlDto.Name,
+							SubTitle:     subTitle,
+							Text:         lineTextSlice,
+							TimeDuration: timeDuration,
+							Lan:          urlDto.Lan,
+						}
+
+						dtoSlice = append(dtoSlice, indexDto)
+
+						lineTextSlice = []string{} //(lineTextSlice)[0:0]
+						timeDuration = ""
+					}
 
 				}
 				//fmt.Println(lineText)
 			}
+		}
 
-			if itemIndex%batchNum == 0 {
-				timeDuration = item.StartAt.String()
+		lineTextSliceLen = len(lineTextSlice)
+		if lineTextSliceLen > 0 {
+
+			indexDto := &dto.SubtitlesIndexDto{
+				IndexId:      strconv.Itoa(ai.Id()),
+				Title:        urlDto.Name,
+				SubTitle:     subTitle,
+				Text:         lineTextSlice,
+				TimeDuration: timeDuration,
+				Lan:          urlDto.Lan,
 			}
 
-			if ((itemIndex+1)%batchNum == 0 || (itemIndex+1) == itemLen) && len(lineTextSlice) > 0 {
-
-				indexDto := &dto.SubtitlesIndexDto{
-					IndexId:      strconv.Itoa(ai.Id()),
-					Title:        urlDto.Name,
-					SubTitle:     subTitle,
-					Text:         lineTextSlice,
-					TimeDuration: timeDuration,
-					Lan:          urlDto.Lan,
-				}
-
-				dtoSlice = append(dtoSlice, indexDto)
-
-				lineTextSlice = (lineTextSlice)[0:0]
-				timeDuration = ""
-			}
-
+			dtoSlice = append(dtoSlice, indexDto)
 		}
 
 	}
 
-	toEs(dtoSlice)
+	if len(dtoSlice) <= 0 {
+		return
+	}
+
+	if variable.ES == nil {
+		toConsole(dtoSlice)
+	} else {
+		toEs(dtoSlice)
+	}
 }
 
 func toEs(dtoSlice []*dto.SubtitlesIndexDto) {
@@ -104,8 +131,15 @@ func toEs(dtoSlice []*dto.SubtitlesIndexDto) {
 	}
 }
 
-func getPathFileName(filePath string) string {
+func toConsole(dtoSlice []*dto.SubtitlesIndexDto) {
 
+	for _, dto := range dtoSlice {
+		fmt.Printf("\n%v:%v", dto.TimeDuration, dto.Text)
+	}
+
+}
+
+func getPathFileName(filePath string) string {
 	filePathSlice := strings.Split(filePath, "\\")
 	fileFullName := filePathSlice[len(filePathSlice)-1]
 	fileSuffix := path.Ext(fileFullName)
