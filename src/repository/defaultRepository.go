@@ -12,10 +12,10 @@ import (
 )
 
 func UseDbConn() *gorm.DB {
-	return UseDbConn("")
+	return UseDbConnWithType("")
 }
 
-func UseDbConn(sqlType string) *gorm.DB {
+func UseDbConnWithType(sqlType string) *gorm.DB {
 	var db *gorm.DB
 	sqlType = strings.Trim(sqlType, " ")
 	if sqlType == "" {
@@ -47,7 +47,8 @@ func UseDbConn(sqlType string) *gorm.DB {
 }
 
 func Insert(inter interface{}) (id int32, err error) {
-	result := Db.Create(inter)
+	db := UseDbConn()
+	result := db.Create(inter)
 	if result.RowsAffected <= 0 {
 		return 0, result.Error
 	}

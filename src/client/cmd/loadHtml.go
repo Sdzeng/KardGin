@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"kard/src/dto"
+	"kard/src/model/dto"
 	"net/http"
 	"strconv"
 	"time"

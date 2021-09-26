@@ -9,8 +9,8 @@ import (
 	"sync"
 
 	_ "kard/src/client"
-	"kard/src/dto"
 	"kard/src/global/variable"
+	"kard/src/model/dto"
 )
 
 var (

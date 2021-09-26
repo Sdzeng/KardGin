@@ -31,7 +31,7 @@ func CreateYamlFactory(fileName ...string) interf.YmlConfigInterf {
 
 	yamlConfig := viper.New()
 	// 配置文件所在目录
-	yamlConfig.AddConfigPath(variable.BasePath + "/config")
+	yamlConfig.AddConfigPath(variable.BasePath + "/global/config/ymls")
 	// 需要读取的文件名,默认为：config
 	if len(fileName) == 0 {
 		yamlConfig.SetConfigName("web")
