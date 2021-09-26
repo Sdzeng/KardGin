@@ -79,18 +79,18 @@ func work(q string) {
 	for {
 		select {
 		case urlDto := <-workerQueue:
-			go func() {
-				switch urlDto.WorkType {
+			go func(dto *dto.UrlDto, queue chan *dto.UrlDto) {
+				switch dto.WorkType {
 				case variable.FecthPage:
-					fetchPage(urlDto, workerQueue)
+					fetchPage(dto, queue)
 				case variable.FecthList:
-					fetchList(urlDto, workerQueue)
+					fetchList(dto, queue)
 				case variable.FecthInfo:
-					fetchInfo(urlDto, workerQueue)
+					fetchInfo(dto, queue)
 				case variable.ParseFile:
-					parseFile(urlDto, workerQueue)
+					parseFile(dto, queue)
 				}
-			}()
+			}(urlDto, workerQueue)
 		default:
 			fmt.Printf("\n等待任务")
 			time.Sleep(1 * time.Second)
