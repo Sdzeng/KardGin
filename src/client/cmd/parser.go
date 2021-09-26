@@ -14,56 +14,29 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
-var indexId = 0
+var (
+	ai *AutoInc
+)
+
+func init() {
+	ai = NewAi(0, 1)
+}
 
 func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
-	// filePathLower := ""
-	// var subtitles *astisub.Subtitles
-	//decoder := mahonia.NewDecoder("utf8")
+	batchNum := 10
+	dtoSlice := []*dto.SubtitlesIndexDto{}
+
 	for _, filePath := range urlDto.FilePaths {
 		subtitles, err := astisub.Open(astisub.Options{Filename: filePath})
 		if err != nil {
 			continue
 		}
-		// filePathLower = strings.ToLower(filePath)
-		// switch {
-		// case strings.HasSuffix(filePathLower, ".ass"):
-		// 	file, err := os.Open(filePath)
-		// 	if err != nil {
-		// 		continue
-		// 	}
-		// 	defer file.Close()
 
-		// 	subtitles, err = astisub.Open(file)
-		// 	if err != nil {
-		// 		continue
-		// 	}
-
-		// case strings.HasSuffix(filePathLower, ".srt"):
-		// 	file, err := os.Open(filePath)
-		// 	if err != nil {
-		// 		continue
-		// 	}
-		// 	defer file.Close()
-
-		// 	subtitles, err = astisub.ReadFromSRT(file)
-		// 	if err != nil {
-		// 		continue
-		// 	}
-
-		// default:
-		// 	fmt.Println("未识别的文件" + urlDto.FileName)
-		// 	continue
-		// }
-		numberOfActions := 0
-		batchNum := 10
 		timeDuration := ""
 		subTitle := getPathFileName(filePath)
 		itemLen := len(subtitles.Items)
-		indexName := "subtitles_" + time.Now().Format("20060102")
-		indexType := "_doc" // time.Now().Format("20060102")
-		bulkRequest := variable.ES.Bulk()
 		lineTextSlice := []string{}
+
 		for itemIndex, item := range subtitles.Items {
 
 			for _, line := range item.Lines {
@@ -81,50 +54,54 @@ func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 
 			if ((itemIndex+1)%batchNum == 0 || (itemIndex+1) == itemLen) && len(lineTextSlice) > 0 {
 
-				indexDto := dto.SubtitlesIndexDto{Title: urlDto.Name, SubTitle: subTitle, Text: lineTextSlice, TimeDuration: timeDuration, Lan: urlDto.Lan}
-				indexId++
-				numberOfActions++
-				indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(strconv.Itoa(indexId)).Doc(indexDto)
+				indexDto := &dto.SubtitlesIndexDto{
+					IndexId:      strconv.Itoa(ai.Id()),
+					Title:        urlDto.Name,
+					SubTitle:     subTitle,
+					Text:         lineTextSlice,
+					TimeDuration: timeDuration,
+					Lan:          urlDto.Lan,
+				}
 
-				bulkRequest = bulkRequest.Add(indexReq)
+				dtoSlice = append(dtoSlice, indexDto)
 
-				lineTextSlice = []string{}
+				lineTextSlice = (lineTextSlice)[0:0]
 				timeDuration = ""
 			}
 
 		}
 
-		if numberOfActions <= 0 {
-			return
-		}
-
-		if bulkRequest.NumberOfActions() != numberOfActions {
-			fmt.Printf("expected bulkRequest.NumberOfActions %d; got %d", numberOfActions, bulkRequest.NumberOfActions())
-			return
-		}
-
-		bulkResponse, err := bulkRequest.Do(context.TODO())
-		if err != nil {
-			fmt.Printf("批量插入es失败：%v", err)
-		}
-		if bulkResponse == nil {
-			fmt.Printf("批量插入es：expected bulkResponse to be != nil; got nil")
-		}
-		if bulkRequest.NumberOfActions() != 0 {
-			fmt.Printf("expected bulkRequest.NumberOfActions %d; got %d", 0, bulkRequest.NumberOfActions())
-		}
-
-		// // Document with Id="1" should not exist
-		// exists, err := es.Exists().Index(indexName).Id("1").Do(context.TODO())
-		// if err != nil {
-		// 	fmt.Println(err)
-		// }
-		// if exists {
-		// 	fmt.Printf("expected exists %v; got %v", false, exists)
-		// }
-
 	}
 
+	toEs(dtoSlice)
+}
+
+func toEs(dtoSlice []*dto.SubtitlesIndexDto) {
+	indexName := "subtitles_" + time.Now().Format("20060102")
+	indexType := "_doc" // time.Now().Format("20060102")
+
+	bulkRequest := variable.ES.Bulk()
+	for _, dto := range dtoSlice {
+		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(dto.IndexId).Doc(dto)
+		bulkRequest = bulkRequest.Add(indexReq)
+
+		fmt.Println(dto.Text)
+	}
+
+	if bulkRequest.NumberOfActions() <= 0 {
+		return
+	}
+
+	bulkResponse, err := bulkRequest.Do(context.TODO())
+	if err != nil {
+		fmt.Printf("批量插入es失败：%v", err)
+	}
+	if bulkResponse == nil {
+		fmt.Printf("批量插入es：expected bulkResponse to be != nil; got nil")
+	}
+	if bulkRequest.NumberOfActions() != 0 {
+		fmt.Printf("expected bulkRequest.NumberOfActions %d; got %d", 0, bulkRequest.NumberOfActions())
+	}
 }
 
 func getPathFileName(filePath string) string {
