@@ -64,7 +64,11 @@ func Download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) error {
 
 	//拷贝
 	fileName, err := getDownloadFileName(dto.DownloadUrl, res)
-	if err != nil || len(fileName) == 0 {
+	if err != nil {
+		return err
+	}
+
+	if len(fileName) == 0 {
 		return errors.New("getDownloadFileName:获取不到文件名")
 	}
 
