@@ -11,34 +11,35 @@ import (
 	"gorm.io/gorm"
 )
 
-var Db *gorm.DB
-
-func init() {
-	Db = UseDbConn(variable.UseDbType)
+func UseDbConn() *gorm.DB {
+	return UseDbConn("")
 }
 
 func UseDbConn(sqlType string) *gorm.DB {
 	var db *gorm.DB
 	sqlType = strings.Trim(sqlType, " ")
 	if sqlType == "" {
-		sqlType = variable.GormYml.GetString("Gormv2.UseDbType")
+		sqlType = variable.UseDbType // variable.GormYml.GetString("Gormv2.UseDbType")
 	}
 	switch strings.ToLower(sqlType) {
 	case "mysql":
 		if variable.GormDbMysql == nil {
-			variable.ZapLog.Fatal(fmt.Sprintf(kardError.ErrorsGormNotInitGlobalPointer, sqlType, sqlType))
+			variable.ZapLog.Warn(fmt.Sprintf(kardError.ErrorsGormNotInitGlobalPointer, sqlType, sqlType))
+		} else {
+			db = variable.GormDbMysql
 		}
-		db = variable.GormDbMysql
 	case "sqlserver":
 		if variable.GormDbSqlserver == nil {
-			variable.ZapLog.Fatal(fmt.Sprintf(kardError.ErrorsGormNotInitGlobalPointer, sqlType, sqlType))
+			variable.ZapLog.Warn(fmt.Sprintf(kardError.ErrorsGormNotInitGlobalPointer, sqlType, sqlType))
+		} else {
+			db = variable.GormDbSqlserver
 		}
-		db = variable.GormDbSqlserver
 	case "postgres", "postgre", "postgresql":
 		if variable.GormDbPostgreSql == nil {
-			variable.ZapLog.Fatal(fmt.Sprintf(kardError.ErrorsGormNotInitGlobalPointer, sqlType, sqlType))
+			variable.ZapLog.Warn(fmt.Sprintf(kardError.ErrorsGormNotInitGlobalPointer, sqlType, sqlType))
+		} else {
+			db = variable.GormDbPostgreSql
 		}
-		db = variable.GormDbPostgreSql
 	default:
 		variable.ZapLog.Error(kardError.ErrorsDbDriverNotExists + sqlType)
 	}

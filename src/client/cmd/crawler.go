@@ -248,7 +248,7 @@ func fetchSelectDx1(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 func download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("download recover error:%s %s \n", dto.DownloadUrl, err)
+			fmt.Printf("download error:%s %s \n", dto.DownloadUrl, err)
 		}
 	}()
 
@@ -257,7 +257,7 @@ func download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		// fmt.Printf("\n下载失败：%s %s", dto.DownloadUrl, err.Error())
 		fmt.Printf("\n下载失败：%s", err.Error())
 	} else {
-		fmt.Printf("\n下载成功：%s", dto.DownloadUrl)
+		//fmt.Printf("\n下载成功：%s", dto.DownloadUrl)
 
 	}
 }

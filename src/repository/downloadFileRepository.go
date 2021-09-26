@@ -9,9 +9,24 @@ import (
 )
 
 type DownloadFileRepository struct {
+	IsEnable bool,
+	*gorm.DB
 }
 
+// 创建 DownloadFileFactory
+// 参数说明： 传递空值，默认使用 配置文件选项：UseDbType（mysql）
+func DownloadFileFactory() *DownloadFileRepository {
+	db := UseDbConn(variable.UseDbType)
+	isEnable := db != nil
+	return &DownloadFileRepository{IsEnable：isEnable,DB: db}
+}
+
+
 func (repository *DownloadFileRepository) Save(dto *dto.UrlDto) error {
+	if !u.IsEnable {
+		return nil,nil
+	 }
+
 	df := &model.Downloads{
 		BaseModel:   model.BaseModel{CreateTime: time.Now().Unix()},
 		Name:        dto.Name,
