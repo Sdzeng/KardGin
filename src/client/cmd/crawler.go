@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	_ "kard/src/client"
 	"kard/src/global/variable"
@@ -74,20 +75,28 @@ func work(q string) {
 	workerQueue := make(chan *dto.UrlDto, 1)
 
 	workerQueue <- &dto.UrlDto{WorkType: variable.FecthPage, DownloadUrl: reqUrl}
-	for urlDto := range workerQueue {
 
-		switch urlDto.WorkType {
-		case variable.FecthPage:
-			go fetchPage(urlDto, workerQueue)
-		case variable.FecthList:
-			go fetchList(urlDto, workerQueue)
-		case variable.FecthInfo:
-			go fetchInfo(urlDto, workerQueue)
-		case variable.ParseFile:
-			go parseFile(urlDto, workerQueue)
+	for {
+		select {
+		case urlDto := <-workerQueue:
+			go func() {
+				switch urlDto.WorkType {
+				case variable.FecthPage:
+					fetchPage(urlDto, workerQueue)
+				case variable.FecthList:
+					fetchList(urlDto, workerQueue)
+				case variable.FecthInfo:
+					fetchInfo(urlDto, workerQueue)
+				case variable.ParseFile:
+					parseFile(urlDto, workerQueue)
+				}
+			}()
+		default:
+			fmt.Printf("\n等待任务")
+			time.Sleep(1 * time.Second)
 		}
-
 	}
+
 }
 
 func fetchPage(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
@@ -248,7 +257,7 @@ func fetchSelectDx1(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 func download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("download error:%s %s \n", dto.DownloadUrl, err)
+			fmt.Printf("\n download error:%s %s", dto.DownloadUrl, err)
 		}
 	}()
 
