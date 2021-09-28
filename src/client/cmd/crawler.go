@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
 	_ "kard/src/client"
 	"kard/src/global/variable"
@@ -76,27 +75,42 @@ func work(q string) {
 
 	workerQueue <- &dto.UrlDto{WorkType: variable.FecthPage, DownloadUrl: reqUrl}
 
-	for {
-		select {
-		case urlDto := <-workerQueue:
-			go func(dto *dto.UrlDto, queue chan *dto.UrlDto) {
-				switch dto.WorkType {
-				case variable.FecthPage:
-					fetchPage(dto, queue)
-				case variable.FecthList:
-					fetchList(dto, queue)
-				case variable.FecthInfo:
-					fetchInfo(dto, queue)
-				case variable.ParseFile:
-					parseFile(dto, queue)
-				}
-			}(urlDto, workerQueue)
-		default:
-			fmt.Printf("\n等待任务")
-			time.Sleep(1 * time.Second)
-		}
-	}
+	// for {
+	// 	select {
+	// 	case urlDto := <-workerQueue:
+	// 		go func(dto *dto.UrlDto, queue chan *dto.UrlDto) {
+	// 			switch dto.WorkType {
+	// 			case variable.FecthPage:
+	// 				fetchPage(dto, queue)
+	// 			case variable.FecthList:
+	// 				fetchList(dto, queue)
+	// 			case variable.FecthInfo:
+	// 				fetchInfo(dto, queue)
+	// 			case variable.ParseFile:
+	// 				parseFile(dto, queue)
+	// 			}
+	// 		}(urlDto, workerQueue)
+	// 	default:
+	// 		fmt.Printf("\n等待任务")
+	// 		time.Sleep(1 * time.Second)
+	// 	}
+	// }
 
+	wg := *&sync.WaitGroup{}
+	go func(queue chan *dto.UrlDto) {
+		for dto := range workerQueue {
+			switch dto.WorkType {
+			case variable.FecthPage:
+				fetchPage(dto, queue)
+			case variable.FecthList:
+				fetchList(dto, queue)
+			case variable.FecthInfo:
+				fetchInfo(dto, queue)
+			case variable.ParseFile:
+				parseFile(dto, queue)
+			}
+		}
+	}(workerQueue)
 }
 
 func fetchPage(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
