@@ -71,9 +71,12 @@ func work(q string) {
 		reqUrl = "https://www.zimutiantang.com"
 	}
 
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
 	workerQueue := make(chan *dto.UrlDto, 1)
 
-	workerQueue <- &dto.UrlDto{WorkType: variable.FecthPage, DownloadUrl: reqUrl}
+	workerQueue <- &dto.UrlDto{WorkType: variable.FecthPage, DownloadUrl: reqUrl, Wg: wg}
 
 	// for {
 	// 	select {
@@ -96,21 +99,34 @@ func work(q string) {
 	// 	}
 	// }
 
-	wg := *&sync.WaitGroup{}
 	go func(queue chan *dto.UrlDto) {
-		for dto := range workerQueue {
-			switch dto.WorkType {
-			case variable.FecthPage:
-				fetchPage(dto, queue)
-			case variable.FecthList:
-				fetchList(dto, queue)
-			case variable.FecthInfo:
-				fetchInfo(dto, queue)
-			case variable.ParseFile:
-				parseFile(dto, queue)
-			}
+		for urlDto := range workerQueue {
+			go func(dt *dto.UrlDto, que chan *dto.UrlDto) {
+				defer func(d *dto.UrlDto) {
+					d.Wg.Done()
+				}(dt)
+				fmt.Printf("\n执行任务：%s", dt.WorkType)
+				switch dt.WorkType {
+				case variable.FecthPage:
+					fetchPage(dt, que)
+				case variable.FecthList:
+					fetchList(dt, que)
+				case variable.FecthInfo:
+					fetchInfo(dt, que)
+				case variable.ParseFile:
+					parseFile(dt, que)
+				}
+			}(urlDto, queue)
 		}
 	}(workerQueue)
+
+	wg.Wait()
+	fmt.Printf("\n执行结束")
+}
+
+func insertQueue(newDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
+	newDto.Wg.Add(1)
+	workerQueue <- newDto
 }
 
 func fetchPage(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
@@ -144,13 +160,13 @@ func fetchPage(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		if lastIndex == index {
 			urlDto.Cookies = cookies
 			urlDto.DownloadUrl = url
-			workerQueue <- urlDto
+			insertQueue(urlDto, workerQueue)
 		}
 
 		if _, ok := visited.Load(url); !ok {
-			newDto := &dto.UrlDto{WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies}
+			newDto := &dto.UrlDto{WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: urlDto.Wg}
 			visited.Store(newDto.DownloadUrl, &struct{}{})
-			workerQueue <- newDto
+			insertQueue(newDto, workerQueue)
 		}
 
 	}
@@ -169,7 +185,7 @@ func fetchList(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 
 	for _, item := range items {
 
-		newDto := &dto.UrlDto{WorkType: variable.FecthInfo, Refers: []string{urlDto.DownloadUrl}, DownloadUrl: item[2], Cookies: cookies, Lan: item[1], Subtitles: item[4]}
+		newDto := &dto.UrlDto{WorkType: variable.FecthInfo, Refers: []string{urlDto.DownloadUrl}, DownloadUrl: item[2], Cookies: cookies, Lan: item[1], Subtitles: item[4], Wg: urlDto.Wg}
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
 			continue
 		}
@@ -179,7 +195,7 @@ func fetchList(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 
 		if _, ok := visited.Load(newDto.DownloadUrl); !ok {
 			visited.Store(newDto.DownloadUrl, &struct{}{})
-			workerQueue <- newDto
+			insertQueue(newDto, workerQueue)
 		}
 
 	}

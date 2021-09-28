@@ -86,7 +86,7 @@ func Download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) error {
 	}
 
 	dto.WorkType = variable.ParseFile
-	workerQueue <- dto
+	insertQueue(dto, workerQueue)
 	return nil
 }
 

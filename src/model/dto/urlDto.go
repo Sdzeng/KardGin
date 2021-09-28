@@ -1,6 +1,9 @@
 package dto
 
-import "net/http"
+import (
+	"net/http"
+	"sync"
+)
 
 type UrlDto struct {
 	WorkType    string
@@ -12,4 +15,5 @@ type UrlDto struct {
 	FilePaths   []string
 	Lan         string
 	Subtitles   string
+	Wg          *sync.WaitGroup
 }
