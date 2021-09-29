@@ -49,7 +49,7 @@ func (wc *WriterCounter) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-func Download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) error {
+func Download(dto *dto.UrlDto) error {
 	//请求资源
 	req, err := getRequest(dto)
 	if err != nil {
@@ -86,7 +86,7 @@ func Download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) error {
 	}
 
 	dto.WorkType = variable.ParseFile
-	insertQueue(dto, workerQueue)
+	insertQueue(dto)
 	return nil
 }
 

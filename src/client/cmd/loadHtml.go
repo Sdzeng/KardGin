@@ -7,7 +7,6 @@ import (
 	"kard/src/model/dto"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 var (
@@ -34,7 +33,8 @@ var (
 		// 		KeepAlive: 30 * time.Second,
 		// 	}).Dial,
 		// },
-		Timeout: 60 * time.Second}
+		//Timeout: 60 * time.Second
+	}
 )
 
 func loadHtml(urlDto *dto.UrlDto) (*string, []*http.Cookie, error) {

@@ -49,7 +49,7 @@ func main() {
 	fmt.Printf("q=%s\n", *q)
 	work(*q)
 
-	fmt.Println("完美结束")
+	fmt.Printf("\n执行结束")
 }
 
 func work(q string) {
@@ -71,12 +71,9 @@ func work(q string) {
 		reqUrl = "https://www.zimutiantang.com"
 	}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	// workerQueue := make(chan *dto.UrlDto, 1)
 
-	workerQueue := make(chan *dto.UrlDto, 1)
-
-	workerQueue <- &dto.UrlDto{WorkType: variable.FecthPage, DownloadUrl: reqUrl, Wg: wg}
+	urlDto := &dto.UrlDto{WorkType: variable.FecthPage, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}}
 
 	// for {
 	// 	select {
@@ -99,37 +96,67 @@ func work(q string) {
 	// 	}
 	// }
 
-	go func(queue chan *dto.UrlDto) {
-		for urlDto := range workerQueue {
-			go func(dt *dto.UrlDto, que chan *dto.UrlDto) {
-				defer func(d *dto.UrlDto) {
-					d.Wg.Done()
-				}(dt)
-				fmt.Printf("\n执行任务：%s", dt.WorkType)
-				switch dt.WorkType {
-				case variable.FecthPage:
-					fetchPage(dt, que)
-				case variable.FecthList:
-					fetchList(dt, que)
-				case variable.FecthInfo:
-					fetchInfo(dt, que)
-				case variable.ParseFile:
-					parseFile(dt, que)
-				}
-			}(urlDto, queue)
-		}
-	}(workerQueue)
+	// f := func(wg *sync.WaitGroup, urlDto *dto.UrlDto, queue chan *dto.UrlDto) {
+	// 	defer func(wd *sync.WaitGroup) {
+	// 		wd.Done()
+	// 	}(wg)
 
-	wg.Wait()
-	fmt.Printf("\n执行结束")
+	// 	// fmt.Printf("\n执行任务：%s", urlDto.WorkType)
+	// 	wg.Add(1)
+
+	// 	time.Sleep(1 * time.Second)
+
+	// 	switch urlDto.WorkType {
+	// 	case variable.FecthPage:
+	// 		fetchPage(urlDto)
+	// 	case variable.FecthList:
+	// 		fetchList(urlDto)
+	// 	case variable.FecthInfo:
+	// 		fetchInfo(urlDto)
+	// 	case variable.ParseFile:
+	// 		parseFile(urlDto)
+	// 	}
+	// }
+
+	// wg := &sync.WaitGroup{}
+	// wg.Add(1)
+	// go func(wg *sync.WaitGroup, queue chan *dto.UrlDto) {
+	// 	defer func(w *sync.WaitGroup) {
+	// 		w.Done()
+	// 	}(wg)
+
+	// 	for urlDto := range queue {
+	// 		go f(wg, urlDto, queue)
+	// 	}
+	// }(wg, workerQueue)
+
+	// wg.Wait()
+
+	insertQueue(urlDto)
+	urlDto.Wg.Wait()
 }
 
-func insertQueue(newDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
-	newDto.Wg.Add(1)
-	workerQueue <- newDto
+func insertQueue(newDto *dto.UrlDto) {
+	switch newDto.WorkType {
+	case variable.FecthPage:
+		newDto.Wg.Add(1)
+		go fetchPage(newDto)
+	case variable.FecthList:
+		// newDto.Wg.Add(1)
+		// go fetchList(newDto)
+		fetchList(newDto)
+	case variable.FecthInfo:
+		fetchInfo(newDto)
+	case variable.ParseFile:
+		parseFile(newDto)
+	}
 }
 
-func fetchPage(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
+func fetchPage(urlDto *dto.UrlDto) {
+	defer func(d *dto.UrlDto) {
+		d.Wg.Done()
+	}(urlDto)
+
 	if _, ok := pageVisited.Load(urlDto.DownloadUrl); ok {
 		return
 	} else {
@@ -160,20 +187,23 @@ func fetchPage(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 		if lastIndex == index {
 			urlDto.Cookies = cookies
 			urlDto.DownloadUrl = url
-			insertQueue(urlDto, workerQueue)
+			insertQueue(urlDto)
 		}
 
 		if _, ok := visited.Load(url); !ok {
 			newDto := &dto.UrlDto{WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: urlDto.Wg}
 			visited.Store(newDto.DownloadUrl, &struct{}{})
-			insertQueue(newDto, workerQueue)
+			insertQueue(newDto)
 		}
 
 	}
 
 }
 
-func fetchList(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
+func fetchList(urlDto *dto.UrlDto) {
+	// defer func(d *dto.UrlDto) {
+	// 	d.Wg.Done()
+	// }(urlDto)
 
 	html, cookies, err := loadHtml(urlDto)
 	if err != nil {
@@ -195,14 +225,14 @@ func fetchList(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 
 		if _, ok := visited.Load(newDto.DownloadUrl); !ok {
 			visited.Store(newDto.DownloadUrl, &struct{}{})
-			insertQueue(newDto, workerQueue)
+			insertQueue(newDto)
 		}
 
 	}
 
 }
 
-func fetchInfo(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
+func fetchInfo(urlDto *dto.UrlDto) {
 	html, _, err := loadHtml(urlDto)
 	if err != nil {
 		return
@@ -238,15 +268,15 @@ func fetchInfo(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 	urlDto.Name = name
 
 	if len(fileName) > 0 {
-		download(urlDto, workerQueue)
+		download(urlDto)
 
 	} else {
-		fetchSelectDx1(urlDto, workerQueue)
+		fetchSelectDx1(urlDto)
 	}
 
 }
 
-func fetchSelectDx1(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
+func fetchSelectDx1(urlDto *dto.UrlDto) {
 	html, _, err := loadHtml(urlDto)
 	if err != nil {
 		return
@@ -267,7 +297,7 @@ func fetchSelectDx1(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 
 		urlDto.Refers = append(urlDto.Refers, urlDto.DownloadUrl)
 		urlDto.DownloadUrl = downloadUrl
-		download(urlDto, workerQueue)
+		download(urlDto)
 	} else {
 
 		items = jsPageDownloadRegexp.FindAllStringSubmatch(*html, -1)
@@ -276,7 +306,7 @@ func fetchSelectDx1(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 
 			urlDto.Refers = append(urlDto.Refers, urlDto.DownloadUrl)
 			urlDto.DownloadUrl = url
-			fetchSelectDx1(urlDto, workerQueue)
+			fetchSelectDx1(urlDto)
 		} else if find := strings.Contains(*html, "该字幕不可下载"); !find {
 			fmt.Println("匹配失败:" + urlDto.DownloadUrl)
 		}
@@ -284,14 +314,14 @@ func fetchSelectDx1(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
 
 }
 
-func download(dto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
+func download(dto *dto.UrlDto) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Printf("\n download error:%s %s", dto.DownloadUrl, err)
 		}
 	}()
 
-	err := Download(dto, workerQueue)
+	err := Download(dto)
 	if err != nil {
 		// fmt.Printf("\n下载失败：%s %s", dto.DownloadUrl, err.Error())
 		fmt.Printf("\n下载失败：%s", err.Error())

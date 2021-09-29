@@ -22,7 +22,7 @@ func init() {
 	ai = NewAi(0, 1)
 }
 
-func parseFile(urlDto *dto.UrlDto, workerQueue chan *dto.UrlDto) {
+func parseFile(urlDto *dto.UrlDto) {
 	batchNum := 10
 	dtoSlice := []*dto.SubtitlesIndexDto{}
 
@@ -133,10 +133,11 @@ func toEs(dtoSlice []*dto.SubtitlesIndexDto) {
 
 func toConsole(dtoSlice []*dto.SubtitlesIndexDto) {
 
-	for _, dto := range dtoSlice {
-		fmt.Printf("\n%v:%v", dto.TimeDuration, dto.Text)
-	}
+	// for _, dto := range dtoSlice {
+	// 	fmt.Printf("\n%v:%v", dto.TimeDuration, dto.Text)
+	// }
 
+	fmt.Printf("\n解析成功：%v", dtoSlice[0].Title)
 }
 
 func getPathFileName(filePath string) string {
