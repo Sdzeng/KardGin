@@ -18,6 +18,7 @@ type ZimuCrawler struct {
 	// Wg *sync.WaitGroup
 	// helper.Parser
 	// helper.Downloader
+	Open bool
 }
 
 var (
@@ -211,9 +212,10 @@ func (obj ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 
 	for _, item := range items {
 		title := strings.Replace(strings.Replace(item[3], "<em>", "", -1), "</em>", "", -1)
-		if !strings.Contains(title, taskDto.SearchKeyword) {
+		if len(taskDto.SearchKeyword) > 0 && !strings.Contains(title, taskDto.SearchKeyword) {
 			fmt.Printf("\n忽略下载 %v", title)
-			continue
+			obj.Open = false
+			return
 		}
 
 		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[5], Cookies: cookies, Lan: item[4], Subtitles: item[7], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
