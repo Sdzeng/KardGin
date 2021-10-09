@@ -29,7 +29,7 @@ import (
 var downloadFileRepository = &repository.DownloadFileRepository{}
 
 type WriterCounter struct {
-	//urlDto   *dto.UrlDto
+	//taskDto   *dto.UrlDto
 	FileName string
 	Total    uint64
 }
@@ -38,7 +38,7 @@ type WriterCounter struct {
 
 func (wc *WriterCounter) PrintProgress() {
 	//fmt.Printf("\n%s", strings.Repeat(" ", 50))
-	//fmt.Printf("\nDownloading... %s complete %s(%s)", humanize.Bytes(wc.Total), wc.urlDto.name, wc.urlDto.fileName)
+	//fmt.Printf("\nDownloading... %s complete %s(%s)", humanize.Bytes(wc.Total), wc.taskDto.name, wc.taskDto.fileName)
 
 }
 
@@ -49,10 +49,7 @@ func (wc *WriterCounter) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-type Downloader struct {
-}
-
-func (this Downloader) Download(dto *dto.TaskDto) (*dto.TaskDto, error) {
+func Download(dto *dto.TaskDto) (*dto.TaskDto, error) {
 	//请求资源
 	req, err := GetRequest(dto)
 	if err != nil {

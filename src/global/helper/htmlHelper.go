@@ -8,8 +8,8 @@ import (
 	"net/url"
 )
 
-func LoadHtml(urlDto *dto.TaskDto) (*string, []*http.Cookie, error) {
-	req, err := GetRequest(urlDto)
+func LoadHtml(taskDto *dto.TaskDto) (*string, []*http.Cookie, error) {
+	req, err := GetRequest(taskDto)
 	if err != nil {
 		fmt.Println("create request error", err)
 		return nil, nil, err

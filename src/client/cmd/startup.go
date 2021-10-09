@@ -5,7 +5,6 @@ import (
 	"fmt"
 	_ "kard/src/client"
 	"kard/src/client/cmd/crawler"
-	"kard/src/global/helper"
 	"kard/src/global/variable"
 	"kard/src/model/dto"
 	"time"
@@ -15,10 +14,7 @@ import (
 
 func main() {
 
-	zimuCrawler := &crawler.ZimuCrawler{
-		Parser:     helper.Parser{Ai: helper.NewAi(0, 1)},
-		Downloader: helper.Downloader{},
-	}
+	zimuCrawler := &crawler.ZimuCrawler{}
 
 	crawlerWork(zimuCrawler)
 }

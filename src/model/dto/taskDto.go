@@ -6,15 +6,16 @@ import (
 )
 
 type TaskDto struct {
-	WorkType    string
-	Refers      []string
-	Cookies     []*http.Cookie
-	DownloadUrl string
-	Name        string
-	FileName    string
-	FilePaths   []string
-	Lan         string
-	Subtitles   string
-	Wg          *sync.WaitGroup
-	StoreFunc   func([]*SubtitlesIndexDto)
+	WorkType      string
+	Refers        []string
+	Cookies       []*http.Cookie
+	DownloadUrl   string
+	Name          string
+	FileName      string
+	FilePaths     []string
+	Lan           string
+	Subtitles     string //字幕文件格式 如SSA
+	SearchKeyword string
+	Wg            *sync.WaitGroup
+	StoreFunc     func([]*SubtitlesIndexDto)
 }

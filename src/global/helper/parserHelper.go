@@ -9,23 +9,23 @@ import (
 	"github.com/asticode/go-astisub"
 )
 
-type Parser struct {
-	Ai *AutoInc
+var (
+	ai *AutoInc
+)
+
+func init() {
+	ai = NewAi(0, 1)
 }
 
-// func init() {
-// 	ai = NewAi(0, 1)
-// }
-
-func (obj Parser) ParseFile(urlDto *dto.TaskDto) {
+func ParseFile(taskDto *dto.TaskDto) {
 	defer func(dto *dto.TaskDto) {
 		dto.Wg.Done()
-	}(urlDto)
+	}(taskDto)
 
 	batchNum := 10
 	dtoSlice := []*dto.SubtitlesIndexDto{}
 
-	for _, filePath := range urlDto.FilePaths {
+	for _, filePath := range taskDto.FilePaths {
 		subtitles, err := astisub.Open(astisub.Options{Filename: filePath})
 		if err != nil {
 			continue
@@ -55,12 +55,12 @@ func (obj Parser) ParseFile(urlDto *dto.TaskDto) {
 					if lineTextSliceLen%batchNum == 0 {
 
 						indexDto := &dto.SubtitlesIndexDto{
-							IndexId:      strconv.Itoa(obj.Ai.Id()),
-							Title:        urlDto.Name,
+							IndexId:      strconv.Itoa(ai.Id()),
+							Title:        taskDto.Name,
 							SubTitle:     subTitle,
 							Text:         lineTextSlice,
 							TimeDuration: timeDuration,
-							Lan:          urlDto.Lan,
+							Lan:          taskDto.Lan,
 						}
 
 						dtoSlice = append(dtoSlice, indexDto)
@@ -78,12 +78,12 @@ func (obj Parser) ParseFile(urlDto *dto.TaskDto) {
 		if lineTextSliceLen > 0 {
 
 			indexDto := &dto.SubtitlesIndexDto{
-				IndexId:      strconv.Itoa(obj.Ai.Id()),
-				Title:        urlDto.Name,
+				IndexId:      strconv.Itoa(ai.Id()),
+				Title:        taskDto.Name,
 				SubTitle:     subTitle,
 				Text:         lineTextSlice,
 				TimeDuration: timeDuration,
-				Lan:          urlDto.Lan,
+				Lan:          taskDto.Lan,
 			}
 
 			dtoSlice = append(dtoSlice, indexDto)
@@ -95,7 +95,7 @@ func (obj Parser) ParseFile(urlDto *dto.TaskDto) {
 		return
 	}
 
-	urlDto.StoreFunc(dtoSlice)
+	taskDto.StoreFunc(dtoSlice)
 
 }
 
