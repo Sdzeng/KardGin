@@ -243,7 +243,6 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 			// }
 		}
 
-		break
 	case "rar":
 		r := archiver.NewRar()
 		err := r.Open(rc, 0)

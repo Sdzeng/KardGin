@@ -64,9 +64,9 @@ func work(q string) {
 		v := url.Values{}
 		v.Add("q", q)
 		v.Add("m", "yes")
-		v.Add("f", "_all")
+		// v.Add("f", "_all")
 		v.Add("s", "relevance")
-		reqUrl = "https://www.zimutiantang.com/search/search.php?" + v.Encode()
+		reqUrl = "https://www.zimutiantang.com/search/?" + v.Encode()
 	} else {
 		reqUrl = "https://www.zimutiantang.com"
 	}
@@ -139,23 +139,20 @@ func work(q string) {
 func insertQueue(newDto *dto.UrlDto) {
 	switch newDto.WorkType {
 	case variable.FecthPage:
-		newDto.Wg.Add(1)
-		go fetchPage(newDto)
+		fetchPage(newDto)
 	case variable.FecthList:
-		// newDto.Wg.Add(1)
-		// go fetchList(newDto)
 		fetchList(newDto)
 	case variable.FecthInfo:
 		fetchInfo(newDto)
+	case variable.Download:
+		download(newDto)
 	case variable.ParseFile:
-		parseFile(newDto)
+		newDto.Wg.Add(1)
+		go parseFile(newDto)
 	}
 }
 
 func fetchPage(urlDto *dto.UrlDto) {
-	defer func(d *dto.UrlDto) {
-		d.Wg.Done()
-	}(urlDto)
 
 	if _, ok := pageVisited.Load(urlDto.DownloadUrl); ok {
 		return
@@ -214,8 +211,9 @@ func fetchList(urlDto *dto.UrlDto) {
 	items := fetchListRegexp.FindAllStringSubmatch(*html, -1)
 
 	for _, item := range items {
+		title := item[4]
+		newDto := &dto.UrlDto{WorkType: variable.FecthInfo, Refers: []string{urlDto.DownloadUrl}, DownloadUrl: item[2], Cookies: cookies, Lan: item[1], Subtitles: title, Wg: urlDto.Wg}
 
-		newDto := &dto.UrlDto{WorkType: variable.FecthInfo, Refers: []string{urlDto.DownloadUrl}, DownloadUrl: item[2], Cookies: cookies, Lan: item[1], Subtitles: item[4], Wg: urlDto.Wg}
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
 			continue
 		}
@@ -268,7 +266,8 @@ func fetchInfo(urlDto *dto.UrlDto) {
 	urlDto.Name = name
 
 	if len(fileName) > 0 {
-		download(urlDto)
+		urlDto.WorkType = variable.Download
+		insertQueue(urlDto)
 
 	} else {
 		fetchSelectDx1(urlDto)
@@ -297,7 +296,8 @@ func fetchSelectDx1(urlDto *dto.UrlDto) {
 
 		urlDto.Refers = append(urlDto.Refers, urlDto.DownloadUrl)
 		urlDto.DownloadUrl = downloadUrl
-		download(urlDto)
+		urlDto.WorkType = variable.Download
+		insertQueue(urlDto)
 	} else {
 
 		items = jsPageDownloadRegexp.FindAllStringSubmatch(*html, -1)

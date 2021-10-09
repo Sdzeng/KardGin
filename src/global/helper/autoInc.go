@@ -1,4 +1,4 @@
-package main
+package helper
 
 type AutoInc struct {
 	start, step int

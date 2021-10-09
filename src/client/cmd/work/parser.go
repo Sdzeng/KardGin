@@ -23,6 +23,10 @@ func init() {
 }
 
 func parseFile(urlDto *dto.UrlDto) {
+	defer func(d *dto.UrlDto) {
+		d.Wg.Done()
+	}(urlDto)
+
 	batchNum := 10
 	dtoSlice := []*dto.SubtitlesIndexDto{}
 
