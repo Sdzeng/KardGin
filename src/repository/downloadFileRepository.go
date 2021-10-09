@@ -23,7 +23,7 @@ func DownloadFileFactory() *DownloadFileRepository {
 	return &DownloadFileRepository{IsEnable: isEnable, DB: db}
 }
 
-func (repository *DownloadFileRepository) Save(dto *dto.UrlDto) error {
+func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 	if !repository.IsEnable {
 		return nil
 	}

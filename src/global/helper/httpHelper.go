@@ -1,9 +1,7 @@
-package main
+package helper
 
 import (
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"kard/src/model/dto"
 	"net/http"
 	"strconv"
@@ -37,32 +35,7 @@ var (
 	}
 )
 
-func loadHtml(urlDto *dto.UrlDto) (*string, []*http.Cookie, error) {
-	req, err := getRequest(urlDto)
-	if err != nil {
-		fmt.Println("create request error", err)
-		return nil, nil, err
-	}
-
-	var res *http.Response
-	res, err = getResponse(req)
-	if err != nil {
-		fmt.Println("http get error", err)
-		return nil, nil, err
-	}
-	defer res.Body.Close()
-
-	var html *string
-	html, err = getHtml(res)
-	if err != nil {
-		fmt.Println("read html error", err)
-		return nil, nil, err
-	}
-
-	return html, res.Cookies(), nil
-}
-
-func getRequest(urlDto *dto.UrlDto) (*http.Request, error) {
+func GetRequest(urlDto *dto.TaskDto) (*http.Request, error) {
 
 	url := urlDto.DownloadUrl
 	req, err := http.NewRequest("GET", url, nil)
@@ -86,7 +59,7 @@ func getRequest(urlDto *dto.UrlDto) (*http.Request, error) {
 	return req, nil
 }
 
-func getResponse(req *http.Request) (*http.Response, error) {
+func GetResponse(req *http.Request) (*http.Response, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, errors.New("http request error:" + err.Error())
@@ -100,15 +73,4 @@ func getResponse(req *http.Request) (*http.Response, error) {
 	}
 
 	return resp, nil
-}
-
-func getHtml(resp *http.Response) (*string, error) {
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	html := string(body)
-	return &html, nil
 }

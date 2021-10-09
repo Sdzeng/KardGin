@@ -1,4 +1,4 @@
-package main
+package helper
 
 import (
 	"archive/zip"
@@ -49,27 +49,30 @@ func (wc *WriterCounter) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-func Download(dto *dto.UrlDto) error {
+type Downloader struct {
+}
+
+func (this Downloader) Download(dto *dto.TaskDto) (*dto.TaskDto, error) {
 	//请求资源
-	req, err := getRequest(dto)
+	req, err := GetRequest(dto)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var res *http.Response
-	res, err = getResponse(req)
+	res, err = GetResponse(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer res.Body.Close()
 
 	//拷贝
-	fileName, err := getDownloadFileName(dto.DownloadUrl, res)
+	fileName, err := GetDownloadFileName(dto.DownloadUrl, res)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(fileName) == 0 {
-		return errors.New("getDownloadFileName:获取不到文件名")
+		return nil, errors.New("GetDownloadFileName:获取不到文件名")
 	}
 
 	dto.FileName = ToUtf8Str(fileName)
@@ -82,15 +85,13 @@ func Download(dto *dto.UrlDto) error {
 	// }
 	err = downloadFileRepository.Save(dto)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	dto.WorkType = variable.ParseFile
-	insertQueue(dto)
-	return nil
+	return dto, nil
 }
 
-func getDownloadFileName(url string, resp *http.Response) (string, error) {
+func GetDownloadFileName(url string, resp *http.Response) (string, error) {
 	fileName := getFileName(url)
 	fileNameLower := strings.ToLower(fileName)
 	urlRp := regexp.MustCompile(`\d+.html`)

@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-type UrlDto struct {
+type TaskDto struct {
 	WorkType    string
 	Refers      []string
 	Cookies     []*http.Cookie
@@ -16,4 +16,5 @@ type UrlDto struct {
 	Lan         string
 	Subtitles   string
 	Wg          *sync.WaitGroup
+	StoreFunc   func([]*SubtitlesIndexDto)
 }

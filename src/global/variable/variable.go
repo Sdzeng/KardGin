@@ -14,8 +14,8 @@ const (
 	FecthInfo string = "fecthInfo"
 	// FecthSelectDx1 string = "fecthSelectDx1"
 	// FecthSource    string = "fecthSource"
-	Download  string = "download"
-	ParseFile string = "parseFile"
+	Store string = "store"
+	// ParseFile string = "parseFile"
 )
 
 var (
