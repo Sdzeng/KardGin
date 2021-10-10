@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	zimuCrawler := &crawler.ZimuCrawler{}
+	zimuCrawler := &crawler.ZimuCrawler{Open: true}
 
 	crawlerWork(zimuCrawler)
 }

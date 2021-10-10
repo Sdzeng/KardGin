@@ -45,11 +45,11 @@ var (
 	jsPageDownloadRegexp = regexp.MustCompile(jsPageDownloadReg)
 )
 
-func (obj ZimuCrawler) Work(store func(dtoSlice []*dto.SubtitlesIndexDto)) {
+func (obj *ZimuCrawler) Work(store func(dtoSlice []*dto.SubtitlesIndexDto)) {
 	obj.search(store)
 }
 
-func (obj ZimuCrawler) search(store func(dtoSlice []*dto.SubtitlesIndexDto)) {
+func (obj *ZimuCrawler) search(store func(dtoSlice []*dto.SubtitlesIndexDto)) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Printf("main recover error:%s \n", err)
@@ -139,7 +139,13 @@ func (obj ZimuCrawler) search(store func(dtoSlice []*dto.SubtitlesIndexDto)) {
 	taskDto.Wg.Wait()
 }
 
-func (obj ZimuCrawler) insertQueue(newDto *dto.TaskDto) {
+func (obj *ZimuCrawler) insertQueue(newDto *dto.TaskDto) {
+
+	// fmt.Printf("v2=%p", &obj)
+	if !obj.Open {
+		return
+	}
+
 	switch newDto.WorkType {
 	case variable.FecthPage:
 		obj.fetchPage(newDto)
@@ -152,7 +158,7 @@ func (obj ZimuCrawler) insertQueue(newDto *dto.TaskDto) {
 	}
 }
 
-func (obj ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
+func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 
 	if _, ok := pageVisited.Load(taskDto.DownloadUrl); ok {
 		return
@@ -197,7 +203,7 @@ func (obj ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 
 }
 
-func (obj ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
+func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 	// defer func(d *dto.UrlDto) {
 	// 	d.Wg.Done()
 	// }(taskDto)
@@ -214,6 +220,8 @@ func (obj ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 		title := strings.Replace(strings.Replace(item[3], "<em>", "", -1), "</em>", "", -1)
 		if len(taskDto.SearchKeyword) > 0 && !strings.Contains(title, taskDto.SearchKeyword) {
 			fmt.Printf("\n忽略下载 %v", title)
+			// o := &obj
+			fmt.Printf("v1=%p", &obj)
 			obj.Open = false
 			return
 		}
@@ -236,7 +244,7 @@ func (obj ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 
 }
 
-func (obj ZimuCrawler) fetchInfo(taskDto *dto.TaskDto) {
+func (obj *ZimuCrawler) fetchInfo(taskDto *dto.TaskDto) {
 	html, _, err := helper.LoadHtml(taskDto)
 	if err != nil {
 		return
@@ -281,7 +289,7 @@ func (obj ZimuCrawler) fetchInfo(taskDto *dto.TaskDto) {
 
 }
 
-func (obj ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
+func (obj *ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 	html, _, err := helper.LoadHtml(taskDto)
 	if err != nil {
 		return
@@ -320,7 +328,7 @@ func (obj ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 
 }
 
-func (obj ZimuCrawler) store(taskDto *dto.TaskDto) {
+func (obj *ZimuCrawler) store(taskDto *dto.TaskDto) {
 
 	newDto, err := helper.Download(taskDto)
 	if err != nil {
