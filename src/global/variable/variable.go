@@ -14,7 +14,7 @@ const (
 	FecthInfo string = "fecthInfo"
 	// FecthSelectDx1 string = "fecthSelectDx1"
 	// FecthSource    string = "fecthSource"
-	Store string = "store"
+	Parse string = "parse"
 	// ParseFile string = "parseFile"
 )
 

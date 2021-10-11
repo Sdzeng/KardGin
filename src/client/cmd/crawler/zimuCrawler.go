@@ -45,11 +45,11 @@ var (
 	jsPageDownloadRegexp = regexp.MustCompile(jsPageDownloadReg)
 )
 
-func (obj *ZimuCrawler) Work(store func(dtoSlice []*dto.SubtitlesIndexDto)) {
+func (obj *ZimuCrawler) Work(store func(taskDto *dto.TaskDto)) {
 	obj.search(store)
 }
 
-func (obj *ZimuCrawler) search(store func(dtoSlice []*dto.SubtitlesIndexDto)) {
+func (obj *ZimuCrawler) search(store func(taskDto *dto.TaskDto)) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Printf("main recover error:%s \n", err)
@@ -140,8 +140,6 @@ func (obj *ZimuCrawler) search(store func(dtoSlice []*dto.SubtitlesIndexDto)) {
 }
 
 func (obj *ZimuCrawler) insertQueue(newDto *dto.TaskDto) {
-
-	// fmt.Printf("v2=%p", &obj)
 	if !obj.Open {
 		return
 	}
@@ -153,8 +151,8 @@ func (obj *ZimuCrawler) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		obj.fetchInfo(newDto)
-	case variable.Store:
-		obj.store(newDto)
+	case variable.Parse:
+		obj.parse(newDto)
 	}
 }
 
@@ -218,10 +216,8 @@ func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 
 	for _, item := range items {
 		title := strings.Replace(strings.Replace(item[3], "<em>", "", -1), "</em>", "", -1)
-		if len(taskDto.SearchKeyword) > 0 && !strings.Contains(title, taskDto.SearchKeyword) {
+		if len(taskDto.SearchKeyword) > 0 && !taskDto.ContainsKeyword(title) {
 			fmt.Printf("\n忽略下载 %v", title)
-			// o := &obj
-			fmt.Printf("v1=%p", &obj)
 			obj.Open = false
 			return
 		}
@@ -280,7 +276,7 @@ func (obj *ZimuCrawler) fetchInfo(taskDto *dto.TaskDto) {
 	taskDto.Name = name
 
 	if len(fileName) > 0 {
-		taskDto.WorkType = variable.Store
+		taskDto.WorkType = variable.Parse
 		obj.insertQueue(taskDto)
 
 	} else {
@@ -310,7 +306,7 @@ func (obj *ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 
 		taskDto.Refers = append(taskDto.Refers, taskDto.DownloadUrl)
 		taskDto.DownloadUrl = downloadUrl
-		taskDto.WorkType = variable.Store
+		taskDto.WorkType = variable.Parse
 		obj.insertQueue(taskDto)
 	} else {
 
@@ -328,7 +324,7 @@ func (obj *ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 
 }
 
-func (obj *ZimuCrawler) store(taskDto *dto.TaskDto) {
+func (obj *ZimuCrawler) parse(taskDto *dto.TaskDto) {
 
 	newDto, err := helper.Download(taskDto)
 	if err != nil {

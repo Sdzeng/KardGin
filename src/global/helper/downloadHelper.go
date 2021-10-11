@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"kard/src/global/variable"
 	"kard/src/model/dto"
-	"kard/src/repository"
 	"log"
 	"net/http"
 	"os"
@@ -25,8 +24,6 @@ import (
 	"golang.org/x/text/transform"
 	//"github.com/sony/sonyflake"
 )
-
-var downloadFileRepository = &repository.DownloadFileRepository{}
 
 type WriterCounter struct {
 	//taskDto   *dto.UrlDto
@@ -49,9 +46,9 @@ func (wc *WriterCounter) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-func Download(dto *dto.TaskDto) (*dto.TaskDto, error) {
+func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 	//请求资源
-	req, err := GetRequest(dto)
+	req, err := GetRequest(taskDto)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +60,7 @@ func Download(dto *dto.TaskDto) (*dto.TaskDto, error) {
 	defer res.Body.Close()
 
 	//拷贝
-	fileName, err := GetDownloadFileName(dto.DownloadUrl, res)
+	fileName, err := GetDownloadFileName(taskDto.DownloadUrl, res)
 	if err != nil {
 		return nil, err
 	}
@@ -72,20 +69,21 @@ func Download(dto *dto.TaskDto) (*dto.TaskDto, error) {
 		return nil, errors.New("GetDownloadFileName:获取不到文件名")
 	}
 
-	dto.FileName = ToUtf8Str(fileName)
+	taskDto.FileName = ToUtf8Str(fileName)
 	//checkErrorName(fileName)
-	dto.FilePaths = downloadFiles(dto.FileName, res.Body, dto.DownloadUrl)
+	filePaths := downloadFiles(taskDto.FileName, res.Body, taskDto.DownloadUrl)
+
+	taskDto.FilePathDtos = make([]*dto.FilePathDto, 0)
+	for _, filePath := range filePaths {
+		taskDto.FilePathDtos = append(taskDto.FilePathDtos, &dto.FilePathDto{FilePath: filePath})
+	}
 
 	// for _, v := range dto.FilePaths {
 	// 	checkErrorName(v)
 
 	// }
-	err = downloadFileRepository.Save(dto)
-	if err != nil {
-		return nil, err
-	}
 
-	return dto, nil
+	return taskDto, nil
 }
 
 func GetDownloadFileName(url string, resp *http.Response) (string, error) {

@@ -7,6 +7,7 @@ import (
 	"kard/src/client/cmd/crawler"
 	"kard/src/global/variable"
 	"kard/src/model/dto"
+	"kard/src/repository"
 	"time"
 
 	"github.com/olivere/elastic"
@@ -23,11 +24,19 @@ func crawlerWork(crawler crawler.ICrawler) {
 	crawler.Work(store)
 }
 
-func store(dtos []*dto.SubtitlesIndexDto) {
-	if variable.ES == nil {
-		toConsole(dtos)
-	} else {
-		toEs(dtos)
+func store(taskDto *dto.TaskDto) {
+	downloadFileRepository := &repository.DownloadFileRepository{}
+	err := downloadFileRepository.Save(taskDto)
+	if err != nil {
+		return
+	}
+
+	for _, filePathDto := range taskDto.FilePathDtos {
+		if variable.ES == nil {
+			toConsole(filePathDto.SubtitleItems)
+		} else {
+			toEs(filePathDto.SubtitleItems)
+		}
 	}
 }
 

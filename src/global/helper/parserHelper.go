@@ -23,15 +23,17 @@ func ParseFile(taskDto *dto.TaskDto) {
 	}(taskDto)
 
 	batchNum := 10
-	dtoSlice := []*dto.SubtitlesIndexDto{}
+	//dtoSlice := []*dto.SubtitlesIndexDto{}
 
-	for _, filePath := range taskDto.FilePaths {
-		subtitles, err := astisub.Open(astisub.Options{Filename: filePath})
+	for _, filePathDto := range taskDto.FilePathDtos {
+		filePathDto.SubtitleItems = []*dto.SubtitlesIndexDto{}
+
+		subtitles, err := astisub.Open(astisub.Options{Filename: filePathDto.FilePath})
 		if err != nil {
 			continue
 		}
 
-		subTitle := getPathFileName(filePath)
+		subTitle := getPathFileName(filePathDto.FilePath)
 
 		lineTextSlice := []string{}
 		lineTextSliceLen := 0
@@ -63,7 +65,7 @@ func ParseFile(taskDto *dto.TaskDto) {
 							Lan:          taskDto.Lan,
 						}
 
-						dtoSlice = append(dtoSlice, indexDto)
+						filePathDto.SubtitleItems = append(filePathDto.SubtitleItems, indexDto)
 
 						lineTextSlice = []string{} //(lineTextSlice)[0:0]
 						timeDuration = ""
@@ -86,16 +88,12 @@ func ParseFile(taskDto *dto.TaskDto) {
 				Lan:          taskDto.Lan,
 			}
 
-			dtoSlice = append(dtoSlice, indexDto)
+			filePathDto.SubtitleItems = append(filePathDto.SubtitleItems, indexDto)
 		}
 
 	}
 
-	if len(dtoSlice) <= 0 {
-		return
-	}
-
-	taskDto.StoreFunc(dtoSlice)
+	taskDto.StoreFunc(taskDto)
 
 }
 

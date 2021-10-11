@@ -52,12 +52,12 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 		fmt.Printf("\n数据库新加：%v", dto.Name)
 	}
 
-	if len(dto.FilePaths) > 0 {
-		for _, filePath := range dto.FilePaths {
+	if len(dto.FilePathDtos) > 0 {
+		for _, filePathDto := range dto.FilePathDtos {
 			downloadPath := &model.DownloadPaths{
 				BaseModel:  model.BaseModel{CreateTime: df.CreateTime},
 				DownloadId: df.Id,
-				FilePath:   filePath,
+				FilePath:   filePathDto.FilePath,
 			}
 
 			result = trans.Create(downloadPath)
