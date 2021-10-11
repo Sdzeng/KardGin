@@ -69,13 +69,13 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 		return nil, errors.New("GetDownloadFileName:获取不到文件名")
 	}
 
-	taskDto.FileName = ToUtf8Str(fileName)
+	taskDto.DownloadLinkFileName = ToUtf8Str(fileName)
 	//checkErrorName(fileName)
-	filePaths := downloadFiles(taskDto.FileName, res.Body, taskDto.DownloadUrl)
+	filePaths := downloadFiles(taskDto.DownloadLinkFileName, res.Body, taskDto.DownloadUrl)
 
-	taskDto.FilePathDtos = make([]*dto.FilePathDto, 0)
+	taskDto.SubtitlesFiles = make([]*dto.SubtitlesFileDto, 0)
 	for _, filePath := range filePaths {
-		taskDto.FilePathDtos = append(taskDto.FilePathDtos, &dto.FilePathDto{FilePath: filePath})
+		taskDto.SubtitlesFiles = append(taskDto.SubtitlesFiles, &dto.SubtitlesFileDto{FilePath: filePath})
 	}
 
 	// for _, v := range dto.FilePaths {

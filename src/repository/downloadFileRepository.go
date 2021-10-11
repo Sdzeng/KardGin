@@ -32,9 +32,9 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 		BaseModel:   model.BaseModel{CreateTime: time.Now().Unix()},
 		Name:        dto.Name,
 		DownloadUrl: dto.DownloadUrl,
-		FileName:    dto.FileName,
+		FileName:    dto.DownloadLinkFileName,
 		Lan:         dto.Lan,
-		Subtitles:   dto.Subtitles,
+		Subtitles:   dto.SubtitlesType,
 	}
 
 	trans := repository.DB.Begin()
@@ -52,12 +52,12 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 		fmt.Printf("\n数据库新加：%v", dto.Name)
 	}
 
-	if len(dto.FilePathDtos) > 0 {
-		for _, filePathDto := range dto.FilePathDtos {
+	if len(dto.SubtitlesFiles) > 0 {
+		for _, subtitlesFile := range dto.SubtitlesFiles {
 			downloadPath := &model.DownloadPaths{
 				BaseModel:  model.BaseModel{CreateTime: df.CreateTime},
 				DownloadId: df.Id,
-				FilePath:   filePathDto.FilePath,
+				FilePath:   subtitlesFile.FilePath,
 			}
 
 			result = trans.Create(downloadPath)

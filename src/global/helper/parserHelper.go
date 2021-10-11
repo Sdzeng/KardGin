@@ -3,19 +3,10 @@ package helper
 import (
 	"kard/src/model/dto"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/asticode/go-astisub"
 )
-
-var (
-	ai *AutoInc
-)
-
-func init() {
-	ai = NewAi(0, 1)
-}
 
 func ParseFile(taskDto *dto.TaskDto) {
 	defer func(dto *dto.TaskDto) {
@@ -25,19 +16,18 @@ func ParseFile(taskDto *dto.TaskDto) {
 	batchNum := 10
 	//dtoSlice := []*dto.SubtitlesIndexDto{}
 
-	for _, filePathDto := range taskDto.FilePathDtos {
-		filePathDto.SubtitleItems = []*dto.SubtitlesIndexDto{}
+	for _, subtitlesFile := range taskDto.SubtitlesFiles {
+		subtitlesFile.SubtitleItems = []*dto.SubtitlesItemDto{}
+		subtitlesFile.FileName = getPathFileName(subtitlesFile.FilePath)
 
-		subtitles, err := astisub.Open(astisub.Options{Filename: filePathDto.FilePath})
+		subtitles, err := astisub.Open(astisub.Options{Filename: subtitlesFile.FilePath})
 		if err != nil {
 			continue
 		}
 
-		subTitle := getPathFileName(filePathDto.FilePath)
-
 		lineTextSlice := []string{}
 		lineTextSliceLen := 0
-		timeDuration := ""
+		startAt := ""
 
 		for _, item := range subtitles.Items {
 			for _, line := range item.Lines {
@@ -51,24 +41,20 @@ func ParseFile(taskDto *dto.TaskDto) {
 					lineTextSliceLen := len(lineTextSlice)
 
 					if (lineTextSliceLen-1)%batchNum == 0 {
-						timeDuration = item.StartAt.String()
+						startAt = item.StartAt.String()
 					}
 
 					if lineTextSliceLen%batchNum == 0 {
 
-						indexDto := &dto.SubtitlesIndexDto{
-							IndexId:      strconv.Itoa(ai.Id()),
-							Title:        taskDto.Name,
-							SubTitle:     subTitle,
-							Text:         lineTextSlice,
-							TimeDuration: timeDuration,
-							Lan:          taskDto.Lan,
+						itemDto := &dto.SubtitlesItemDto{
+							Text:    lineTextSlice,
+							StartAt: startAt,
 						}
 
-						filePathDto.SubtitleItems = append(filePathDto.SubtitleItems, indexDto)
+						subtitlesFile.SubtitleItems = append(subtitlesFile.SubtitleItems, itemDto)
 
 						lineTextSlice = []string{} //(lineTextSlice)[0:0]
-						timeDuration = ""
+						startAt = ""
 					}
 
 				}
@@ -78,23 +64,17 @@ func ParseFile(taskDto *dto.TaskDto) {
 
 		lineTextSliceLen = len(lineTextSlice)
 		if lineTextSliceLen > 0 {
-
-			indexDto := &dto.SubtitlesIndexDto{
-				IndexId:      strconv.Itoa(ai.Id()),
-				Title:        taskDto.Name,
-				SubTitle:     subTitle,
-				Text:         lineTextSlice,
-				TimeDuration: timeDuration,
-				Lan:          taskDto.Lan,
+			itemDto := &dto.SubtitlesItemDto{
+				Text:    lineTextSlice,
+				StartAt: startAt,
 			}
 
-			filePathDto.SubtitleItems = append(filePathDto.SubtitleItems, indexDto)
+			subtitlesFile.SubtitleItems = append(subtitlesFile.SubtitleItems, itemDto)
 		}
 
 	}
 
 	taskDto.StoreFunc(taskDto)
-
 }
 
 func getPathFileName(filePath string) string {

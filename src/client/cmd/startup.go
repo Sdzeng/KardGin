@@ -5,13 +5,23 @@ import (
 	"fmt"
 	_ "kard/src/client"
 	"kard/src/client/cmd/crawler"
+	"kard/src/global/helper"
 	"kard/src/global/variable"
 	"kard/src/model/dto"
 	"kard/src/repository"
+	"strconv"
 	"time"
 
 	"github.com/olivere/elastic"
 )
+
+var (
+	ai *helper.AutoInc
+)
+
+func init() {
+	ai = helper.NewAi(0, 1)
+}
 
 func main() {
 
@@ -31,25 +41,39 @@ func store(taskDto *dto.TaskDto) {
 		return
 	}
 
-	for _, filePathDto := range taskDto.FilePathDtos {
-		if variable.ES == nil {
-			toConsole(filePathDto.SubtitleItems)
-		} else {
-			toEs(filePathDto.SubtitleItems)
-		}
+	if variable.ES == nil {
+		toConsole(taskDto)
+	} else {
+		toEs(taskDto)
 	}
+
 }
 
-func toEs(dtos []*dto.SubtitlesIndexDto) {
+func toEs(taskDto *dto.TaskDto) {
 	indexName := "subtitles_" + time.Now().Format("20060102")
 	indexType := "_doc" // time.Now().Format("20060102")
 
+	for _, subtitlesFile := range taskDto.SubtitlesFiles {
+		toEsByBulk(indexName, indexType, taskDto, subtitlesFile)
+	}
+}
+
+func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile *dto.SubtitlesFileDto) {
+
 	bulkRequest := variable.ES.Bulk()
-	for _, dto := range dtos {
-		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(dto.IndexId).Doc(dto)
+	for _, itemDto := range subtitlesFile.SubtitleItems {
+		indexDto := &dto.SubtitlesIndexDto{
+			IndexId:      strconv.Itoa(ai.Id()),
+			Title:        taskDto.Name,
+			SubTitle:     subtitlesFile.FileName,
+			Text:         itemDto.Text,
+			TimeDuration: itemDto.StartAt,
+			Lan:          taskDto.Lan,
+		}
+		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexDto.IndexId).Doc(indexDto)
 		bulkRequest = bulkRequest.Add(indexReq)
 
-		fmt.Println(dto.Text)
+		fmt.Println(indexDto.Text)
 	}
 
 	if bulkRequest.NumberOfActions() <= 0 {
@@ -66,13 +90,15 @@ func toEs(dtos []*dto.SubtitlesIndexDto) {
 	if bulkRequest.NumberOfActions() != 0 {
 		fmt.Printf("expected bulkRequest.NumberOfActions %d; got %d", 0, bulkRequest.NumberOfActions())
 	}
+
 }
 
-func toConsole(dtos []*dto.SubtitlesIndexDto) {
+func toConsole(taskDto *dto.TaskDto) {
 
 	// for _, dto := range dtoSlice {
 	// 	fmt.Printf("\n%v:%v", dto.TimeDuration, dto.Text)
 	// }
-
-	fmt.Printf("\n解析成功：%v", dtos[0].Title)
+	for _, subtitlesFile := range taskDto.SubtitlesFiles {
+		fmt.Printf("\n解析成功：%v-%v", taskDto.Name, subtitlesFile.FileName)
+	}
 }
