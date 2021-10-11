@@ -3,11 +3,11 @@ package model
 // downloads表
 type Downloads struct {
 	BaseModel
-	Name        string `gorm:"column:name"`
-	DownloadUrl string `gorm:"downloag_url"`
-	FileName    string `gorm:"file_name"`
-	Lan         string `gorm:"lan"`
-	Subtitles   string `gorm:"subtitles"`
+	Name                string `gorm:"column:name"`
+	DownloadUrl         string `gorm:"download_url"`
+	DownloadUrlFileName string `gorm:"download_url_file_name"`
+	Lan                 string `gorm:"lan"`
+	SubtitlesType       string `gorm:"subtitles_type"`
 }
 
 // 表名

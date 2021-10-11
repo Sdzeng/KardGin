@@ -4,6 +4,7 @@ package model
 type DownloadPaths struct {
 	BaseModel
 	DownloadId int32  `gorm:"column:download_id"`
+	FileName   string `gorm:"file_name"`
 	FilePath   string `gorm:"file_path"`
 }
 

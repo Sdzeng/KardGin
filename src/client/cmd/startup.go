@@ -35,7 +35,7 @@ func crawlerWork(crawler crawler.ICrawler) {
 }
 
 func store(taskDto *dto.TaskDto) {
-	downloadFileRepository := &repository.DownloadFileRepository{}
+	downloadFileRepository := repository.DownloadFileFactory()
 	err := downloadFileRepository.Save(taskDto)
 	if err != nil {
 		return

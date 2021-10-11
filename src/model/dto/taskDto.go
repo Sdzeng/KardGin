@@ -18,10 +18,10 @@ type TaskDto struct {
 	Lan           string //字幕采用的语言
 	SubtitlesType string //字幕文件格式 如SSA
 
-	DownloadUrl          string              //下载链接
-	DownloadLinkFileName string              //下载链接带的文件名称（比如1.rar）
-	SubtitlesFiles       []*SubtitlesFileDto //解压后存储的文件列表
-	StoreFunc            func(taskDto *TaskDto)
+	DownloadUrl         string              //下载链接
+	DownloadUrlFileName string              //下载链接带的文件名称（比如1.rar）
+	SubtitlesFiles      []*SubtitlesFileDto //解压后存储的文件列表
+	StoreFunc           func(taskDto *TaskDto)
 }
 
 func (dto *TaskDto) ContainsKeyword(work string) bool {

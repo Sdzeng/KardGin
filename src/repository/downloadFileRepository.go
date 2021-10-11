@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bytes"
 	"fmt"
 	"kard/src/model"
 	"kard/src/model/dto"
@@ -29,12 +30,12 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 	}
 
 	df := &model.Downloads{
-		BaseModel:   model.BaseModel{CreateTime: time.Now().Unix()},
-		Name:        dto.Name,
-		DownloadUrl: dto.DownloadUrl,
-		FileName:    dto.DownloadLinkFileName,
-		Lan:         dto.Lan,
-		Subtitles:   dto.SubtitlesType,
+		BaseModel:           model.BaseModel{CreateTime: time.Now().Unix()},
+		Name:                dto.Name,
+		DownloadUrl:         dto.DownloadUrl,
+		DownloadUrlFileName: dto.DownloadUrlFileName,
+		Lan:                 dto.Lan,
+		SubtitlesType:       dto.SubtitlesType,
 	}
 
 	trans := repository.DB.Begin()
@@ -57,10 +58,34 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 			downloadPath := &model.DownloadPaths{
 				BaseModel:  model.BaseModel{CreateTime: df.CreateTime},
 				DownloadId: df.Id,
+				FileName:   subtitlesFile.FileName,
 				FilePath:   subtitlesFile.FilePath,
 			}
 
 			result = trans.Create(downloadPath)
+			if result.Error != nil {
+				trans.Rollback()
+				return result.Error
+			}
+			downloadPathSubtitlesSlice := []*model.DownloadPathSubtitles{}
+			for _, subtitleItems := range subtitlesFile.SubtitleItems {
+
+				var buffer bytes.Buffer
+				for _, text := range subtitleItems.Text {
+					buffer.WriteString(text + " ")
+				}
+
+				downloadPathSubtitles := &model.DownloadPathSubtitles{
+					BaseModel:      model.BaseModel{CreateTime: df.CreateTime},
+					DownloadPathId: downloadPath.Id,
+					StartAt:        subtitleItems.StartAt,
+					Text:           buffer.String(),
+				}
+
+				downloadPathSubtitlesSlice = append(downloadPathSubtitlesSlice, downloadPathSubtitles)
+			}
+
+			result = trans.CreateInBatches(downloadPathSubtitlesSlice, len(downloadPathSubtitlesSlice))
 			if result.Error != nil {
 				trans.Rollback()
 				return result.Error
