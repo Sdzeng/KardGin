@@ -4,7 +4,7 @@ package model
 type DownloadPathSubtitles struct {
 	BaseModel
 	DownloadPathId int32  `gorm:"column:download_path_id"`
-	StartAt        string `gorm:"start_at"`
+	StartAt        int32  `gorm:"start_at"`
 	Text           string `gorm:"text"`
 }
 

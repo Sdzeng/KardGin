@@ -1,6 +1,8 @@
 package dto
 
+import "time"
+
 type SubtitlesItemDto struct {
-	Text    []string `json:"text"`
-	StartAt string   `json:"start_at"`
+	Text    []string      `json:"text"`
+	StartAt time.Duration `json:"start_at"`
 }

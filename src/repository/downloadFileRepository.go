@@ -30,7 +30,7 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 	}
 
 	df := &model.Downloads{
-		BaseModel:           model.BaseModel{CreateTime: time.Now().Unix()},
+		BaseModel:           model.BaseModel{CreateTime: time.Now()},
 		Name:                dto.Name,
 		DownloadUrl:         dto.DownloadUrl,
 		DownloadUrlFileName: dto.DownloadUrlFileName,
@@ -78,7 +78,7 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 				downloadPathSubtitles := &model.DownloadPathSubtitles{
 					BaseModel:      model.BaseModel{CreateTime: df.CreateTime},
 					DownloadPathId: downloadPath.Id,
-					StartAt:        subtitleItems.StartAt,
+					StartAt:        int32(subtitleItems.StartAt.Seconds()),
 					Text:           buffer.String(),
 				}
 

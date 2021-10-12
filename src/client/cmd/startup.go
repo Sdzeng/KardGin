@@ -63,12 +63,12 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 	bulkRequest := variable.ES.Bulk()
 	for _, itemDto := range subtitlesFile.SubtitleItems {
 		indexDto := &dto.SubtitlesIndexDto{
-			IndexId:      strconv.Itoa(ai.Id()),
-			Title:        taskDto.Name,
-			SubTitle:     subtitlesFile.FileName,
-			Text:         itemDto.Text,
-			TimeDuration: itemDto.StartAt,
-			Lan:          taskDto.Lan,
+			IndexId:  strconv.Itoa(ai.Id()),
+			Title:    taskDto.Name,
+			SubTitle: subtitlesFile.FileName,
+			Text:     itemDto.Text,
+			StartAt:  int32(itemDto.StartAt.Seconds()),
+			Lan:      taskDto.Lan,
 		}
 		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexDto.IndexId).Doc(indexDto)
 		bulkRequest = bulkRequest.Add(indexReq)
