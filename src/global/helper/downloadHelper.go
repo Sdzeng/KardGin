@@ -253,7 +253,12 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 			if err == io.EOF {
 				break
 			}
-			defer f.Close()
+			defer func(fi archiver.File) {
+
+				err := fi.Close()
+				PrintErrorWithStack("fi.Close", err.Error())
+
+			}(f)
 
 			if err != nil {
 				if r.ContinueOnError {
