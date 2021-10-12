@@ -52,7 +52,7 @@ func (obj *ZimuCrawler) Work(store func(taskDto *dto.TaskDto)) {
 func (obj *ZimuCrawler) search(store func(taskDto *dto.TaskDto)) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("main recover error:%s \n", err)
+			fmt.Printf("search recover error:%s \n", err)
 		}
 	}()
 
