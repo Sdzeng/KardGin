@@ -46,15 +46,16 @@ var (
 )
 
 func (obj *ZimuCrawler) Work(store func(taskDto *dto.TaskDto)) {
+	defer func() {
+		if err := recover(); err != nil {
+			helper.PrintError("Work", err.(error).Error(), true)
+		}
+	}()
+
 	obj.search(store)
 }
 
 func (obj *ZimuCrawler) search(store func(taskDto *dto.TaskDto)) {
-	defer func() {
-		if err := recover(); err != nil {
-			helper.PrintErrorWithStack("search", err.(error).Error())
-		}
-	}()
 
 	q := flag.String("q", "", "useage to search")
 	flag.Parse()

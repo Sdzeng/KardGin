@@ -5,9 +5,13 @@ import (
 	"runtime"
 )
 
-func PrintErrorWithStack(errCode string, errMsg string) {
+func PrintError(errCode string, errMsg string, stack bool) {
+	if stack {
+		var buf [4096]byte
+		n := runtime.Stack(buf[:], false)
+		fmt.Printf("\nerrcode[%s] errmsg:%s \n堆栈==> %s", errCode, errMsg, string(buf[:n]))
+	} else {
+		fmt.Printf("\nerrcode[%s] errmsg:%s", errCode, errMsg)
 
-	var buf [4096]byte
-	n := runtime.Stack(buf[:], false)
-	fmt.Printf("\nerrcode[%s] errmsg:%s 堆栈 %s\n", errCode, errMsg, string(buf[:n]))
+	}
 }

@@ -184,7 +184,6 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 
 			childFilePath := downloadFiles(fileName, inFile, "")
 			result = append(result, childFilePath...)
-
 		}
 
 	case "7z":
@@ -253,12 +252,6 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 			if err == io.EOF {
 				break
 			}
-			defer func(fi archiver.File) {
-
-				err := fi.Close()
-				PrintErrorWithStack("fi.Close", err.Error())
-
-			}(f)
 
 			if err != nil {
 				if r.ContinueOnError {
@@ -267,6 +260,8 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 				}
 				break
 			}
+
+			defer f.Close()
 
 			rh, ok := f.Header.(*rardecode.FileHeader)
 			if !ok {
@@ -286,6 +281,11 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 			}
 			childFilePath := downloadFiles(fileName, f.ReadCloser, "")
 			result = append(result, childFilePath...)
+
+			// err = f.Close()
+			// if err != nil {
+			// 	PrintError("f.Close", err.Error(), false)
+			// }
 		}
 
 	default:
