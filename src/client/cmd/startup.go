@@ -64,6 +64,8 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 	batchNum := 10
 	startAt := 0 * time.Second
 	texts := []string{}
+	indexId := string(subtitlesFile.DownloadPathId)
+	partId := 0
 
 	for _, itemDto := range subtitlesFile.SubtitleItems {
 		for _, text := range itemDto.Text {
@@ -80,7 +82,8 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 					StartAt:  int32(startAt.Seconds()),
 					Lan:      taskDto.Lan,
 				}
-				indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(strconv.Itoa(ai.Id())).Doc(indexDto)
+				partId++
+				indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_" + strconv.Itoa(partId)).Doc(indexDto)
 				bulkRequest = bulkRequest.Add(indexReq)
 
 				texts = []string{} //(lineTextSlice)[0:0]
@@ -97,7 +100,8 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 			StartAt:  int32(startAt.Seconds()),
 			Lan:      taskDto.Lan,
 		}
-		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(strconv.Itoa(ai.Id())).Doc(indexDto)
+		partId++
+		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_part" + strconv.Itoa(partId)).Doc(indexDto)
 		bulkRequest = bulkRequest.Add(indexReq)
 	}
 

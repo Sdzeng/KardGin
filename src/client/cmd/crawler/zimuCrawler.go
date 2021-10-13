@@ -219,7 +219,7 @@ func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 		title := strings.Replace(strings.Replace(item[3], "<em>", "", -1), "</em>", "", -1)
 		if len(taskDto.SearchKeyword) > 0 && !taskDto.ContainsKeyword(title) {
 			fmt.Printf("\n忽略下载 %v", title)
-			obj.Open = false
+			// obj.Open = false
 			return
 		}
 

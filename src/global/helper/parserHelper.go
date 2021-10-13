@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"kard/src/global/variable"
 	"kard/src/model/dto"
 	"path"
 	"strings"
@@ -80,15 +81,20 @@ import (
 func ParseFile(taskDto *dto.TaskDto) {
 	defer func(dto *dto.TaskDto) {
 		dto.Wg.Done()
+
+		if err := recover(); err != nil {
+			PrintError("ParseFile", err.(error).Error(), true)
+		}
 	}(taskDto)
 
 	//dtoSlice := []*dto.SubtitlesIndexDto{}
-
+	sysFilePath := ""
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
 		subtitlesFile.SubtitleItems = []*dto.SubtitlesItemDto{}
 		subtitlesFile.FileName = getPathFileName(subtitlesFile.FilePath)
 
-		subtitles, err := astisub.Open(astisub.Options{Filename: subtitlesFile.FilePath})
+		sysFilePath = variable.BasePath + `\client\cmd\assert\` + subtitlesFile.FilePath
+		subtitles, err := astisub.Open(astisub.Options{Filename: sysFilePath})
 		if err != nil {
 			continue
 		}

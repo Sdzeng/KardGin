@@ -71,7 +71,7 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 
 	taskDto.DownloadUrlFileName = ToUtf8Str(fileName)
 	//checkErrorName(fileName)
-	filePaths := downloadFiles(taskDto.DownloadUrlFileName, res.Body, taskDto.DownloadUrl)
+	filePaths := downloadFiles(taskDto.DownloadUrl, taskDto.DownloadUrlFileName, res.Body)
 
 	taskDto.SubtitlesFiles = make([]*dto.SubtitlesFileDto, 0)
 	for _, filePath := range filePaths {
@@ -137,10 +137,11 @@ func getFileNameExtension(fileName string) string {
 	return fileNameExtension
 }
 
-func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
+func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []string {
 	result := []string{}
 
 	fileNameExtension := getFileNameExtension(fileName)
+
 	switch fileNameExtension {
 	case "zip":
 		body, err := ioutil.ReadAll(rc)
@@ -161,19 +162,20 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 
 			//如果标致位是0  则是默认的本地编码   默认为gbk
 			//如果标志为是 1 << 11也就是 2048  则是utf-8编码
+			childFileName := ""
 			if f.Flags != 2048 {
 				i := bytes.NewReader([]byte(f.Name))
 				decoder := transform.NewReader(i, simplifiedchinese.GB18030.NewDecoder())
 				content, _ := ioutil.ReadAll(decoder)
-				fileName = strconv.Itoa(int(f.Flags)) + "_" + string(content)
+				childFileName = strconv.Itoa(int(f.Flags)) + "_" + string(content)
 
 			} else {
-				fileName = "2048_" + f.Name
+				childFileName = "2048_" + f.Name
 			}
 
-			if strings.Contains(fileName, "/") || strings.Contains(fileName, "\\") {
+			if strings.Contains(childFileName, "/") || strings.Contains(childFileName, "\\") {
 
-				fileName = getFileName(fileName)
+				childFileName = getFileName(childFileName)
 			}
 
 			inFile, err := f.Open()
@@ -182,7 +184,7 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 			}
 			defer inFile.Close()
 
-			childFilePath := downloadFiles(fileName, inFile, "")
+			childFilePath := downloadFiles(md5Seed+"_"+fileName, childFileName, inFile)
 			result = append(result, childFilePath...)
 		}
 
@@ -217,14 +219,14 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 			}
 
 			// Create file
-			fileName := hdr.Name
-			if strings.Contains(fileName, "/") || strings.Contains(fileName, "\\") {
+			childFileName := hdr.Name
+			if strings.Contains(childFileName, "/") || strings.Contains(childFileName, "\\") {
 
-				fileName = getFileName(fileName)
+				childFileName = getFileName(childFileName)
 			}
 
 			rc := io.NopCloser(go7zReader)
-			childFilePath := downloadFiles(fileName, rc, "")
+			childFilePath := downloadFiles(md5Seed+"_"+fileName, childFileName, rc)
 			result = append(result, childFilePath...)
 
 			// f, err := os.Create(hdr.Name)
@@ -273,13 +275,13 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 				continue
 			}
 
-			fileName = rh.Name
+			childFileName := rh.Name
 			//checkErrorName(fileName)
-			if strings.Contains(fileName, "/") || strings.Contains(fileName, "\\") {
+			if strings.Contains(childFileName, "/") || strings.Contains(childFileName, "\\") {
 
-				fileName = getFileName(fileName)
+				childFileName = getFileName(childFileName)
 			}
-			childFilePath := downloadFiles(fileName, f.ReadCloser, "")
+			childFilePath := downloadFiles(md5Seed+"_"+fileName, childFileName, f.ReadCloser)
 			result = append(result, childFilePath...)
 
 			// err = f.Close()
@@ -289,7 +291,7 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 		}
 
 	default:
-		filePtah := SaveFile(fileName, rc)
+		filePtah := SaveFile(md5Seed, fileName, rc)
 		if len(filePtah) > 0 {
 			result = append(result, filePtah)
 		}
@@ -298,18 +300,20 @@ func downloadFiles(fileName string, rc io.ReadCloser, du string) []string {
 	return result
 }
 
-func SaveFile(fileName string, reader io.Reader) string {
+func SaveFile(md5Seed, fileName string, reader io.Reader) string {
 
 	//文件是否已经存在
-	filePath := variable.BasePath + `\client\cmd\assert\subtitles\` + fileName
-	if _, err := os.Stat(filePath); err != nil && os.IsExist(err) {
+	md5Str := StrMd5(md5Seed)
+	filePath := `subtitles\` + md5Str + `\` + fileName
+	sysFilePath := variable.BasePath + `\client\cmd\assert\` + filePath
+	if _, err := os.Stat(sysFilePath); err != nil && os.IsExist(err) {
 
 		return ""
 
 	}
 
 	//生成文件
-	out, err := os.Create(filePath)
+	out, err := os.Create(sysFilePath)
 	if err != nil {
 		return ""
 	}
