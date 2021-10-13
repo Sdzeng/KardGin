@@ -27,12 +27,12 @@
                     }
                 }
             },
-            "text": {
+            "texts": {
                 "type": "text",
                 "analyzer": "ik_max_word",
                 "search_analyzer": "ik_smart"
             },
-            "time_duration": {
+            "start_at": {
                 "type":"keyword"
             },
             "lan": {
