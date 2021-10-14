@@ -5,7 +5,6 @@ import (
 	"fmt"
 	_ "kard/src/client"
 	"kard/src/client/cmd/crawler"
-	"kard/src/global/helper"
 	"kard/src/global/variable"
 	"kard/src/model/dto"
 	"kard/src/repository"
@@ -15,13 +14,13 @@ import (
 	"github.com/olivere/elastic"
 )
 
-var (
-	ai *helper.AutoInc
-)
+// var (
+// 	ai *helper.AutoInc
+// )
 
-func init() {
-	ai = helper.NewAi(0, 1)
-}
+// func init() {
+// 	ai = helper.NewAi(0, 1)
+// }
 
 func main() {
 
@@ -64,7 +63,7 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 	batchNum := 10
 	startAt := 0 * time.Second
 	texts := []string{}
-	indexId := string(subtitlesFile.DownloadPathId)
+	indexId := strconv.FormatInt(int64(subtitlesFile.DownloadPathId), 10)
 	partId := 0
 
 	for _, itemDto := range subtitlesFile.SubtitleItems {
@@ -83,7 +82,7 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 					Lan:      taskDto.Lan,
 				}
 				partId++
-				indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_" + strconv.Itoa(partId)).Doc(indexDto)
+				indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_part" + strconv.Itoa(partId)).Doc(indexDto)
 				bulkRequest = bulkRequest.Add(indexReq)
 
 				texts = []string{} //(lineTextSlice)[0:0]

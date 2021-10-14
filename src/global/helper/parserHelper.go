@@ -3,7 +3,6 @@ package helper
 import (
 	"kard/src/global/variable"
 	"kard/src/model/dto"
-	"path"
 	"strings"
 
 	"github.com/asticode/go-astisub"
@@ -91,7 +90,7 @@ func ParseFile(taskDto *dto.TaskDto) {
 	sysFilePath := ""
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
 		subtitlesFile.SubtitleItems = []*dto.SubtitlesItemDto{}
-		subtitlesFile.FileName = getPathFileName(subtitlesFile.FilePath)
+		// subtitlesFile.FileName = getPathFileName(subtitlesFile.FilePath)
 
 		sysFilePath = variable.BasePath + `\client\cmd\assert\` + subtitlesFile.FilePath
 		subtitles, err := astisub.Open(astisub.Options{Filename: sysFilePath})
@@ -128,10 +127,10 @@ func ParseFile(taskDto *dto.TaskDto) {
 	taskDto.StoreFunc(taskDto)
 }
 
-func getPathFileName(filePath string) string {
-	filePathSlice := strings.Split(filePath, "\\")
-	fileFullName := filePathSlice[len(filePathSlice)-1]
-	fileSuffix := path.Ext(fileFullName)
+// func getPathFileName(filePath string) string {
+// 	filePathSlice := strings.Split(filePath, "\\")
+// 	fileFullName := filePathSlice[len(filePathSlice)-1]
+// 	fileSuffix := path.Ext(fileFullName)
 
-	return strings.TrimSuffix(fileFullName, fileSuffix)
-}
+// 	return strings.TrimSuffix(fileFullName, fileSuffix)
+// }

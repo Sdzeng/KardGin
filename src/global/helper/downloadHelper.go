@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -71,12 +72,12 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 
 	taskDto.DownloadUrlFileName = ToUtf8Str(fileName)
 	//checkErrorName(fileName)
-	filePaths := downloadFiles(taskDto.DownloadUrl, taskDto.DownloadUrlFileName, res.Body)
+	taskDto.SubtitlesFiles = downloadFiles(taskDto.DownloadUrl, taskDto.DownloadUrlFileName, res.Body)
 
-	taskDto.SubtitlesFiles = make([]*dto.SubtitlesFileDto, 0)
-	for _, filePath := range filePaths {
-		taskDto.SubtitlesFiles = append(taskDto.SubtitlesFiles, &dto.SubtitlesFileDto{FilePath: filePath})
-	}
+	// taskDto.SubtitlesFiles = make([]*dto.SubtitlesFileDto, 0)
+	// for _, filePath := range filePaths {
+	// 	taskDto.SubtitlesFiles = append(taskDto.SubtitlesFiles, &dto.SubtitlesFileDto{FilePath: filePath})
+	// }
 
 	// for _, v := range dto.FilePaths {
 	// 	checkErrorName(v)
@@ -137,8 +138,8 @@ func getFileNameExtension(fileName string) string {
 	return fileNameExtension
 }
 
-func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []string {
-	result := []string{}
+func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesFileDto {
+	result := []*dto.SubtitlesFileDto{}
 
 	fileNameExtension := getFileNameExtension(fileName)
 
@@ -184,7 +185,7 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []string {
 			}
 			defer inFile.Close()
 
-			childFilePath := downloadFiles(md5Seed+"_"+fileName, childFileName, inFile)
+			childFilePath := downloadFiles(md5Seed+"/"+fileName, childFileName, inFile)
 			result = append(result, childFilePath...)
 		}
 
@@ -226,7 +227,7 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []string {
 			}
 
 			rc := io.NopCloser(go7zReader)
-			childFilePath := downloadFiles(md5Seed+"_"+fileName, childFileName, rc)
+			childFilePath := downloadFiles(md5Seed+"/"+fileName, childFileName, rc)
 			result = append(result, childFilePath...)
 
 			// f, err := os.Create(hdr.Name)
@@ -281,7 +282,7 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []string {
 
 				childFileName = getFileName(childFileName)
 			}
-			childFilePath := downloadFiles(md5Seed+"_"+fileName, childFileName, f.ReadCloser)
+			childFilePath := downloadFiles(md5Seed+"/"+fileName, childFileName, f.ReadCloser)
 			result = append(result, childFilePath...)
 
 			// err = f.Close()
@@ -293,7 +294,7 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []string {
 	default:
 		filePtah := SaveFile(md5Seed, fileName, rc)
 		if len(filePtah) > 0 {
-			result = append(result, filePtah)
+			result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileName})
 		}
 
 	}
@@ -307,11 +308,15 @@ func SaveFile(md5Seed, fileName string, reader io.Reader) string {
 	filePath := `subtitles\` + md5Str + `\` + fileName
 	sysFilePath := variable.BasePath + `\client\cmd\assert\` + filePath
 	if _, err := os.Stat(sysFilePath); err != nil && os.IsExist(err) {
-
 		return ""
-
 	}
 
+	//创建文件夹
+	dirPath := filepath.Dir(sysFilePath)
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return ""
+	}
 	//生成文件
 	out, err := os.Create(sysFilePath)
 	if err != nil {
