@@ -22,6 +22,8 @@ type TaskDto struct {
 	DownloadUrlFileName string              //下载链接带的文件名称（比如1.rar）
 	SubtitlesFiles      []*SubtitlesFileDto //解压后存储的文件列表
 	StoreFunc           func(taskDto *TaskDto)
+
+	DbNew bool //是否为新数据
 }
 
 func (dto *TaskDto) ContainsKeyword(work string) bool {

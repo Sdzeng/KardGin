@@ -22,8 +22,8 @@ type ZimuCrawler struct {
 }
 
 var (
-	pageVisited sync.Map
-	visited     sync.Map
+	// pageVisited sync.Map
+	// visited     sync.Map
 
 	pageNum         = `<a class="num" href="([^"]+)">.+?</a>`
 	fetchPageRegexp = regexp.MustCompile(pageNum)
@@ -159,11 +159,11 @@ func (obj *ZimuCrawler) insertQueue(newDto *dto.TaskDto) {
 
 func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 
-	if _, ok := pageVisited.Load(taskDto.DownloadUrl); ok {
-		return
-	} else {
-		pageVisited.Store(taskDto.DownloadUrl, &struct{}{})
-	}
+	// if _, ok := pageVisited.Load(taskDto.DownloadUrl); ok {
+	// 	return
+	// } else {
+	// 	pageVisited.Store(taskDto.DownloadUrl, &struct{}{})
+	// }
 
 	html, cookies, err := helper.LoadHtml(taskDto)
 	if err != nil {
@@ -192,11 +192,14 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 			obj.insertQueue(taskDto)
 		}
 
-		if _, ok := visited.Load(url); !ok {
-			newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
-			visited.Store(newDto.DownloadUrl, &struct{}{})
-			obj.insertQueue(newDto)
-		}
+		// if _, ok := visited.Load(url); !ok {
+		// 	newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
+		// 	visited.Store(newDto.DownloadUrl, &struct{}{})
+		// 	obj.insertQueue(newDto)
+		// }
+
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
+		obj.insertQueue(newDto)
 
 	}
 
@@ -220,7 +223,7 @@ func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 		if len(taskDto.SearchKeyword) > 0 && !taskDto.ContainsKeyword(title) {
 			fmt.Printf("\n忽略下载 %v", title)
 			// obj.Open = false
-			return
+			continue
 		}
 
 		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[5], Cookies: cookies, Lan: item[4], SubtitlesType: item[7], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
@@ -232,11 +235,11 @@ func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 			newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, "https://www.zimutiantang.com")
 		}
 
-		if _, ok := visited.Load(newDto.DownloadUrl); !ok {
-			visited.Store(newDto.DownloadUrl, &struct{}{})
-			obj.insertQueue(newDto)
-		}
-
+		// if _, ok := visited.Load(newDto.DownloadUrl); !ok {
+		// 	visited.Store(newDto.DownloadUrl, &struct{}{})
+		// 	obj.insertQueue(newDto)
+		// }
+		obj.insertQueue(newDto)
 	}
 
 }

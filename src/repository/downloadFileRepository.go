@@ -62,13 +62,10 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 				FilePath:   subtitlesFile.FilePath,
 			}
 
-			result = trans.FirstOrCreate(downloadPath, model.DownloadPaths{FilePath: subtitlesFile.FilePath})
+			result = trans.Create(downloadPath)
 			if result.Error != nil {
 				trans.Rollback()
 				return result.Error
-			}
-			if result.RowsAffected <= 0 {
-				continue
 			}
 
 			subtitlesFile.DownloadPathId = downloadPath.Id

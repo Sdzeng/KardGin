@@ -59,6 +59,10 @@ func toEs(taskDto *dto.TaskDto) {
 
 func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile *dto.SubtitlesFileDto) {
 
+	if subtitlesFile.DownloadPathId <= 0 {
+		return
+	}
+
 	bulkRequest := variable.ES.Bulk()
 	batchNum := 10
 	startAt := 0 * time.Second
