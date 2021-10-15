@@ -29,7 +29,7 @@ func (c *HomeController) Search(context *gin.Context) {
 
 func search(es_index string, page int, li int, search_word string) interface{} {
 	p := (page - 1) * li
-	collapsedata := elastic.NewCollapseBuilder("texts")
+	// collapsedata := elastic.NewCollapseBuilder("texts")
 	esq := elastic.NewBoolQuery()
 	esq.Should(elastic.NewMatchQuery("texts", search_word))
 	esq.Should(elastic.NewMatchQuery("title", search_word))
@@ -38,7 +38,7 @@ func search(es_index string, page int, li int, search_word string) interface{} {
 		Index(es_index).
 		From(p).Size(li).
 		Query(esq).
-		Collapse(collapsedata).
+		// Collapse(collapsedata).
 		Pretty(true)
 	searchResult, err := search.Do(context.Background())
 	if err != nil {
