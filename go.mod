@@ -3,11 +3,9 @@ module kard
 go 1.16
 
 require (
-	github.com/apache/thrift v0.12.0 // indirect
 	github.com/asticode/go-astisub v0.14.0
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/dsnet/compress v0.0.1 // indirect
-	github.com/elastic/go-elasticsearch/v7 v7.13.1 // indirect
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gin-contrib/pprof v1.3.0
@@ -16,9 +14,8 @@ require (
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/nwaples/rardecode v1.1.0
-	github.com/olivere/elastic v6.2.23+incompatible // indirect
-	github.com/olivere/elastic/v7 v7.0.26 // indirect
-	github.com/openzipkin/zipkin-go v0.1.6 // indirect
+	github.com/olivere/elastic v6.2.23+incompatible
+	github.com/olivere/elastic/v7 v7.0.26
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
 	github.com/saracen/go7z v0.0.0-20191010121135-9c09b6bd7fda

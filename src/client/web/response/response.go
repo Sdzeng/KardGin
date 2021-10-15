@@ -2,6 +2,7 @@ package response
 
 import (
 	"kard/src/global/kardError"
+	"kard/src/global/variable"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +28,7 @@ func ReturnJsonFromString(Context *gin.Context, httpCode int, jsonStr string) {
 
 // 直接返回成功
 func Success(c *gin.Context, msg string, data interface{}) {
-	ReturnJson(c, http.StatusOK, CurdStatusOkCode, msg, data)
+	ReturnJson(c, http.StatusOK, variable.CurdStatusOkCode, msg, data)
 }
 
 // 失败的业务逻辑
@@ -51,12 +52,12 @@ func ErrorCasbinAuthFail(c *gin.Context, msg interface{}) {
 
 //参数校验错误
 func ErrorParam(c *gin.Context, wrongParam interface{}) {
-	ReturnJson(c, http.StatusBadRequest, ValidatorParamsCheckFailCode, ValidatorParamsCheckFailMsg, wrongParam)
+	ReturnJson(c, http.StatusBadRequest, variable.ValidatorParamsCheckFailCode, variable.ValidatorParamsCheckFailMsg, wrongParam)
 	c.Abort()
 }
 
 // 系统执行代码错误
 func ErrorSystem(c *gin.Context, msg string, data interface{}) {
-	ReturnJson(c, http.StatusInternalServerError, ServerOccurredErrorCode, ServerOccurredErrorMsg+msg, data)
+	ReturnJson(c, http.StatusInternalServerError, variable.ServerOccurredErrorCode, variable.ServerOccurredErrorMsg+msg, data)
 	c.Abort()
 }
