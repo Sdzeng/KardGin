@@ -56,8 +56,8 @@ func store(taskDto *dto.TaskDto) {
 }
 
 func toEs(taskDto *dto.TaskDto) {
-	indexName := "subtitles_" + time.Now().Format("20060102")
-	indexType := "_doc" // time.Now().Format("20060102")
+	indexName := "subtitles_20060102" //+ time.Now().Format("20060102")
+	indexType := "_doc"               // time.Now().Format("20060102")
 
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
 		toEsByBulk(indexName, indexType, taskDto, subtitlesFile)

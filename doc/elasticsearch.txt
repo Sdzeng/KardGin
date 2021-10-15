@@ -1,0 +1,143 @@
+
+填写账号密码
+cd bin
+elasticsearch-setup-passwords.bat interactive
+
+
+
+
+============================================================================docker=========================================================================================
+
+docker network create elastic
+docker pull docker.elastic.co/elasticsearch/elasticsearch:7.13.2
+docker pull docker.elastic.co/kibana/kibana:7.13.2
+
+docker run --name es01-test --net elastic -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.13.2
+docker run --name kib01-test --net elastic -p 5601:5601 -e "ELASTICSEARCH_HOSTS=http://es01-test:9200" docker.elastic.co/kibana/kibana:7.13.2
+
+http://localhost:9200/
+=========elasticsearch=============>
+
+cluster.name: "docker-cluster"
+network.host: 0.0.0.0
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.cors.allow-headers: Authorization
+xpack.security.enabled: true
+xpack.security.transport.ssl.enabled: true
+
+rpm -qa|grep wget
+yum install -y wget
+mkdir -m 777 song_download 
+wget -P /song_download  https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.13.2/elasticsearch-analysis-ik-7.13.2.zip
+
+cd /plugins/ && mkdir -m 777 ik
+cd ..
+
+unzip /song_download/elasticsearch-analysis-ik-7.13.2.zip -d plugins/ik
+
+--or--
+elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.13.2/elasticsearch-analysis-ik-7.13.2.zip
+ 
+
+
+http://localhost:5601/
+=========kibana=============
+
+server.host: "0"
+elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+monitoring.ui.container.elasticsearch.enabled: true
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "123456"
+i18n.locale: "zh-CN"
+
+
+测试分词器
+ 
+GET _analyze
+{
+  "analyzer": "standard",
+  "text": "this is a test"
+}
+
+GET /_analyze 
+{
+"analyzer": "ik_max_word",
+"text": "且听风吟" 
+}
+
+
+
+POST /subtitles_20060102/_doc
+{
+    "settings": {
+        "index": {
+            "number_of_shards": "1",
+            "number_of_replicas": "0"
+        }
+    },
+    "mappings": {
+        "properties": {
+            "title": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "subtitle": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "texts": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "start_at": {
+                "type":"keyword"
+            },
+            "lan": {
+                "type": "keyword"
+            }
+        }
+    }
+}
+
+
+
+PUT /subtitles/
+{
+    "settings": {
+        "index": {
+            "number_of_shards": "3",
+            "number_of_replicas": "0"
+        }
+    },
+    "mappings": {
+        "properties": {
+            "name": {
+                "type": "keyword",
+                "analyzer": "whitespace" #指定分词器
+            },
+            "text": {
+                "type": "keyword"
+            },
+            "age": {
+                "type": "integer"
+            },
+            "date": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss || yyyy-MM-dd || epoch_millis"
+            }
+        }
+    }
+}

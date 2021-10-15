@@ -4,7 +4,6 @@ import (
 	"context"
 	"kard/src/client/web/response"
 	"kard/src/global/variable"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/olivere/elastic/v7"
@@ -18,7 +17,7 @@ func (c *HomeController) Search(context *gin.Context) {
 	context.BindJSON(&json)
 	searchWord := json["search_word"].(string)
 
-	indexName := "subtitles_" + time.Now().Format("20060102")
+	indexName := "subtitles_20060102" //+ time.Now().Format("20060102")
 	data := search(indexName, 1, 100, searchWord)
 
 	if data != nil {

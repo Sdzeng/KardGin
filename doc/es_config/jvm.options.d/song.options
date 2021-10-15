@@ -1,0 +1,10 @@
+## The heap size is automatically configured by Elasticsearch
+## based on the available memory in your system and the roles
+## each node is configured to fulfill. If specifying heap is
+## required, it should be done through a file in jvm.options.d,
+## and the min and max should be set to the same value. For
+## example, to set the heap to 4 GB, create a new file in the
+## jvm.options.d directory containing these lines:
+##
+-Xms1g
+-Xmx1g
