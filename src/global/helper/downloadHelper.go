@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"kard/src/global/variable"
@@ -308,6 +309,7 @@ func SaveFile(md5Seed, fileName string, reader io.Reader) string {
 	filePath := `subtitles\` + md5Str + `\` + fileName
 	sysFilePath := variable.BasePath + `\client\cmd\assert\` + filePath
 	if _, err := os.Stat(sysFilePath); err != nil && os.IsExist(err) {
+		fmt.Printf("\n跳过已下载文件：%v", fileName)
 		return ""
 	}
 

@@ -40,6 +40,13 @@ func store(taskDto *dto.TaskDto) {
 		return
 	}
 
+	if !taskDto.DbNew {
+		fmt.Printf("\n跳过已存在数据(漏网之鱼)：%v", taskDto.Name)
+		return
+	}
+
+	fmt.Printf("\n新加数据：%v", taskDto.Name)
+
 	if variable.ES == nil {
 		toConsole(taskDto)
 	} else {

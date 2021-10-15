@@ -11,6 +11,7 @@ import (
 	"kard/src/global/helper"
 	"kard/src/global/variable"
 	"kard/src/model/dto"
+	"kard/src/repository"
 )
 
 type ZimuCrawler struct {
@@ -329,6 +330,11 @@ func (obj *ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 }
 
 func (obj *ZimuCrawler) parse(taskDto *dto.TaskDto) {
+	downloadRepository := repository.DownloadFactory()
+	if downloadRepository.Exists(taskDto.DownloadUrl) {
+		fmt.Printf("\n跳过已存在数据：%v", taskDto.Name)
+		return
+	}
 
 	newDto, err := helper.Download(taskDto)
 	if err != nil {

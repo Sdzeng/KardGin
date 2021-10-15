@@ -17,7 +17,6 @@ type DownloadFileRepository struct {
 }
 
 // 创建 DownloadFileFactory
-// 参数说明： 传递空值，默认使用 配置文件选项：UseDbType（mysql）
 func DownloadFileFactory() *DownloadFileRepository {
 	db := UseDbConn()
 	isEnable := db != nil
@@ -48,9 +47,11 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 
 	if result.RowsAffected <= 0 {
 		trans.Commit()
+		dto.DbNew = false
 		return nil
 	} else {
-		fmt.Printf("\n数据库新加：%v", dto.Name)
+		dto.DbNew = true
+		// fmt.Printf("\n数据库新加：%v", dto.Name)
 	}
 
 	if len(dto.SubtitlesFiles) > 0 {
