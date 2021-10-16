@@ -86,11 +86,12 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 			}
 			if len(texts)%batchNum == 0 {
 				indexDto := &dto.SubtitlesIndexDto{
-					Title:    taskDto.Name,
-					SubTitle: subtitlesFile.FileName,
-					Texts:    texts,
-					StartAt:  int32(startAt.Seconds()),
-					Lan:      taskDto.Lan,
+					DownloadPathId: subtitlesFile.DownloadPathId,
+					Title:          taskDto.Name,
+					SubTitle:       subtitlesFile.FileName,
+					Texts:          texts,
+					StartAt:        int32(startAt.Seconds()),
+					Lan:            taskDto.Lan,
 				}
 				partId++
 				indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_part" + strconv.Itoa(partId)).Doc(indexDto)
@@ -104,11 +105,12 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 
 	if len(texts) > 0 {
 		indexDto := &dto.SubtitlesIndexDto{
-			Title:    taskDto.Name,
-			SubTitle: subtitlesFile.FileName,
-			Texts:    texts,
-			StartAt:  int32(startAt.Seconds()),
-			Lan:      taskDto.Lan,
+			DownloadPathId: subtitlesFile.DownloadPathId,
+			Title:          taskDto.Name,
+			SubTitle:       subtitlesFile.FileName,
+			Texts:          texts,
+			StartAt:        int32(startAt.Seconds()),
+			Lan:            taskDto.Lan,
 		}
 		partId++
 		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_part" + strconv.Itoa(partId)).Doc(indexDto)

@@ -308,14 +308,19 @@ func SaveFile(md5Seed, fileName string, reader io.Reader) string {
 	md5Str := StrMd5(md5Seed)
 	filePath := `subtitles\` + md5Str + `\` + fileName
 	sysFilePath := variable.BasePath + `\client\cmd\assert\` + filePath
-	if _, err := os.Stat(sysFilePath); err != nil && os.IsExist(err) {
+
+	_, err := os.Stat(sysFilePath)
+	if err == nil {
 		fmt.Printf("\n跳过已下载文件：%v", fileName)
+		return ""
+	} else if !os.IsNotExist(err) {
+		fmt.Printf("\n判断文件是否存在发生异常：%v", fileName)
 		return ""
 	}
 
 	//创建文件夹
 	dirPath := filepath.Dir(sysFilePath)
-	err := os.MkdirAll(dirPath, os.ModePerm)
+	err = os.MkdirAll(dirPath, os.ModePerm)
 	if err != nil {
 		return ""
 	}

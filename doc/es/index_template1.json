@@ -1,0 +1,33 @@
+//  PUT /_template/common_template
+{
+    "index_patterns":[ "subtitles_*" ],
+    "mappings": {
+      "_doc": {
+        "dynamic_templates": [
+          {
+            "string_fields": {
+              "match": "*",
+              "match_mapping_type": "string",
+              "mapping": {
+                "type": "keyword",
+                "ignore_above": 512
+              }
+            }
+          },
+          {
+            "number_fields": {
+              "match": "*",
+              "match_mapping_type": "long",
+              "mapping": {
+                "type": "double"
+              }
+            }
+          }
+        ]
+      }
+    }
+}
+
+
+//GET /_template/common_template
+//DELETE /_template/common_template
