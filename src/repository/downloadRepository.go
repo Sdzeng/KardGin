@@ -2,6 +2,7 @@ package repository
 
 import (
 	"kard/src/model"
+	"kard/src/model/dto"
 
 	"gorm.io/gorm"
 )
@@ -18,12 +19,12 @@ func DownloadFactory() *DownloadRepository {
 	return &DownloadRepository{IsEnable: isEnable, DB: db}
 }
 
-func (repository *DownloadRepository) Exists(downloadUrl string) bool {
+func (repository *DownloadRepository) Exists(taskDto *dto.TaskDto) bool {
 	if !repository.IsEnable {
 		return false
 	}
 
 	dl := new(model.Downloads)
-	repository.DB.First(dl, &model.Downloads{DownloadUrl: downloadUrl})
+	repository.DB.Where("download_url=?", taskDto.DownloadUrl).Or("name=? and lan=?", taskDto.Name, taskDto.Lan).First(dl)
 	return dl.Id > 0
 }

@@ -1,7 +1,6 @@
 package helper
 
 import (
-	"io"
 	"kard/src/model/dto"
 	"path/filepath"
 	"strings"
@@ -94,7 +93,7 @@ func ParseFile(taskDto *dto.TaskDto) {
 		// subtitlesFile.FileName = getPathFileName(subtitlesFile.FilePath)
 
 		// sysFilePath = variable.BasePath + `\client\cmd\assert\` + subtitlesFile.FilePath
-		subtitles, err := open(subtitlesFile.FileName, subtitlesFile.Reader)
+		subtitles, err := open(subtitlesFile.FileName, subtitlesFile.Content)
 		if err != nil {
 			continue
 		}
@@ -136,7 +135,8 @@ func ParseFile(taskDto *dto.TaskDto) {
 // 	return strings.TrimSuffix(fileFullName, fileSuffix)
 // }
 
-func open(fileName string, reader io.Reader) (s *astisub.Subtitles, err error) {
+func open(fileName string, content *string) (s *astisub.Subtitles, err error) {
+	reader := strings.NewReader(*content)
 	o := astisub.Options{Filename: fileName}
 
 	// Parse the content

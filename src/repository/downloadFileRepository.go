@@ -27,8 +27,9 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 		return nil
 	}
 
+	createTime := time.Now()
 	df := &model.Downloads{
-		BaseModel:           model.BaseModel{CreateTime: time.Now()},
+		BaseModel:           model.BaseModel{CreateTime: createTime},
 		Name:                dto.Name,
 		DownloadUrl:         dto.DownloadUrl,
 		DownloadUrlFileName: dto.DownloadUrlFileName,
@@ -37,14 +38,19 @@ func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
 	}
 
 	trans := repository.DB.Begin()
-	result := trans.FirstOrCreate(df, model.Downloads{DownloadUrl: dto.DownloadUrl})
+	// result := trans.Debug().FirstOrCreate(df, model.Downloads{DownloadUrl: dto.DownloadUrl})
+	// result := trans.Where(model.Downloads{DownloadUrl: dto.DownloadUrl}).FirstOrCreate(df)
+	result := trans.Where("download_url=?", dto.DownloadUrl).Or("name=? and lan=?", dto.Name, dto.Lan).FirstOrCreate(df)
+	// result := trans.Debug().Where("download_url=?", dto.DownloadUrl).FirstOrCreate(df)
+	// result := trans.Debug().Where("name=? and lan=?", dto.Name, dto.Lan).FirstOrCreate(df)
 
 	if result.Error != nil {
 		trans.Rollback()
 		return result.Error
 	}
 
-	if result.RowsAffected <= 0 {
+	//result.RowsAffected <= 0 ||
+	if df.CreateTime.Before(createTime) {
 		trans.Commit()
 		dto.DbNew = false
 		return nil

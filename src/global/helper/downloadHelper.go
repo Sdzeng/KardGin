@@ -23,6 +23,14 @@ import (
 	//"github.com/sony/sonyflake"
 )
 
+var (
+	detector *chardet.Detector
+)
+
+func init() {
+	detector = chardet.NewTextDetector()
+}
+
 type WriterCounter struct {
 	//taskDto   *dto.UrlDto
 	FileName string
@@ -224,6 +232,7 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 			}
 
 			rc := io.NopCloser(go7zReader)
+			defer rc.Close()
 			childFilePath := downloadFiles(md5Seed+"/"+fileName, childFileName, rc)
 			result = append(result, childFilePath...)
 
@@ -289,9 +298,9 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 		}
 
 	default:
-		filePtah, reader := ChangeCharset(md5Seed, fileName, rc)
+		filePtah, content := ChangeCharset(md5Seed, fileName, rc)
 		if len(filePtah) > 0 {
-			result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileName, Reader: reader})
+			result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileName, Content: content})
 		}
 
 	}
@@ -354,7 +363,7 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 // 	return filePath
 // }
 
-func ChangeCharset(md5Seed, fileName string, reader io.Reader) (string, io.Reader) {
+func ChangeCharset(md5Seed, fileName string, reader io.Reader) (string, *string) {
 
 	md5Str := StrMd5(md5Seed)
 	filePath := md5Str + `\` + fileName
@@ -364,7 +373,6 @@ func ChangeCharset(md5Seed, fileName string, reader io.Reader) (string, io.Reade
 		return "", nil
 	}
 
-	detector := chardet.NewTextDetector()
 	charset, err := detector.DetectBest(bytes)
 	if err != nil {
 		panic(err)
@@ -377,7 +385,7 @@ func ChangeCharset(md5Seed, fileName string, reader io.Reader) (string, io.Reade
 		targetStr = Convert(string(bytes), charset.Charset, "utf-8")
 	}
 
-	return filePath, strings.NewReader(targetStr)
+	return filePath, &targetStr
 }
 
 func ToUtf8Str(fileName string) string {

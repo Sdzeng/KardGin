@@ -29,7 +29,8 @@ var (
 	pageNum         = `<a class="num" href="([^"]+)">.+?</a>`
 	fetchPageRegexp = regexp.MustCompile(pageNum)
 
-	titleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
+	// titleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
+	titleReg          = `<td class=.+>\s*<a .+ target="_blank">(.+)</a>\s*</td>`
 	lanReg            = `\n<td class="nobr center">([简繁英日体双语/]*)</td>`
 	downloadButtonReg = `\n<td class="nobr center"><a href="(/sub(s)?/\d+.html)" target="_blank"><span class="label label-danger">字幕下载</span></a></td>`
 	subtitleReg       = `\n<td class="nobr center">([ASTR/其他]*)</td>`
@@ -220,14 +221,14 @@ func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 	items := fetchListRegexp.FindAllStringSubmatch(*html, -1)
 
 	for _, item := range items {
-		title := strings.Replace(strings.Replace(item[3], "<em>", "", -1), "</em>", "", -1)
+		title := strings.Replace(strings.Replace(item[1], "<em>", "", -1), "</em>", "", -1)
 		if len(taskDto.SearchKeyword) > 0 && !taskDto.ContainsKeyword(title) {
 			fmt.Printf("\n忽略下载 %v", title)
 			// obj.Open = false
 			continue
 		}
 
-		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[5], Cookies: cookies, Lan: item[4], SubtitlesType: item[7], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[3], Cookies: cookies, Lan: item[2], SubtitlesType: item[5], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
 			continue
@@ -331,7 +332,7 @@ func (obj *ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 
 func (obj *ZimuCrawler) parse(taskDto *dto.TaskDto) {
 	downloadRepository := repository.DownloadFactory()
-	if downloadRepository.Exists(taskDto.DownloadUrl) {
+	if downloadRepository.Exists(taskDto) {
 		fmt.Printf("\n跳过已存在数据：%v", taskDto.Name)
 		return
 	}
