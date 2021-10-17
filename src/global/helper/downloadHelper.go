@@ -4,15 +4,11 @@ import (
 	"archive/zip"
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
-	"kard/src/global/variable"
 	"kard/src/model/dto"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -293,47 +289,79 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 		}
 
 	default:
-		filePtah := SaveFile(md5Seed, fileName, rc)
+		filePtah, reader := ChangeCharset(md5Seed, fileName, rc)
 		if len(filePtah) > 0 {
-			result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileName})
+			result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileName, Reader: reader})
 		}
 
 	}
 	return result
 }
 
-func SaveFile(md5Seed, fileName string, reader io.Reader) string {
+// func SaveFile(md5Seed, fileName string, reader io.Reader) string {
 
-	//文件是否已经存在
+// 	//文件是否已经存在
+// 	md5Str := StrMd5(md5Seed)
+// 	filePath := `subtitles\` + md5Str + `\` + fileName
+// 	sysFilePath := variable.BasePath + `\client\cmd\assert\` + filePath
+
+// 	_, err := os.Stat(sysFilePath)
+// 	if err == nil {
+// 		fmt.Printf("\n跳过已下载文件：%v", fileName)
+// 		return ""
+// 	} else if !os.IsNotExist(err) {
+// 		fmt.Printf("\n判断文件是否存在发生异常：%v", fileName)
+// 		return ""
+// 	}
+
+// 	//创建文件夹
+// 	dirPath := filepath.Dir(sysFilePath)
+// 	err = os.MkdirAll(dirPath, os.ModePerm)
+// 	if err != nil {
+// 		return ""
+// 	}
+// 	//生成文件
+// 	out, err := os.Create(sysFilePath)
+// 	if err != nil {
+// 		return ""
+// 	}
+// 	defer out.Close()
+
+// 	bytes, err := ioutil.ReadAll(reader)
+// 	if err != nil {
+// 		return ""
+// 	}
+
+// 	detector := chardet.NewTextDetector()
+// 	charset, err := detector.DetectBest(bytes)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	// println(charset.Charset)
+// 	// println(charset.Language)
+
+// 	targetStr := ""
+// 	if charset.Charset == "UTF-8" {
+// 		targetStr = string(bytes)
+// 	} else {
+// 		targetStr = Convert(string(bytes), charset.Charset, "utf-8")
+// 	}
+// 	_, err = out.WriteString(targetStr)
+// 	// _, err = io.Copy(out, decoder.NewReader(reader))
+// 	if err != nil {
+// 		return ""
+// 	}
+// 	return filePath
+// }
+
+func ChangeCharset(md5Seed, fileName string, reader io.Reader) (string, io.Reader) {
+
 	md5Str := StrMd5(md5Seed)
-	filePath := `subtitles\` + md5Str + `\` + fileName
-	sysFilePath := variable.BasePath + `\client\cmd\assert\` + filePath
-
-	_, err := os.Stat(sysFilePath)
-	if err == nil {
-		fmt.Printf("\n跳过已下载文件：%v", fileName)
-		return ""
-	} else if !os.IsNotExist(err) {
-		fmt.Printf("\n判断文件是否存在发生异常：%v", fileName)
-		return ""
-	}
-
-	//创建文件夹
-	dirPath := filepath.Dir(sysFilePath)
-	err = os.MkdirAll(dirPath, os.ModePerm)
-	if err != nil {
-		return ""
-	}
-	//生成文件
-	out, err := os.Create(sysFilePath)
-	if err != nil {
-		return ""
-	}
-	defer out.Close()
+	filePath := md5Str + `\` + fileName
 
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return ""
+		return "", nil
 	}
 
 	detector := chardet.NewTextDetector()
@@ -341,8 +369,6 @@ func SaveFile(md5Seed, fileName string, reader io.Reader) string {
 	if err != nil {
 		panic(err)
 	}
-	// println(charset.Charset)
-	// println(charset.Language)
 
 	targetStr := ""
 	if charset.Charset == "UTF-8" {
@@ -350,12 +376,8 @@ func SaveFile(md5Seed, fileName string, reader io.Reader) string {
 	} else {
 		targetStr = Convert(string(bytes), charset.Charset, "utf-8")
 	}
-	_, err = out.WriteString(targetStr)
-	// _, err = io.Copy(out, decoder.NewReader(reader))
-	if err != nil {
-		return ""
-	}
-	return filePath
+
+	return filePath, strings.NewReader(targetStr)
 }
 
 func ToUtf8Str(fileName string) string {

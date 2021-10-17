@@ -6,5 +6,5 @@
 ## example, to set the heap to 4 GB, create a new file in the
 ## jvm.options.d directory containing these lines:
 ##
--Xms1g
--Xmx1g
+-Xms256m
+-Xmx256m

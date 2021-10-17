@@ -1,9 +1,192 @@
 
-填写账号密码
-cd bin
-elasticsearch-setup-passwords.bat interactive
+CentOS8.4 安装ES7.13.2
 
--Xms=256m -Xms=256m
+1.安装Java
+java -version
+sudo yum search java-11
+sudo yum install java-11-openjdk.x86_64 -y
+
+2.安装ES7.13.2
+cd /usr/local
+mkdir elastic7_13_2
+wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.13.2-x86_64.rpm
+rpm -ivh elasticsearch-7.13.2-x86_64.rpm
+
+修改配置
+Elasticsearch 数据存储在 /var/lib/elasticsearch目录，配置文件在/etc/elasticsearch
+cd /etc/elasticsearch/
+vi elasticsearch.yml
+修改yml文件 开启远程访问连接 开启账号密码登录
+node.name: node-1
+cluster.initial_master_nodes: ["node-1"]
+network.host: 0.0.0.0 
+http.port: 9200 （端口）
+
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.cors.allow-headers: Authorization
+xpack.security.enabled: true
+xpack.security.transport.ssl.enabled: true
+
+使用elasticsearch-setup-passwords interactive命令生成用户密码 （ rpm -qal |grep elasticsearch查找es安装路径）
+/usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
+
+cd jvm.options.d/
+touch song.options
+vi song.options
+填入
+## The heap size is automatically configured by Elasticsearch
+## based on the available memory in your system and the roles
+## each node is configured to fulfill. If specifying heap is
+## required, it should be done through a file in jvm.options.d,
+## and the min and max should be set to the same value. For
+## example, to set the heap to 4 GB, create a new file in the
+## jvm.options.d directory containing these lines:
+##
+-Xms256m
+-Xmx256m
+
+3.设置开机启动
+sudo systemctl daemon-reload      # 重新加载systemd程序的配置文件
+sudo systemctl enable elasticsearch.service     # 设置开机自启动
+sudo systemctl start elasticsearch.service     # 启动服务
+sudo systemctl restart elasticsearch # 重启服务
+
+测试访问地址
+curl -X GET "localhost:9200/"
+
+
+防火墙开启9200端口（在新开的elasticsearch域）
+sudo firewall-cmd --new-zone=elasticsearch --permanent
+sudo firewall-cmd --reload
+sudo firewall-cmd --zone=elasticsearch --add-source=192.168.0.106/32 --permanent //只允许远程ip 192.168.0.106访问9200端口
+sudo firewall-cmd --zone=elasticsearch --add-port=9200/tcp --permanent
+sudo firewall-cmd --reload
+
+
+sudo firewall-cmd --new-zone=elasticsearch --permanent
+
+查看防火墙某个端口是否开放
+firewall-cmd --query-port=9200/tcp
+
+
+
+
+防火墙开启5601端口（公共域）
+sudo firewall-cmd --zone=public --add-port=5601/tcp --permanent
+sudo firewall-cmd --reload
+ 
+
+
+
+
+安装Kibana 7.13.2
+1.下载Kibana
+cd /usr/local/elastic7_13_2
+wget https://artifacts.elastic.co/downloads/kibana/kibana-7.13.2-x86_64.rpm
+
+2.rpm包下载完成后直接执行如下：
+rpm -ivh kibana-7.13.2-x86_64.rpm
+
+3.修改配置文件
+vi /etc/kibana/kibana.yml
+# 找到server.host: 这行，修改如下：
+server.host: "0.0.0.0"
+# 找到elasticsearch.hosts: 这行，修改如下：
+elasticsearch.hosts: ["http://localhost:9200"] # 此处ip地址为服务器内网IP地址。端口为es端口
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "123456"
+
+# 找到i18n.locale:这行，修改如下：
+i18n.locale: "zh-CN"  #此处是修改为中文
+
+4.设置开机启动
+sudo systemctl daemon-reload      # 重新加载systemd程序的配置文件
+sudo systemctl enable kibana.service     # 设置开机自启动
+sudo systemctl start kibana.service     # 启动服务
+sudo systemctl restart kibana # 重启服务
+
+防火墙开启5601端口（公共域）
+sudo firewall-cmd --zone=public --add-port=5601/tcp --permanent
+sudo firewall-cmd --reload
+
+
+
+
+安装Mysql 8
+yum install mysql-server -y
+ 
+mysql --version
+
+sudo systemctl daemon-reload      # 重新加载systemd程序的配置文件
+sudo systemctl enable mysqld.service     # 设置开机自启动
+sudo systemctl start mysqld.service     # 启动服务
+sudo systemctl restart mysqld 或 service mysql restart # 重启服务
+
+要检查MySQL服务器是否正在运行：
+sudo systemctl status mysqld
+
+
+
+修改配置
+vi /etc/my.cnf.d/mysql-server.cnf
+添加
+[mysqld]
+port=3306
+bind-address=0.0.0.0
+
+#innodb_buffer_pool_size=576M ->128M InnoDB引擎缓冲区占了大头，首要就是拿它开刀
+#query_cache_size=100M          ->8M 查询缓存
+#tmp_table_size=102M                ->16M 临时表大小
+#key_buffer_size=256m                ->16M
+
+
+
+1.设置 root 密码
+mysql -u root -p
+输入密码
+无密码按回车
+mysql> use mysql;
+ 
+mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '123456';
+mysql> flush privileges;
+mysql> exit;
+
+2.开启远程
+mysql -u root -p
+输入密码
+
+mysql> use mysql;
+mysql> select user,host from user;
+
+mysql> update user set host='%' where user='root';
+mysql> flush privileges;
+ 
+防火墙开启3306端口（公共域）
+sudo firewall-cmd --zone=public --add-port=3306/tcp --permanent
+sudo firewall-cmd --reload
+ 
+3.查看设置
+mysql -u root -p
+输入密码
+
+mysql> use mysql;
+mysql> show variables like 'innodb_buffer_pool%';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ============================================================================docker=========================================================================================

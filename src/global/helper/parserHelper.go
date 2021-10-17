@@ -1,8 +1,9 @@
 package helper
 
 import (
-	"kard/src/global/variable"
+	"io"
 	"kard/src/model/dto"
+	"path/filepath"
 	"strings"
 
 	"github.com/asticode/go-astisub"
@@ -87,13 +88,13 @@ func ParseFile(taskDto *dto.TaskDto) {
 	}(taskDto)
 
 	//dtoSlice := []*dto.SubtitlesIndexDto{}
-	sysFilePath := ""
+	// sysFilePath := ""
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
 		subtitlesFile.SubtitleItems = []*dto.SubtitlesItemDto{}
 		// subtitlesFile.FileName = getPathFileName(subtitlesFile.FilePath)
 
-		sysFilePath = variable.BasePath + `\client\cmd\assert\` + subtitlesFile.FilePath
-		subtitles, err := astisub.Open(astisub.Options{Filename: sysFilePath})
+		// sysFilePath = variable.BasePath + `\client\cmd\assert\` + subtitlesFile.FilePath
+		subtitles, err := open(subtitlesFile.FileName, subtitlesFile.Reader)
 		if err != nil {
 			continue
 		}
@@ -134,3 +135,26 @@ func ParseFile(taskDto *dto.TaskDto) {
 
 // 	return strings.TrimSuffix(fileFullName, fileSuffix)
 // }
+
+func open(fileName string, reader io.Reader) (s *astisub.Subtitles, err error) {
+	o := astisub.Options{Filename: fileName}
+
+	// Parse the content
+	switch filepath.Ext(strings.ToLower(o.Filename)) {
+	case ".srt":
+		s, err = astisub.ReadFromSRT(reader)
+	case ".ssa", ".ass":
+		s, err = astisub.ReadFromSSA(reader)
+	case ".stl":
+		s, err = astisub.ReadFromSTL(reader)
+	case ".ts":
+		s, err = astisub.ReadFromTeletext(reader, o.Teletext)
+	case ".ttml":
+		s, err = astisub.ReadFromTTML(reader)
+	case ".vtt":
+		s, err = astisub.ReadFromWebVTT(reader)
+	default:
+		err = astisub.ErrInvalidExtension
+	}
+	return
+}

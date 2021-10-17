@@ -16,7 +16,7 @@ Token:
 
 ElasticSearch:
   Enable: true
-  Url: "http://localhost:9200"
+  Url: "http://192.168.0.107:9200"
   UserName: "elastic"
   Password: "123456"
 
