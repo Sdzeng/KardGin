@@ -26,17 +26,17 @@ var (
 	// pageVisited sync.Map
 	// visited     sync.Map
 
-	pageNum         = `<a class="num" href="([^"]+)">.+?</a>`
+	pageNum         = `<a class="num" href="([^"]+)">(.+?)</a>`
 	fetchPageRegexp = regexp.MustCompile(pageNum)
 
 	// titleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
 	titleReg          = `<td class=.+>\s*<a .+ target="_blank">(.+)</a>\s*</td>`
-	lanReg            = `\n<td class="nobr center">([简繁英日体双语/]*)</td>`
-	downloadButtonReg = `\n<td class="nobr center"><a href="(/sub(s)?/\d+.html)" target="_blank"><span class="label label-danger">字幕下载</span></a></td>`
-	subtitleReg       = `\n<td class="nobr center">([ASTR/其他]*)</td>`
+	lanReg            = `(\s|\n)*<td class="nobr center">([简繁英日体双语/]*)</td>`
+	downloadButtonReg = `(\s|\n)*<td class="nobr center"><a href="(/sub(s)?/\d+.html)" target="_blank"><span class="label label-danger">字幕下载</span></a></td>`
+	subtitleReg       = `(\s|\n)*<td class="nobr center">([ASTR/其他]*)</td>`
 	fetchListRegexp   = regexp.MustCompile(titleReg + lanReg + downloadButtonReg + subtitleReg)
 
-	nameReg         = `<div class="md_tt prel">(\n| )*<h1 title=[^>]+>(.+)</h1>(.|\n)+`
+	nameReg         = `<div class="md_tt prel">(\n|\s)*<h1 title=[^>]+>(.+)</h1>(.|\n)+`
 	downloadReg     = `<a class="btn btn-info btn-sm" href="([^"]+)"(.|\n)+下载字幕</a>`
 	fetchInfoRegexp = regexp.MustCompile(nameReg + downloadReg)
 
@@ -172,7 +172,7 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 		return
 	}
 
-	intoPage := []string{"", taskDto.DownloadUrl}
+	intoPage := []string{"", taskDto.DownloadUrl, "1"}
 	items := [][]string{intoPage}
 	pageItems := fetchPageRegexp.FindAllStringSubmatch(*html, -1)
 	if pageItems != nil {
@@ -181,9 +181,12 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 	lastIndex := len(items) - 1
 	for index, item := range items {
 		url := item[1]
+		pageNum := item[2]
 		if len(strings.Trim(url, " ")) == 0 {
 			continue
 		}
+		fmt.Printf("\n 处理第%v页", pageNum)
+
 		if !strings.HasPrefix(url, "http:") && !strings.HasPrefix(url, "https:") {
 			url = helper.UrlJoin(url, "https://www.zimutiantang.com")
 		}
@@ -228,7 +231,7 @@ func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 			continue
 		}
 
-		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[3], Cookies: cookies, Lan: item[2], SubtitlesType: item[5], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[5], Cookies: cookies, Lan: item[3], SubtitlesType: item[8], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
 			continue
@@ -256,12 +259,12 @@ func (obj *ZimuCrawler) fetchInfo(taskDto *dto.TaskDto) {
 	items := fetchInfoRegexp.FindAllStringSubmatch(*html, -1)
 
 	if len(items) != 1 {
-		rp2 := regexp.MustCompile(nameReg)
-		rp3 := regexp.MustCompile(downloadReg)
-		items2 := rp2.FindAllStringSubmatch(*html, -1)
-		items3 := rp3.FindAllStringSubmatch(*html, -1)
+		// rp2 := regexp.MustCompile(nameReg)
+		// rp3 := regexp.MustCompile(downloadReg)
+		// items2 := rp2.FindAllStringSubmatch(*html, -1)
+		// items3 := rp3.FindAllStringSubmatch(*html, -1)
 
-		fmt.Println("匹配失败:" + taskDto.DownloadUrl + items2[0][2] + items3[0][1])
+		fmt.Println("fetchInfo匹配失败:" + taskDto.DownloadUrl)
 		return
 	}
 
