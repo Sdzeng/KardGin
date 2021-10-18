@@ -26,7 +26,7 @@ var (
 	// pageVisited sync.Map
 	// visited     sync.Map
 
-	pageNum         = `<a class="num" href="([^"]+)">(.+?)</a>`
+	pageNum         = `<a class="num" href="([^"]+)">(\d+)?</a>`
 	fetchPageRegexp = regexp.MustCompile(pageNum)
 
 	// titleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
