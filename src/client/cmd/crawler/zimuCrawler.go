@@ -217,7 +217,7 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 			continue
 		}
 
-		fmt.Printf("\n 处理第%v页", pageNum)
+		fmt.Printf("\n处理第%v页", pageNum)
 
 		// if _, ok := visited.Load(url); !ok {
 		// 	newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
@@ -233,9 +233,6 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 }
 
 func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
-	// defer func(d *dto.UrlDto) {
-	// 	d.Wg.Done()
-	// }(taskDto)
 
 	html, cookies, err := helper.LoadHtml(taskDto)
 	if err != nil {

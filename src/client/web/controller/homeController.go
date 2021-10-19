@@ -2,6 +2,8 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"kard/src/client/web/response"
 	"kard/src/global/variable"
 
@@ -27,25 +29,76 @@ func (c *HomeController) Search(context *gin.Context) {
 	}
 }
 
-func search(es_index string, page int, li int, search_word string) interface{} {
-	p := (page - 1) * li
+func search(es_index string, page int, li int, search_word string) []*elastic.SearchHit {
+	// p := (page - 1) * li
 	// collapsedata := elastic.NewCollapseBuilder("texts")
 	esq := elastic.NewBoolQuery()
-	esq.Should(elastic.NewMatchQuery("texts", search_word))
-	esq.Should(elastic.NewMatchQuery("title", search_word))
-	esq.Should(elastic.NewMatchQuery("subtitle", search_word))
-	search := variable.ES.Search().
-		Index(es_index).
-		From(p).Size(li).
+	esq = esq.Should(
+		elastic.NewWildcardQuery("title.keyword", search_word),
+		elastic.NewWildcardQuery("subtitle.keyword", search_word),
+		elastic.NewWildcardQuery("texts.keyword", search_word),
+	)
+
+	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "lan")
+
+	hl := elastic.NewHighlight().Fields(
+		elastic.NewHighlighterField("title"),
+		elastic.NewHighlighterField("subtitle"),
+		elastic.NewHighlighterField("texts"),
+	)
+
+	// search := variable.ES.Search().
+	// 	Index(es_index).
+	// 	Highlight(hl).
+	// 	Query(esq).
+	// 	FetchSourceContext(fsc).
+	// 	// Collapse(collapsedata).
+	// 	Pretty(true)
+
+	scroll := variable.ES.Scroll(es_index).
 		Query(esq).
-		// Collapse(collapsedata).
+		Highlight(hl).
+		FetchSourceContext(fsc).
+		Size(20).
+		// TrackTotalHits(true).
+		// // Collapse(collapsedata).
 		Pretty(true)
-	searchResult, err := search.Do(context.Background())
-	if err != nil {
-		panic(err)
-	} else {
-		return searchResult
+
+	result := []*elastic.SearchHit{}
+	for {
+		res, err := scroll.Do(context.TODO())
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fmt.Print(err)
+		}
+		if res == nil {
+			fmt.Printf("expected results != nil; got nil")
+			continue
+		}
+		if res.Hits == nil {
+			fmt.Printf("expected results.Hits != nil; got nil")
+			continue
+		}
+		// if want, have := int64(3), res.TotalHits(); want != have {
+		// 	fmt.Printf("expected results.TotalHits() = %d; got %d", want, have)
+		// 	continue
+		// }
+		// if want, have := 1, len(res.Hits.Hits); want != have {
+		// 	fmt.Printf("expected len(results.Hits.Hits) = %d; got %d", want, have)
+		// 	continue
+		// }
+
+		result = append(result, res.Hits.Hits...)
 	}
+
+	err := scroll.Clear(context.TODO())
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	return result
 }
 
 // func (c *HomeController) GetCover(context *gin.Context) {

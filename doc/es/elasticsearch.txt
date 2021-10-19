@@ -324,3 +324,64 @@ PUT /subtitles/
         }
     }
 }
+
+GET /subtitles_20060102/_doc/_search
+{
+  "query": {
+    "bool":{
+      "should":[
+            {
+              "match": {
+                "title":"女"
+              }
+            }
+        ]
+
+    }
+  }
+}
+
+
+GET /subtitles_20060102/_doc/_search?scroll=10m
+{
+  "query": {
+    "bool":{
+      "should":[
+            {
+              "wildcard": {
+                "title.keyword":"*晨间剧*"
+              }
+            },
+            {
+              "wildcard": {
+                "subtitle.keyword":"*宿の*"
+              }
+            },
+            {
+              "wildcard": {
+                "texts.keyword":"*宿の*"
+              }
+            }
+        ]
+
+    }
+  },
+  "_source": ["path_id","title","subtitle","texts","lan"],
+  "highlight": {
+    "fields": {
+      "title.keyword": {},
+      "subtitle.keyword": {},
+      "texts.keyword": {}
+    }
+  },
+  "sort" : ["_doc"], 
+  "size": 20
+}
+
+POST /_search/scroll
+{
+    "scroll": "2m", 
+    "scroll_id" : "FGluY2x1ZGVfY29udGV4dF91dWlkDXF1ZXJ5QW5kRmV0Y2gBFnB6VXB4OV9WUjZpSlBZRlhUZTZ4amcAAAAAAAAKMxY5b2U4TWRHbFRaS00xcVFPR2VGTDJn"
+}
+
+
