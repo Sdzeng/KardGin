@@ -42,9 +42,9 @@ func search(es_index string, page int, li int, search_word string) []*elastic.Se
 	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "lan")
 
 	hl := elastic.NewHighlight().Fields(
-		elastic.NewHighlighterField("title"),
-		elastic.NewHighlighterField("subtitle"),
-		elastic.NewHighlighterField("texts"),
+		elastic.NewHighlighterField("title.keyword"),
+		elastic.NewHighlighterField("subtitle.keyword"),
+		elastic.NewHighlighterField("texts.keyword"),
 	)
 
 	// search := variable.ES.Search().
@@ -60,7 +60,7 @@ func search(es_index string, page int, li int, search_word string) []*elastic.Se
 		Highlight(hl).
 		FetchSourceContext(fsc).
 		Size(20).
-		// TrackTotalHits(true).
+		TrackTotalHits(true).
 		// // Collapse(collapsedata).
 		Pretty(true)
 
