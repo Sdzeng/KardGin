@@ -69,6 +69,7 @@ func runKard(router *gin.Engine) {
 		// homeGroup.GET("/", homeController.GetCover)
 		// homeGroup.GET("/subtitles", homeController.ExtractSubtitles)
 		homeGroup.POST("/search", homeController.Search)
+		homeGroup.POST("/scroll_search", homeController.SearchScroll)
 	}
 
 	router.Run(variable.WebYml.GetString("HttpServer.Api.Port"))

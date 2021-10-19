@@ -6,6 +6,7 @@ import (
 	"io"
 	"kard/src/client/web/response"
 	"kard/src/global/variable"
+	"kard/src/model/dto"
 
 	"github.com/gin-gonic/gin"
 	"github.com/olivere/elastic/v7"
@@ -18,9 +19,10 @@ func (c *HomeController) Search(context *gin.Context) {
 	json := make(map[string]interface{})
 	context.BindJSON(&json)
 	searchWord := json["search_word"].(string)
+	pageCount := int(json["page_count"].(float64))
 
 	indexName := "subtitles_20060102" //+ time.Now().Format("20060102")
-	data := search(indexName, 1, 100, searchWord)
+	data := search(indexName, pageCount, searchWord)
 
 	if data != nil {
 		response.Success(context, variable.CurdStatusOkMsg, data)
@@ -29,7 +31,23 @@ func (c *HomeController) Search(context *gin.Context) {
 	}
 }
 
-func search(es_index string, page int, li int, search_word string) []*elastic.SearchHit {
+func (c *HomeController) SearchScroll(context *gin.Context) {
+	json := make(map[string]interface{})
+	context.BindJSON(&json)
+	scrollId := json["scroll_id"].(string)
+
+	// indexName := "subtitles_20060102"
+	data := scrollSearch(scrollId)
+
+	if data != nil {
+		response.Success(context, variable.CurdStatusOkMsg, data)
+	} else {
+		response.Fail(context, variable.CurdSelectFailCode, variable.CurdSelectFailMsg, "")
+	}
+}
+
+func search(es_index string, pageCount int, search_word string) *dto.SearchResultDto {
+	searchResultDto := new(dto.SearchResultDto)
 	// p := (page - 1) * li
 	// collapsedata := elastic.NewCollapseBuilder("texts")
 	esq := elastic.NewBoolQuery()
@@ -56,49 +74,84 @@ func search(es_index string, page int, li int, search_word string) []*elastic.Se
 	// 	Pretty(true)
 
 	scroll := variable.ES.Scroll(es_index).
+		Scroll("5m").
 		Query(esq).
 		Highlight(hl).
 		FetchSourceContext(fsc).
-		Size(20).
+		Size(pageCount).
 		TrackTotalHits(true).
+		FilterPath("hits.total", "hits.hits._id", "hits.hits._source", "hits.hits.highlight").
 		// // Collapse(collapsedata).
 		Pretty(true)
 
-	result := []*elastic.SearchHit{}
-	for {
-		res, err := scroll.Do(context.TODO())
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			fmt.Print(err)
-		}
-		if res == nil {
-			fmt.Printf("expected results != nil; got nil")
-			continue
-		}
-		if res.Hits == nil {
-			fmt.Printf("expected results.Hits != nil; got nil")
-			continue
-		}
-		// if want, have := int64(3), res.TotalHits(); want != have {
-		// 	fmt.Printf("expected results.TotalHits() = %d; got %d", want, have)
-		// 	continue
-		// }
-		// if want, have := 1, len(res.Hits.Hits); want != have {
-		// 	fmt.Printf("expected len(results.Hits.Hits) = %d; got %d", want, have)
-		// 	continue
-		// }
-
-		result = append(result, res.Hits.Hits...)
+	res, err := scroll.Do(context.TODO())
+	if err == io.EOF {
+		return searchResultDto
 	}
-
-	err := scroll.Clear(context.TODO())
 	if err != nil {
 		fmt.Print(err)
+		return searchResultDto
+	}
+	if res == nil {
+		fmt.Printf("expected results != nil; got nil")
+		return searchResultDto
+	}
+	if res.Hits == nil {
+		fmt.Printf("expected results.Hits != nil; got nil")
+		return searchResultDto
+	}
+	// if want, have := int64(3), res.TotalHits(); want != have {
+	// 	fmt.Printf("expected results.TotalHits() = %d; got %d", want, have)
+	// 	continue
+	// }
+	// if want, have := 1, len(res.Hits.Hits); want != have {
+	// 	fmt.Printf("expected len(results.Hits.Hits) = %d; got %d", want, have)
+	// 	continue
+	// }
+
+	//清除后，该查询就清除了，游标就无用
+	// err = scroll.Clear(context.TODO())
+	// if err != nil {
+	// 	fmt.Print(err)
+	// 	return searchResultDto
+	// }
+
+	searchResultDto.ScrollId = res.ScrollId
+	searchResultDto.SearchHits = res.Hits.Hits
+	return searchResultDto
+}
+
+func scrollSearch(scrollId string) *dto.SearchResultDto {
+	searchResultDto := new(dto.SearchResultDto)
+	//游标（缓存）有效期延长*分钟
+	scroll := variable.ES.Scroll().Scroll("2m").ScrollId(scrollId)
+
+	res, err := scroll.Do(context.TODO())
+	if err == io.EOF {
+		return searchResultDto
+	}
+	if err != nil {
+		fmt.Print(err)
+		return searchResultDto
+	}
+	if res == nil {
+		fmt.Printf("expected results != nil; got nil")
+		return searchResultDto
+	}
+	if res.Hits == nil {
+		fmt.Printf("expected results.Hits != nil; got nil")
+		return searchResultDto
 	}
 
-	return result
+	// err = scroll.Clear(context.TODO())
+	// if err != nil {
+	// 	fmt.Print(err)
+	// 	return searchResultDto
+	// }
+
+	searchResultDto.ScrollId = res.ScrollId
+	searchResultDto.SearchHits = res.Hits.Hits
+	return searchResultDto
 }
 
 // func (c *HomeController) GetCover(context *gin.Context) {
