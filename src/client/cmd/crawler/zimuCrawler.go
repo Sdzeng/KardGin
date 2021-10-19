@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -26,7 +27,8 @@ var (
 	// pageVisited sync.Map
 	// visited     sync.Map
 
-	pageNum         = `<a class="num" href="([^"]+)">(\d+)?</a>`
+	// pageNum         = `<a class="num" href="([^"]+)">(\d+)?</a>`
+	pageNum         = `<(li|a) class="(num|prev|next|active)"( href="([^"]+)")?>(<span class="current">)?(.+?)(</span>)?</(li|a)>`
 	fetchPageRegexp = regexp.MustCompile(pageNum)
 
 	// titleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
@@ -79,7 +81,7 @@ func (obj *ZimuCrawler) search(store func(taskDto *dto.TaskDto)) {
 
 	// workerQueue := make(chan *dto.UrlDto, 1)
 
-	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store}
+	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, PageNum: 0, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store}
 
 	// for {
 	// 	select {
@@ -172,30 +174,49 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 		return
 	}
 
-	intoPage := []string{"", taskDto.DownloadUrl, "1"}
-	items := [][]string{intoPage}
+	items := [][]string{}
 	pageItems := fetchPageRegexp.FindAllStringSubmatch(*html, -1)
 	if pageItems != nil {
 		items = append(items, pageItems...)
 	}
-	lastIndex := len(items) - 1
+
 	for index, item := range items {
-		url := item[1]
-		pageNum := item[2]
+		aClass := item[2]
+		url := item[4]
+		pageNum, _ := strconv.Atoi(item[6])
+
+		if aClass == "prev" {
+			continue
+		}
+
+		if aClass == "active" {
+			url = taskDto.DownloadUrl
+		}
+
 		if len(strings.Trim(url, " ")) == 0 {
 			continue
 		}
-		fmt.Printf("\n 处理第%v页", pageNum)
 
 		if !strings.HasPrefix(url, "http:") && !strings.HasPrefix(url, "https:") {
 			url = helper.UrlJoin(url, "https://www.zimutiantang.com")
 		}
 
-		if lastIndex == index {
+		if aClass == "next" {
 			taskDto.Cookies = cookies
 			taskDto.DownloadUrl = url
+			taskDto.PageNum, err = strconv.Atoi(items[index-1][6])
+			if err != nil {
+				fmt.Printf("\n获取最后页码报错:%v", items[index-1][6])
+			}
 			obj.insertQueue(taskDto)
+			break
 		}
+
+		if pageNum <= taskDto.PageNum {
+			continue
+		}
+
+		fmt.Printf("\n 处理第%v页", pageNum)
 
 		// if _, ok := visited.Load(url); !ok {
 		// 	newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}

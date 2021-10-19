@@ -10,6 +10,7 @@ import (
 type TaskDto struct {
 	SearchKeyword string //搜索的关键词
 	WorkType      string
+	PageNum       int
 	Refers        []string
 	Cookies       []*http.Cookie
 	Wg            *sync.WaitGroup
