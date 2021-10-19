@@ -11,14 +11,14 @@ import (
 func LoadHtml(taskDto *dto.TaskDto) (*string, []*http.Cookie, error) {
 	req, err := GetRequest(taskDto)
 	if err != nil {
-		fmt.Println("create request error", err)
+		fmt.Printf("\ncreate request error %v", err)
 		return nil, nil, err
 	}
 
 	var res *http.Response
 	res, err = GetResponse(req)
 	if err != nil {
-		fmt.Println("http get error", err)
+		fmt.Printf("\nhttp get error %v", err)
 		return nil, nil, err
 	}
 	defer res.Body.Close()
@@ -26,7 +26,7 @@ func LoadHtml(taskDto *dto.TaskDto) (*string, []*http.Cookie, error) {
 	var html *string
 	html, err = getHtml(res)
 	if err != nil {
-		fmt.Println("read html error", err)
+		fmt.Printf("\nread html error %v", err)
 		return nil, nil, err
 	}
 

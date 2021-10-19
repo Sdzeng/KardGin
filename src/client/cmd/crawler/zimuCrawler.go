@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"kard/src/global/helper"
 	"kard/src/global/variable"
@@ -168,7 +169,7 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 	// } else {
 	// 	pageVisited.Store(taskDto.DownloadUrl, &struct{}{})
 	// }
-
+	time.Sleep(3 * time.Second)
 	html, cookies, err := helper.LoadHtml(taskDto)
 	if err != nil {
 		return
