@@ -52,17 +52,17 @@ func search(es_index string, pageCount int, search_word string) *dto.SearchResul
 	// collapsedata := elastic.NewCollapseBuilder("texts")
 	esq := elastic.NewBoolQuery()
 	esq = esq.Should(
-		elastic.NewWildcardQuery("title.keyword", search_word),
-		elastic.NewWildcardQuery("subtitle.keyword", search_word),
-		elastic.NewWildcardQuery("texts.keyword", search_word),
+		elastic.NewWildcardQuery("title", search_word),
+		elastic.NewWildcardQuery("subtitle", search_word),
+		elastic.NewWildcardQuery("texts", search_word),
 	)
 
 	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "lan")
 
 	hl := elastic.NewHighlight().Fields(
-		elastic.NewHighlighterField("title.keyword"),
-		elastic.NewHighlighterField("subtitle.keyword"),
-		elastic.NewHighlighterField("texts.keyword"),
+		elastic.NewHighlighterField("title"),
+		elastic.NewHighlighterField("subtitle"),
+		elastic.NewHighlighterField("texts"),
 	)
 
 	// search := variable.ES.Search().
