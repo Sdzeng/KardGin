@@ -80,7 +80,7 @@ func search(es_index string, pageCount int, search_word string) *dto.SearchResul
 		FetchSourceContext(fsc).
 		Size(pageCount).
 		TrackTotalHits(true).
-		FilterPath("hits.total", "hits.hits._id", "hits.hits._source", "hits.hits.highlight").
+		FilterPath("hits.total", "hits.hits._source", "hits.hits.highlight").
 		// // Collapse(collapsedata).
 		Pretty(true)
 

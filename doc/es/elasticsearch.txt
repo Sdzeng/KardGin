@@ -349,17 +349,17 @@ GET /subtitles_20060102/_doc/_search?scroll=10m
       "should":[
             {
               "wildcard": {
-                "title.keyword":"*晨间剧*"
+                "title":"*晨间剧*"
               }
             },
             {
               "wildcard": {
-                "subtitle.keyword":"*宿の*"
+                "subtitle":"*宿の*"
               }
             },
             {
               "wildcard": {
-                "texts.keyword":"*宿の*"
+                "texts":"*宿の*"
               }
             }
         ]
@@ -369,9 +369,9 @@ GET /subtitles_20060102/_doc/_search?scroll=10m
   "_source": ["path_id","title","subtitle","texts","lan"],
   "highlight": {
     "fields": {
-      "title.keyword": {},
-      "subtitle.keyword": {},
-      "texts.keyword": {}
+      "title": {"force_source" : true},
+      "subtitle": {"force_source" : true},
+      "texts": {"force_source" : true}
     }
   },
   "sort" : ["_doc"], 
