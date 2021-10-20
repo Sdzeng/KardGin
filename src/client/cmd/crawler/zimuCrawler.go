@@ -231,6 +231,7 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 			taskDto.Cookies = cookies
 			taskDto.DownloadUrl = url
 			taskDto.PageNum, err = strconv.Atoi(items[index-1][6])
+			taskDto.PageNum++
 			if err != nil {
 				fmt.Printf("\n获取最后页码报错:%v", items[index-1][6])
 			}
