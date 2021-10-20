@@ -3,6 +3,7 @@ package crawler
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -27,6 +28,9 @@ type ZimuCrawler struct {
 var (
 	// pageVisited sync.Map
 	// visited     sync.Map
+
+	seedUrlReg    = `.+/index_(\d+).html`
+	seedUrlRegexp = regexp.MustCompile(seedUrlReg)
 
 	// pageNum         = `<a class="num" href="([^"]+)">(\d+)?</a>`
 	pageNum         = `<(li|a) class="(num|prev|next|active)"( href="([^"]+)")?>(<span class="current">)?(.+?)(</span>)?</(li|a)>`
@@ -62,14 +66,30 @@ func (obj *ZimuCrawler) Work(store func(taskDto *dto.TaskDto)) {
 
 func (obj *ZimuCrawler) search(store func(taskDto *dto.TaskDto)) {
 
+	seedUrl := flag.String("seed-url", "", "useage to search")
 	q := flag.String("q", "", "useage to search")
 	flag.Parse()
 
+	fmt.Printf("seedUrl=%s\n", *seedUrl)
 	fmt.Printf("q=%s\n", *q)
+	seedUrlStr := *seedUrl
 	qStr := *q
 
 	var reqUrl string
-	if len(qStr) > 0 {
+	var pageNum int = 1
+	if len(seedUrlStr) > 0 {
+		reqUrl = seedUrlStr
+		seedPageNumItems := seedUrlRegexp.FindStringSubmatch(reqUrl)
+		if len(seedPageNumItems) > 0 {
+			var err error
+			if pageNum, err = strconv.Atoi(seedPageNumItems[1]); err != nil {
+				pageNum = 1
+			} else {
+				pageNum++
+			}
+		}
+
+	} else if len(qStr) > 0 {
 		v := url.Values{}
 		v.Add("q", qStr)
 		v.Add("m", "yes")
@@ -82,7 +102,7 @@ func (obj *ZimuCrawler) search(store func(taskDto *dto.TaskDto)) {
 
 	// workerQueue := make(chan *dto.UrlDto, 1)
 
-	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, PageNum: 0, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store}
+	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, PageNum: pageNum, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store}
 
 	// for {
 	// 	select {
@@ -150,6 +170,11 @@ func (obj *ZimuCrawler) insertQueue(newDto *dto.TaskDto) {
 		return
 	}
 
+	rand.Seed(time.Now().Unix())
+	second := rand.Intn(10)
+	fmt.Printf("\n休眠%v秒 后面执行%v", second, newDto.WorkType)
+	time.Sleep(time.Duration(second) * time.Second)
+
 	switch newDto.WorkType {
 	case variable.FecthPage:
 		obj.fetchPage(newDto)
@@ -169,7 +194,7 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 	// } else {
 	// 	pageVisited.Store(taskDto.DownloadUrl, &struct{}{})
 	// }
-	time.Sleep(3 * time.Second)
+
 	html, cookies, err := helper.LoadHtml(taskDto)
 	if err != nil {
 		return
@@ -213,7 +238,7 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 			break
 		}
 
-		if pageNum <= taskDto.PageNum {
+		if pageNum < taskDto.PageNum {
 			continue
 		}
 
