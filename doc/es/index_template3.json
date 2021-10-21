@@ -1,0 +1,39 @@
+
+// PUT /_template/subtitles_template
+{
+    "index_patterns": [
+        "subtitles_*"
+    ],
+    "settings": {
+        "number_of_shards": "1",
+        "number_of_replicas": "0"
+    },
+    "mappings": {
+        "dynamic": "false",
+        "properties": {
+            "path_id": {
+                "type": "long"
+            },
+            "title": {
+                "type": "text"
+            },
+            "subtitle": {
+                "type": "text"
+            },
+            "texts": {
+                "type": "text"
+            },
+            "start_at": {
+                "type": "long"
+            },
+            "lan": {
+                "type": "text"
+            }
+        }
+    }
+}
+
+//GET /_template/subtitles_template
+//DELETE /_template/subtitles_template
+//GET /subtitles_20060102/_mapping
+//GET /subtitles_20060102/_settings

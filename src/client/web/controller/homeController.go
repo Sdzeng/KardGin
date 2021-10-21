@@ -21,8 +21,8 @@ func (c *HomeController) Search(context *gin.Context) {
 	searchWord := json["search_word"].(string)
 	pageCount := int(json["page_count"].(float64))
 
-	indexName := "subtitles_20060102" //+ time.Now().Format("20060102")
-	data := search(indexName, pageCount, searchWord)
+	// indexName := variable.IndexName //+ time.Now().Format("20060102")
+	data := search(pageCount, searchWord)
 
 	if data != nil {
 		response.Success(context, variable.CurdStatusOkMsg, data)
@@ -36,7 +36,7 @@ func (c *HomeController) SearchScroll(context *gin.Context) {
 	context.BindJSON(&json)
 	scrollId := json["scroll_id"].(string)
 
-	// indexName := "subtitles_20060102"
+	// indexName := variable.IndexName
 	data := scrollSearch(scrollId)
 
 	if data != nil {
@@ -46,15 +46,23 @@ func (c *HomeController) SearchScroll(context *gin.Context) {
 	}
 }
 
-func search(es_index string, pageCount int, search_word string) *dto.SearchResultDto {
+func search(pageCount int, search_word string) *dto.SearchResultDto {
 	searchResultDto := new(dto.SearchResultDto)
 	// p := (page - 1) * li
 	// collapsedata := elastic.NewCollapseBuilder("texts")
+	es_index := variable.IndexName
 	esq := elastic.NewBoolQuery()
+
+	// esq = esq.Should(
+	// 	elastic.NewWildcardQuery("title", search_word),
+	// 	elastic.NewWildcardQuery("subtitle", search_word),
+	// 	elastic.NewWildcardQuery("texts", search_word),
+	// )
+
 	esq = esq.Should(
-		elastic.NewWildcardQuery("title", search_word),
-		elastic.NewWildcardQuery("subtitle", search_word),
-		elastic.NewWildcardQuery("texts", search_word),
+		elastic.NewMatchPhraseQuery("title", search_word),
+		elastic.NewMatchPhraseQuery("subtitle", search_word),
+		elastic.NewMatchPhraseQuery("texts", search_word),
 	)
 
 	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "lan")

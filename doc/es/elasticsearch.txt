@@ -390,3 +390,40 @@ DELETE /_search/scroll
 }
 
 
+
+
+GET /subtitles2_20060102/_doc/_search?scroll=10m
+{
+  "query": {
+    "bool":{
+      "should":[
+            {
+              "match_phrase": {
+                "title":"晨间剧"
+              }
+            },
+            {
+              "match_phrase": {
+                "subtitle":"宿"
+              }
+            },
+            {
+              "match_phrase": {
+                "texts":"宿の"
+              }
+            }
+        ]
+
+    }
+  },
+  "_source": ["path_id","title","subtitle","texts","lan"],
+  "highlight": {
+    "fields": {
+      "title": {"force_source" : true},
+      "subtitle": {"force_source" : true},
+      "texts": {"force_source" : true}
+    }
+  },
+  "sort" : ["_doc"], 
+  "size": 20
+}
