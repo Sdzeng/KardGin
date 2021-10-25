@@ -29,29 +29,29 @@ var (
 	// pageVisited sync.Map
 	// visited     sync.Map
 
-	seedUrlReg    = `.+/index_(\d+).html`
-	seedUrlRegexp = regexp.MustCompile(seedUrlReg)
+	zmSeedUrlReg    = `.+/index_(\d+).html`
+	zmSeedUrlRegexp = regexp.MustCompile(zmSeedUrlReg)
 
-	// pageNum         = `<a class="num" href="([^"]+)">(\d+)?</a>`
-	pageNum         = `<(li|a) class="(num|prev|next|active)"( href="([^"]+)")?>(<span class="current">)?(.+?)(</span>)?</(li|a)>`
-	fetchPageRegexp = regexp.MustCompile(pageNum)
+	// zmPageNum         = `<a class="num" href="([^"]+)">(\d+)?</a>`
+	zmPageNum         = `<(li|a) class="(num|prev|next|active)"( href="([^"]+)")?>(<span class="current">)?(.+?)(</span>)?</(li|a)>`
+	zmFetchPageRegexp = regexp.MustCompile(zmPageNum)
 
-	// titleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
-	titleReg          = `<td class=.+>\s*<a .+ target="_blank">(.+)</a>\s*</td>`
-	lanReg            = `(\s|\n)*<td class="nobr center">([简繁英日体双语/]*)</td>`
-	downloadButtonReg = `(\s|\n)*<td class="nobr center"><a href="(/sub(s)?/\d+.html)" target="_blank"><span class="label label-danger">字幕下载</span></a></td>`
-	subtitleReg       = `(\s|\n)*<td class="nobr center">([ASTR/其他]*)</td>`
-	fetchListRegexp   = regexp.MustCompile(titleReg + lanReg + downloadButtonReg + subtitleReg)
+	// zmTitleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
+	zmTitleReg          = `<td class=.+>\s*<a .+ target="_blank">(.+)</a>\s*</td>`
+	zmLanReg            = `(\s|\n)*<td class="nobr center">([简繁英日体双语/]*)</td>`
+	zmDownloadButtonReg = `(\s|\n)*<td class="nobr center"><a href="(/sub(s)?/\d+.html)" target="_blank"><span class="label label-danger">字幕下载</span></a></td>`
+	zmSubtitleReg       = `(\s|\n)*<td class="nobr center">([ASTR/其他]*)</td>`
+	zmFetchListRegexp   = regexp.MustCompile(zmTitleReg + zmLanReg + zmDownloadButtonReg + zmSubtitleReg)
 
-	nameReg         = `<div class="md_tt prel">(\n|\s)*<h1 title=[^>]+>(.+)</h1>(.|\n)+`
-	downloadReg     = `<a class="btn btn-info btn-sm" href="([^"]+)"(.|\n)+下载字幕</a>`
-	fetchInfoRegexp = regexp.MustCompile(nameReg + downloadReg)
+	zmNameReg         = `<div class="md_tt prel">(\n|\s)*<h1 title=[^>]+>(.+)</h1>(.|\n)+`
+	zmDownloadReg     = `<a class="btn btn-info btn-sm" href="([^"]+)"(.|\n)+下载字幕</a>`
+	zmFetchInfoRegexp = regexp.MustCompile(zmNameReg + zmDownloadReg)
 
-	dx1DownloadReg       = `<a rel="nofollow" href="(.+dx1)"(.|\n)+电信高速下载（一）</a>`
-	fetchSelectDx1Regexp = regexp.MustCompile(dx1DownloadReg)
+	zmDx1DownloadReg       = `<a rel="nofollow" href="(.+dx1)"(.|\n)+电信高速下载（一）</a>`
+	zmFetchSelectDx1Regexp = regexp.MustCompile(zmDx1DownloadReg)
 
-	jsPageDownloadReg    = `location.href="([^"]+)";`
-	jsPageDownloadRegexp = regexp.MustCompile(jsPageDownloadReg)
+	zmJsPageDownloadReg    = `location.href="([^"]+)";`
+	zmJsPageDownloadRegexp = regexp.MustCompile(zmJsPageDownloadReg)
 )
 
 func (obj *ZimuCrawler) Work(store func(taskDto *dto.TaskDto)) {
@@ -79,7 +79,7 @@ func (obj *ZimuCrawler) search(store func(taskDto *dto.TaskDto)) {
 	var pageNum int = 1
 	if len(seedUrlStr) > 0 {
 		reqUrl = seedUrlStr
-		seedPageNumItems := seedUrlRegexp.FindStringSubmatch(reqUrl)
+		seedPageNumItems := zmSeedUrlRegexp.FindStringSubmatch(reqUrl)
 		if len(seedPageNumItems) > 0 {
 			var err error
 			if pageNum, err = strconv.Atoi(seedPageNumItems[1]); err != nil {
@@ -201,7 +201,7 @@ func (obj *ZimuCrawler) fetchPage(taskDto *dto.TaskDto) {
 	}
 
 	items := [][]string{}
-	pageItems := fetchPageRegexp.FindAllStringSubmatch(*html, -1)
+	pageItems := zmFetchPageRegexp.FindAllStringSubmatch(*html, -1)
 	if pageItems != nil {
 		items = append(items, pageItems...)
 	}
@@ -266,7 +266,7 @@ func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 	}
 
 	//获取子页信息
-	items := fetchListRegexp.FindAllStringSubmatch(*html, -1)
+	items := zmFetchListRegexp.FindAllStringSubmatch(*html, -1)
 
 	for _, item := range items {
 		title := strings.Replace(strings.Replace(item[1], "<em>", "", -1), "</em>", "", -1)
@@ -301,7 +301,7 @@ func (obj *ZimuCrawler) fetchInfo(taskDto *dto.TaskDto) {
 	}
 
 	//获取子页信息
-	items := fetchInfoRegexp.FindAllStringSubmatch(*html, -1)
+	items := zmFetchInfoRegexp.FindAllStringSubmatch(*html, -1)
 
 	if len(items) != 1 {
 		// rp2 := regexp.MustCompile(nameReg)
@@ -345,7 +345,7 @@ func (obj *ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 		return
 	}
 
-	items := fetchSelectDx1Regexp.FindAllStringSubmatch(*html, -1)
+	items := zmFetchSelectDx1Regexp.FindAllStringSubmatch(*html, -1)
 
 	if items != nil {
 		if len(items) != 1 {
@@ -364,7 +364,7 @@ func (obj *ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 		obj.insertQueue(taskDto)
 	} else {
 
-		items = jsPageDownloadRegexp.FindAllStringSubmatch(*html, -1)
+		items = zmJsPageDownloadRegexp.FindAllStringSubmatch(*html, -1)
 		if len(items) == 1 {
 			url := items[0][1]
 
