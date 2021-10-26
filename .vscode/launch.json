@@ -11,7 +11,7 @@
                 "GOPATH": "D:\\GitRepository\\GoPath",
                 "GOROOT": "D:\\Program Files\\Go"
             },
-            "args": ["-seed-url","","-q",""],
+            "args": ["-seed-url","https://www.zimutiantang.com/sub/index_42.html","-q",""],
             //"showLog": true
             "dlvLoadConfig": {
                 "followPointers": true,

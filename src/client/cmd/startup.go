@@ -92,6 +92,7 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 					Texts:          texts,
 					StartAt:        int32(startAt.Seconds()),
 					Lan:            taskDto.Lan,
+					PicPath:        "",
 				}
 				partId++
 				indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_part" + strconv.Itoa(partId)).Doc(indexDto)
@@ -111,6 +112,7 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 			Texts:          texts,
 			StartAt:        int32(startAt.Seconds()),
 			Lan:            taskDto.Lan,
+			PicPath:        "",
 		}
 		partId++
 		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_part" + strconv.Itoa(partId)).Doc(indexDto)

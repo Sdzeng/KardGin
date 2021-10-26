@@ -65,7 +65,7 @@ func search(pageCount int, search_word string) *dto.SearchResultDto {
 		elastic.NewMatchPhraseQuery("texts", search_word),
 	)
 
-	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "lan")
+	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "lan", "pic_path")
 
 	hl := elastic.NewHighlight().Fields(
 		elastic.NewHighlighterField("title"),
