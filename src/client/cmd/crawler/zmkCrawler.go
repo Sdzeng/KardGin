@@ -171,20 +171,24 @@ func (obj *ZmkCrawler) fetchList(taskDto *dto.TaskDto) {
 			continue
 		}
 
-		childItems := zmkLanRegexp.FindAllStringSubmatch(item[6], -1)
 		lanSlice := []string{}
-		for _, childItem := range childItems {
-			switch childItem[1] {
-			case "简体中文字幕":
-				lanSlice = append(lanSlice, "简")
-			case "English字幕":
-				lanSlice = append(lanSlice, "英")
-			case "双语字幕":
-				lanSlice = append(lanSlice, "双语")
+		if strings.Contains(item[6], "双语") || strings.Contains(item[6], "简体") {
+			childItems := zmkLanRegexp.FindAllStringSubmatch(item[6], -1)
+			for _, childItem := range childItems {
+				switch childItem[1] {
+				case "简体中文字幕":
+					lanSlice = append(lanSlice, "简")
+				case "English字幕":
+					lanSlice = append(lanSlice, "英")
+				case "双语字幕":
+					lanSlice = append(lanSlice, "双语")
+				}
 			}
+		} else {
+			continue
 		}
 
-		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[1], Cookies: cookies, Lan: strings.Join(lanSlice, "\\"), SubtitlesType: item[4], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[1], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: item[4], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
 			continue

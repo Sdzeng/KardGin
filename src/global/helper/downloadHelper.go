@@ -298,11 +298,12 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 		}
 
 	default:
-		filePtah, content := ChangeCharset(md5Seed, fileName, rc)
-		if len(filePtah) > 0 {
-			result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileName, Content: content})
+		if !strings.Contains(fileName, "繁") {
+			filePtah, content := ChangeCharset(md5Seed, fileName, rc)
+			if len(filePtah) > 0 {
+				result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileName, Content: content})
+			}
 		}
-
 	}
 	return result
 }
