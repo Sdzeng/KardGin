@@ -29,23 +29,22 @@ var (
 	// pageVisited sync.Map
 	// visited     sync.Map
 
-	zmkSeedUrlReg    = `.+/index_(\d+).html`
-	zmkSeedUrlRegexp = regexp.MustCompile(zmkSeedUrlReg)
-
 	// zmkPageNum         = `<a class="num" href="([^"]+)">(\d+)?</a>`
-	zmkPageNum         = `<(li|a) class="(num|prev|next|active)"( href="([^"]+)")?>(<span class="current">)?(.+?)(</span>)?</(li|a)>`
+	zmkPageNum         = `<a class="next" href="(.+)=(\d+)">»</a>`
 	zmkFetchPageRegexp = regexp.MustCompile(zmkPageNum)
 
-	// zmkTitleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
-	zmkTitleReg          = `<td class=.+>\s*<a .+ target="_blank">(.+)</a>\s*</td>`
-	zmkLanReg            = `(\s|\n)*<td class="nobr center">([简繁英日体双语/]*)</td>`
-	zmkDownloadButtonReg = `(\s|\n)*<td class="nobr center"><a href="(/sub(s)?/\d+.html)" target="_blank"><span class="label label-danger">字幕下载</span></a></td>`
-	zmkSubtitleReg       = `(\s|\n)*<td class="nobr center">([ASTR/其他]*)</td>`
-	zmkFetchListRegexp   = regexp.MustCompile(zmkTitleReg + zmkLanReg + zmkDownloadButtonReg + zmkSubtitleReg)
+	zmkDownloadButtonReg = `<a href="(/detail/\d+\.html)" target="_blank" `
+	zmkTitleReg          = `title="(.+)">.+</a>`
+	zmkSubtitleReg       = `(\s|\n)*<span class="label label-info">([ASTRUPIDX\+/]*)</span>`
+	zmkLanImgReg         = `(\s|\S)+?(<img .+ alt="[^"]+?"[^>]+?>)+`
 
-	zmkNameReg         = `<div class="md_tt prel">(\n|\s)*<h1 title=[^>]+>(.+)</h1>(.|\n)+`
-	zmkDownloadReg     = `<a class="btn btn-info btn-sm" href="([^"]+)"(.|\n)+下载字幕</a>`
-	zmkFetchInfoRegexp = regexp.MustCompile(zmkNameReg + zmkDownloadReg)
+	zmkFetchListRegexp = regexp.MustCompile(zmkDownloadButtonReg + zmkTitleReg + zmkSubtitleReg + zmkLanImgReg)
+
+	zmkLanReg    = `<img .+? alt="([^"]+?)"[^>]+?>`
+	zmkLanRegexp = regexp.MustCompile(zmkLanReg)
+
+	zmkDownloadReg     = `<a id="\w+" href="([^"]+)" target="_blank" rel="nofollow">(\s|\S)*?下载字幕(\s|\S)*?</a>`
+	zmkFetchInfoRegexp = regexp.MustCompile(zmkDownloadReg)
 
 	zmkDx1DownloadReg       = `<a rel="nofollow" href="(.+dx1)"(.|\n)+电信高速下载（一）</a>`
 	zmkFetchSelectDx1Regexp = regexp.MustCompile(zmkDx1DownloadReg)
@@ -79,87 +78,20 @@ func (obj *ZmkCrawler) search(store func(taskDto *dto.TaskDto)) {
 	var pageNum int = 1
 	if len(seedUrlStr) > 0 {
 		reqUrl = seedUrlStr
-		seedPageNumItems := zmkSeedUrlRegexp.FindStringSubmatch(reqUrl)
-		if len(seedPageNumItems) > 0 {
-			var err error
-			if pageNum, err = strconv.Atoi(seedPageNumItems[1]); err != nil {
-				pageNum = 1
-			} else {
-				pageNum++
-			}
+		if values, err := url.ParseQuery(seedUrlStr); err != nil {
+			pageNum = 1
+		} else if p, err2 := strconv.Atoi(values.Get("p")); err2 != nil {
+			pageNum = p + 1
 		}
-
 	} else if len(qStr) > 0 {
 		v := url.Values{}
 		v.Add("q", qStr)
-		v.Add("m", "yes")
-		// v.Add("f", "_all")
-		v.Add("s", "relevance")
-		reqUrl = "https://www.zimutiantang.com/search/?" + v.Encode()
+		reqUrl = "https://zimuku.org/search?" + v.Encode()
 	} else {
-		reqUrl = "https://www.zimutiantang.com"
+		reqUrl = "https://zimuku.org/"
 	}
 
-	// workerQueue := make(chan *dto.UrlDto, 1)
-
 	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, PageNum: pageNum, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store}
-
-	// for {
-	// 	select {
-	// 	case taskDto := <-workerQueue:
-	// 		go func(dto *dto.UrlDto, queue chan *dto.UrlDto) {
-	// 			switch dto.WorkType {
-	// 			case variable.FecthPage:
-	// 				fetchPage(dto, queue)
-	// 			case variable.FecthList:
-	// 				fetchList(dto, queue)
-	// 			case variable.FecthInfo:
-	// 				fetchInfo(dto, queue)
-	// 			case variable.ParseFile:
-	// 				parseFile(dto, queue)
-	// 			}
-	// 		}(taskDto, workerQueue)
-	// 	default:
-	// 		fmt.Printf("\n等待任务")
-	// 		time.Sleep(1 * time.Second)
-	// 	}
-	// }
-
-	// f := func(wg *sync.WaitGroup, taskDto *dto.UrlDto, queue chan *dto.UrlDto) {
-	// 	defer func(wd *sync.WaitGroup) {
-	// 		wd.Done()
-	// 	}(wg)
-
-	// 	// fmt.Printf("\n执行任务：%s", taskDto.WorkType)
-	// 	wg.Add(1)
-
-	// 	time.Sleep(1 * time.Second)
-
-	// 	switch taskDto.WorkType {
-	// 	case variable.FecthPage:
-	// 		fetchPage(taskDto)
-	// 	case variable.FecthList:
-	// 		fetchList(taskDto)
-	// 	case variable.FecthInfo:
-	// 		fetchInfo(taskDto)
-	// 	case variable.ParseFile:
-	// 		parseFile(taskDto)
-	// 	}
-	// }
-
-	// wg := &sync.WaitGroup{}
-	// wg.Add(1)
-	// go func(wg *sync.WaitGroup, queue chan *dto.UrlDto) {
-	// 	defer func(w *sync.WaitGroup) {
-	// 		w.Done()
-	// 	}(wg)
-
-	// 	for taskDto := range queue {
-	// 		go f(wg, taskDto, queue)
-	// 	}
-	// }(wg, workerQueue)
-
-	// wg.Wait()
 
 	obj.insertQueue(taskDto)
 	taskDto.Wg.Wait()
@@ -189,71 +121,33 @@ func (obj *ZmkCrawler) insertQueue(newDto *dto.TaskDto) {
 
 func (obj *ZmkCrawler) fetchPage(taskDto *dto.TaskDto) {
 
-	// if _, ok := pageVisited.Load(taskDto.DownloadUrl); ok {
-	// 	return
-	// } else {
-	// 	pageVisited.Store(taskDto.DownloadUrl, &struct{}{})
-	// }
-
 	html, cookies, err := helper.LoadHtml(taskDto)
 	if err != nil {
 		return
 	}
 
-	items := [][]string{}
 	pageItems := zmkFetchPageRegexp.FindAllStringSubmatch(*html, -1)
-	if pageItems != nil {
-		items = append(items, pageItems...)
+	pathUrl := ""
+	endPageNum := 0
+	pageNum := taskDto.PageNum
+	if len(pageItems) <= 0 {
+		endPageNum = taskDto.PageNum
+	} else {
+		pathUrl = pageItems[0][1]
+
+		if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
+			pathUrl = helper.UrlJoin(pathUrl, "https://zimuku.org")
+		}
+
+		endPageNum, _ = strconv.Atoi(pageItems[0][2])
 	}
 
-	for index, item := range items {
-		aClass := item[2]
-		url := item[4]
-		pageNum, _ := strconv.Atoi(item[6])
-
-		if aClass == "prev" {
-			continue
-		}
-
-		if aClass == "active" {
-			url = taskDto.DownloadUrl
-		}
-
-		if len(strings.Trim(url, " ")) == 0 {
-			continue
-		}
-
-		if !strings.HasPrefix(url, "http:") && !strings.HasPrefix(url, "https:") {
-			url = helper.UrlJoin(url, "https://www.zimutiantang.com")
-		}
-
-		if aClass == "next" {
-			taskDto.Cookies = cookies
-			taskDto.DownloadUrl = url
-			taskDto.PageNum, err = strconv.Atoi(items[index-1][6])
-			taskDto.PageNum++
-			if err != nil {
-				fmt.Printf("\n获取最后页码报错:%v", items[index-1][6])
-			}
-			obj.insertQueue(taskDto)
-			break
-		}
-
-		if pageNum < taskDto.PageNum {
-			continue
-		}
-
+	for pageNum <= endPageNum {
 		fmt.Printf("\n处理第%v页", pageNum)
-
-		// if _, ok := visited.Load(url); !ok {
-		// 	newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
-		// 	visited.Store(newDto.DownloadUrl, &struct{}{})
-		// 	obj.insertQueue(newDto)
-		// }
-
+		url := pathUrl + "=" + strconv.Itoa(pageNum)
 		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
 		obj.insertQueue(newDto)
-
+		pageNum++
 	}
 
 }
@@ -269,26 +163,35 @@ func (obj *ZmkCrawler) fetchList(taskDto *dto.TaskDto) {
 	items := zmkFetchListRegexp.FindAllStringSubmatch(*html, -1)
 
 	for _, item := range items {
-		title := strings.Replace(strings.Replace(item[1], "<em>", "", -1), "</em>", "", -1)
+		title := item[2]
+
 		if len(taskDto.SearchKeyword) > 0 && !taskDto.ContainsKeyword(title) {
 			fmt.Printf("\n忽略下载 %v", title)
 			// obj.Open = false
 			continue
 		}
 
-		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[5], Cookies: cookies, Lan: item[3], SubtitlesType: item[8], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
+		childItems := zmkLanRegexp.FindAllStringSubmatch(item[6], -1)
+		lanSlice := []string{}
+		for _, childItem := range childItems {
+			switch childItem[1] {
+			case "简体中文字幕":
+				lanSlice = append(lanSlice, "简")
+			case "English字幕":
+				lanSlice = append(lanSlice, "英")
+			case "双语字幕":
+				lanSlice = append(lanSlice, "双语")
+			}
+		}
+
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[1], Cookies: cookies, Lan: strings.Join(lanSlice, "\\"), SubtitlesType: item[4], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
 			continue
 		}
-		if !strings.HasPrefix(newDto.DownloadUrl, "http:") && !strings.HasPrefix(newDto.DownloadUrl, "https:") {
-			newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, "https://www.zimutiantang.com")
-		}
 
-		// if _, ok := visited.Load(newDto.DownloadUrl); !ok {
-		// 	visited.Store(newDto.DownloadUrl, &struct{}{})
-		// 	obj.insertQueue(newDto)
-		// }
+		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, "https://zimuku.org")
+
 		obj.insertQueue(newDto)
 	}
 
@@ -313,29 +216,12 @@ func (obj *ZmkCrawler) fetchInfo(taskDto *dto.TaskDto) {
 		return
 	}
 
-	name := items[0][2]
-	url := strings.Trim(strings.Trim(items[0][4], "\n"), " ")
-	if !strings.HasPrefix(url, "http:") && !strings.HasPrefix(url, "https:") {
-		url = helper.UrlJoin(url, "https://www.zimutiantang.com")
-	}
-
-	fileName, err := helper.GetDownloadFileName(url, nil)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+	url := helper.UrlJoin(items[0][1], "https://zimuku.org")
 
 	taskDto.Refers = append(taskDto.Refers, taskDto.DownloadUrl)
 	taskDto.DownloadUrl = url
-	taskDto.Name = name
 
-	if len(fileName) > 0 {
-		taskDto.WorkType = variable.Parse
-		obj.insertQueue(taskDto)
-
-	} else {
-		obj.fetchSelectDx1(taskDto)
-	}
+	obj.fetchSelectDx1(taskDto)
 
 }
 
