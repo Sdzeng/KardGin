@@ -177,9 +177,9 @@ func (obj *ZmkCrawler) fetchList(taskDto *dto.TaskDto) {
 			for _, childItem := range childItems {
 				switch childItem[1] {
 				case "简体中文字幕":
-					lanSlice = append(lanSlice, "简")
-				case "English字幕":
-					lanSlice = append(lanSlice, "英")
+					lanSlice = append(lanSlice, "简体")
+				// case "English字幕":
+				// 	lanSlice = append(lanSlice, "英文")
 				case "双语字幕":
 					lanSlice = append(lanSlice, "双语")
 				}
@@ -269,17 +269,21 @@ func (obj *ZmkCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 }
 
 func (obj *ZmkCrawler) parse(taskDto *dto.TaskDto) {
-	downloadRepository := repository.DownloadFactory()
+	downloadRepository := repository.DownloadsFactory()
+	//清洗数据1
 	if downloadRepository.Exists(taskDto) {
 		fmt.Printf("\n跳过已存在数据：%v", taskDto.Name)
 		return
 	}
 
+	//清洗数据2
 	newDto, err := helper.Download(taskDto)
 	if err != nil {
 		return
 	}
 
 	newDto.Wg.Add(1)
+
+	//清洗数据3
 	go helper.ParseFile(newDto)
 }

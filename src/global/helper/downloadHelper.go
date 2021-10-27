@@ -170,9 +170,10 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 			//如果标志为是 1 << 11也就是 2048  则是utf-8编码
 			childFileName := ""
 			if f.Flags != 2048 {
-				i := bytes.NewReader([]byte(f.Name))
-				decoder := transform.NewReader(i, simplifiedchinese.GB18030.NewDecoder())
-				content, _ := ioutil.ReadAll(decoder)
+				// i := bytes.NewReader([]byte(f.Name))
+				// decoder := transform.NewReader(i, simplifiedchinese.GB18030.NewDecoder())
+				// content, _ := ioutil.ReadAll(decoder)
+				content := ToUtf8Str(f.Name)
 				childFileName = strconv.Itoa(int(f.Flags)) + "_" + string(content)
 
 			} else {
@@ -224,7 +225,6 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 				continue
 			}
 
-			// Create file
 			childFileName := hdr.Name
 			if strings.Contains(childFileName, "/") || strings.Contains(childFileName, "\\") {
 
@@ -298,6 +298,7 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 		}
 
 	default:
+		//清洗数据2
 		if !strings.Contains(fileName, "繁") {
 			filePtah, content := ChangeCharset(md5Seed, fileName, rc)
 			if len(filePtah) > 0 {

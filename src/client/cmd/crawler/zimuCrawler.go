@@ -379,7 +379,7 @@ func (obj *ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 }
 
 func (obj *ZimuCrawler) parse(taskDto *dto.TaskDto) {
-	downloadRepository := repository.DownloadFactory()
+	downloadRepository := repository.DownloadsFactory()
 	if downloadRepository.Exists(taskDto) {
 		fmt.Printf("\n跳过已存在数据：%v", taskDto.Name)
 		return

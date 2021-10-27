@@ -122,6 +122,7 @@ func ParseFile(taskDto *dto.TaskDto) {
 
 		}
 
+		sumSeed := subtitlesFile.SubtitleItems[:10]
 	}
 
 	taskDto.StoreFunc(taskDto)

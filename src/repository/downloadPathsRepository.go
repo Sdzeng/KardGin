@@ -10,19 +10,30 @@ import (
 	"gorm.io/gorm"
 )
 
-type DownloadFileRepository struct {
+type DownloadPathsRepository struct {
 	IsEnable bool
 	*gorm.DB
 }
 
-// 创建 DownloadFileFactory
-func DownloadFileFactory() *DownloadFileRepository {
+// 创建 DownloadPathsFactory
+func DownloadPathsFactory() *DownloadPathsRepository {
 	db := UseDbConn()
 	isEnable := db != nil
-	return &DownloadFileRepository{IsEnable: isEnable, DB: db}
+	return &DownloadPathsRepository{IsEnable: isEnable, DB: db}
 }
 
-func (repository *DownloadFileRepository) Save(dto *dto.TaskDto) error {
+func (repository *DownloadPathsRepository) Exists(fileSum string) bool {
+	if !repository.IsEnable {
+		return false
+	}
+
+	dl := new(model.Downloads)
+	// repository.DB.Where("download_url=?", taskDto.DownloadUrl).Or("name=? and lan=?", taskDto.Name, taskDto.Lan).First(dl)
+	repository.DB.Where("file_sum=?", fileSum).First(dl)
+	return dl.Id > 0
+}
+
+func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	if !repository.IsEnable {
 		return nil
 	}

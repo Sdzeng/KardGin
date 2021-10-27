@@ -6,6 +6,7 @@ type DownloadPaths struct {
 	DownloadId int32  `gorm:"column:download_id"`
 	FileName   string `gorm:"file_name"`
 	FilePath   string `gorm:"file_path"`
+	FileSum    string `gorm:"file_sum"`
 }
 
 // 表名

@@ -376,7 +376,7 @@ func (obj *A4KCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 }
 
 func (obj *A4KCrawler) parse(taskDto *dto.TaskDto) {
-	downloadRepository := repository.DownloadFactory()
+	downloadRepository := repository.DownloadsFactory()
 	if downloadRepository.Exists(taskDto) {
 		fmt.Printf("\n跳过已存在数据：%v", taskDto.Name)
 		return
