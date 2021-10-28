@@ -2,7 +2,15 @@
 CentOS8.4 安装ES7.13.2
 
 1.安装Java
+rpm -qa|grep java
+卸载已安装的jdk
+rpm -e --nodeps java-1.8.0-openjdk-headless-1.8.0.242.b08-0.el8_1.x86_64
+
+验证一下是还有jdk
+rpm -qa|grep java
 java -version
+
+
 sudo yum search java-11
 sudo yum install java-11-openjdk.x86_64 -y
 
@@ -28,8 +36,7 @@ http.cors.allow-headers: Authorization
 xpack.security.enabled: true
 xpack.security.transport.ssl.enabled: true
 
-使用elasticsearch-setup-passwords interactive命令生成用户密码 （ rpm -qal |grep elasticsearch查找es安装路径）
-/usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
+
 
 cd jvm.options.d/
 touch song.options
@@ -43,14 +50,17 @@ vi song.options
 ## example, to set the heap to 4 GB, create a new file in the
 ## jvm.options.d directory containing these lines:
 ##
--Xms256m
--Xmx256m
+-Xms768m
+-Xmx768m
 
 3.设置开机启动
 sudo systemctl daemon-reload      # 重新加载systemd程序的配置文件
 sudo systemctl enable elasticsearch.service     # 设置开机自启动
 sudo systemctl start elasticsearch.service     # 启动服务
 sudo systemctl restart elasticsearch # 重启服务
+
+使用elasticsearch-setup-passwords interactive命令生成用户密码 （ rpm -qal |grep elasticsearch查找es安装路径）
+/usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
 
 测试访问地址
 curl -X GET "localhost:9200/"
@@ -64,8 +74,6 @@ sudo firewall-cmd --zone=elasticsearch --add-port=9200/tcp --permanent
 sudo firewall-cmd --reload
 
 
-sudo firewall-cmd --new-zone=elasticsearch --permanent
-
 查看防火墙某个端口是否开放
 firewall-cmd --query-port=9200/tcp
 
@@ -76,7 +84,7 @@ firewall-cmd --query-port=9200/tcp
 sudo firewall-cmd --zone=public --add-port=5601/tcp --permanent
 sudo firewall-cmd --reload
  
-
+firewall-cmd --query-port=5601/tcp
 
 
 
@@ -110,8 +118,15 @@ sudo systemctl restart kibana # 重启服务
 sudo firewall-cmd --zone=public --add-port=5601/tcp --permanent
 sudo firewall-cmd --reload
 
+安装 nginx
+yum install nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
 
-
+firewall-cmd --query-port=80/tcp
+防火墙开启80端口（公共域）
+sudo firewall-cmd --zone=public --add-port=80/tcp --permanent
+sudo firewall-cmd --reload
 
 安装Mysql 8
 yum install mysql-server -y

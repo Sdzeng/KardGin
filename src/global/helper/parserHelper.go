@@ -4,6 +4,7 @@ import (
 	"kard/src/model/dto"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/asticode/go-astisub"
 )
@@ -86,19 +87,17 @@ func ParseFile(taskDto *dto.TaskDto) {
 		}
 	}(taskDto)
 
-	//dtoSlice := []*dto.SubtitlesIndexDto{}
-	// sysFilePath := ""
+	batchNum := 10
+	startAt := 0 * time.Second
+	texts := []string{}
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
 		subtitlesFile.SubtitleItems = []*dto.SubtitlesItemDto{}
-		// subtitlesFile.FileName = getPathFileName(subtitlesFile.FilePath)
 
-		// sysFilePath = variable.BasePath + `\client\cmd\assert\` + subtitlesFile.FilePath
 		subtitles, err := open(subtitlesFile.FileName, subtitlesFile.Content)
 		if err != nil {
 			continue
 		}
 
-		lineTextSlice := []string{}
 		for _, item := range subtitles.Items {
 			for _, line := range item.Lines {
 				//lineText := line.VoiceName + "："
@@ -107,22 +106,46 @@ func ParseFile(taskDto *dto.TaskDto) {
 						continue
 					}
 
-					lineTextSlice = append(lineTextSlice, lineItem.Text)
+					texts = append(texts, lineItem.Text)
+					//分批
+					if (len(texts)-1)%batchNum == 0 {
+						startAt = item.StartAt
+					}
+					if len(texts)%batchNum == 0 {
+						itemDto := &dto.SubtitlesItemDto{
+							Texts:   texts,
+							StartAt: item.StartAt,
+						}
+
+						subtitlesFile.SubtitleItems = append(subtitlesFile.SubtitleItems, itemDto)
+						texts = []string{} //(lineTextSlice)[0:0]
+						startAt = 0 * time.Second
+					}
 				}
 			}
+		}
 
+		//分批
+		if len(texts) > 0 {
 			itemDto := &dto.SubtitlesItemDto{
-				Text:    lineTextSlice,
-				StartAt: item.StartAt,
+				Texts:   texts,
+				StartAt: startAt,
 			}
 
 			subtitlesFile.SubtitleItems = append(subtitlesFile.SubtitleItems, itemDto)
-
-			lineTextSlice = []string{} //(lineTextSlice)[0:0]
-
+			texts = []string{} //(lineTextSlice)[0:0]
+			startAt = 0 * time.Second
 		}
 
-		sumSeed := subtitlesFile.SubtitleItems[:10]
+		//生成文件md5
+		if len(subtitlesFile.SubtitleItems) > 0 {
+			md5Seed := ""
+			for _, text := range subtitlesFile.SubtitleItems[0].Texts {
+				md5Seed += strings.Trim(text, " ")
+			}
+			subtitlesFile.FileSum = StrMd5(md5Seed)
+		}
+
 	}
 
 	taskDto.StoreFunc(taskDto)

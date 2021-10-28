@@ -9,9 +9,10 @@ type Downloads struct {
 	Lan                 string `gorm:"lan"`
 	SubtitlesType       string `gorm:"subtitles_type"`
 	PicPath             string `gorm:"pic_path"`
-	Making              string `gorm:"making"` //制作
-	Edit                string `gorm:"edit"`   //校订
-	Source              string `gorm:"source"` //来源
+	Making              string `gorm:"making"`   //制作
+	Edit                string `gorm:"edit"`     //校订
+	Source              string `gorm:"source"`   //来源
+	EsIndex             string `gorm:"es_index"` //es索引名称
 }
 
 // 表名

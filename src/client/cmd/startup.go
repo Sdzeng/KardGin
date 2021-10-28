@@ -9,7 +9,6 @@ import (
 	"kard/src/model/dto"
 	"kard/src/repository"
 	"strconv"
-	"time"
 
 	"github.com/olivere/elastic"
 )
@@ -40,11 +39,6 @@ func store(taskDto *dto.TaskDto) {
 		return
 	}
 
-	if !taskDto.DbNew {
-		fmt.Printf("\n跳过已存在数据(漏网之鱼)：%v", taskDto.Name)
-		return
-	}
-
 	fmt.Printf("\n新加数据：%v", taskDto.Name)
 
 	if variable.ES == nil {
@@ -56,67 +50,43 @@ func store(taskDto *dto.TaskDto) {
 }
 
 func toEs(taskDto *dto.TaskDto) {
+	if !taskDto.DbNew {
+		fmt.Printf("\n跳过已存在数据(漏网之鱼)：%v", taskDto.Name)
+		return
+	}
+
 	indexName := variable.IndexName //+ time.Now().Format("20060102")
 	indexType := "_doc"             // time.Now().Format("20060102")
 
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
-		toEsByBulk(indexName, indexType, taskDto, subtitlesFile)
+		if subtitlesFile.DbNew {
+			toEsByBulk(indexName, indexType, taskDto, subtitlesFile)
+		}
 	}
 }
 
 func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile *dto.SubtitlesFileDto) {
 
-	if subtitlesFile.DownloadPathId <= 0 {
-		return
-	}
-
 	bulkRequest := variable.ES.Bulk()
-	batchNum := 10
-	startAt := 0 * time.Second
-	texts := []string{}
+
 	indexId := strconv.FormatInt(int64(subtitlesFile.DownloadPathId), 10)
 	partId := 0
 
 	for _, itemDto := range subtitlesFile.SubtitleItems {
-		for _, text := range itemDto.Text {
 
-			texts = append(texts, text)
-			if (len(texts)-1)%batchNum == 0 {
-				startAt = itemDto.StartAt
-			}
-			if len(texts)%batchNum == 0 {
-				indexDto := &dto.SubtitlesIndexDto{
-					DownloadPathId: subtitlesFile.DownloadPathId,
-					Title:          taskDto.Name,
-					SubTitle:       subtitlesFile.FileName,
-					Texts:          texts,
-					StartAt:        int32(startAt.Seconds()),
-					Lan:            taskDto.Lan,
-					PicPath:        "",
-				}
-				partId++
-				indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_part" + strconv.Itoa(partId)).Doc(indexDto)
-				bulkRequest = bulkRequest.Add(indexReq)
-
-				texts = []string{} //(lineTextSlice)[0:0]
-				startAt = 0 * time.Second
-			}
-		}
-	}
-
-	if len(texts) > 0 {
 		indexDto := &dto.SubtitlesIndexDto{
 			DownloadPathId: subtitlesFile.DownloadPathId,
 			Title:          taskDto.Name,
 			SubTitle:       subtitlesFile.FileName,
-			Texts:          texts,
-			StartAt:        int32(startAt.Seconds()),
+			Texts:          itemDto.Texts,
+			StartAt:        int32(itemDto.StartAt.Seconds()),
 			Lan:            taskDto.Lan,
-			PicPath:        "",
+			// PicPath:        "",
 		}
 		partId++
 		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_part" + strconv.Itoa(partId)).Doc(indexDto)
 		bulkRequest = bulkRequest.Add(indexReq)
+
 	}
 
 	if bulkRequest.NumberOfActions() <= 0 {

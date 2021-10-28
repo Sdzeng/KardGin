@@ -24,7 +24,8 @@ type TaskDto struct {
 	SubtitlesFiles      []*SubtitlesFileDto //解压后存储的文件列表
 	StoreFunc           func(taskDto *TaskDto)
 
-	DbNew bool //是否为新数据
+	DbNew   bool //是否为新数据
+	EsIndex string
 }
 
 func (dto *TaskDto) ContainsKeyword(work string) bool {

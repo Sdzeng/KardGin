@@ -91,7 +91,7 @@ func (obj *ZmkCrawler) search(store func(taskDto *dto.TaskDto)) {
 		reqUrl = "https://zimuku.org/"
 	}
 
-	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, PageNum: pageNum, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store}
+	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, PageNum: pageNum, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store, EsIndex: variable.IndexName}
 
 	obj.insertQueue(taskDto)
 	taskDto.Wg.Wait()
@@ -145,7 +145,7 @@ func (obj *ZmkCrawler) fetchPage(taskDto *dto.TaskDto) {
 	for pageNum <= endPageNum {
 		fmt.Printf("\n处理第%v页", pageNum)
 		url := pathUrl + "=" + strconv.Itoa(pageNum)
-		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
 		obj.insertQueue(newDto)
 		pageNum++
 	}
@@ -188,7 +188,7 @@ func (obj *ZmkCrawler) fetchList(taskDto *dto.TaskDto) {
 			continue
 		}
 
-		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[1], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: item[4], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc}
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[1], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: item[4], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
 			continue

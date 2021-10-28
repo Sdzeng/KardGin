@@ -28,11 +28,12 @@
             },
             "lan": {
                 "type": "text"
-            },
-            "pic_path": {
-                "type": "keyword",
-                "index":"false"
             }
+            // ,
+            // "pic_path": {
+            //     "type": "keyword",
+            //     "index":"false"
+            // }
         }
     }
 }

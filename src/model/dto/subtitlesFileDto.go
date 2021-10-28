@@ -7,5 +7,5 @@ type SubtitlesFileDto struct {
 	FileName       string              //解压后文件的名字
 	SubtitleItems  []*SubtitlesItemDto //解析后的文本
 	DownloadPathId int32               //download_paths表的id
-
+	DbNew          bool
 }

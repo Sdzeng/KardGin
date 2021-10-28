@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+
 	"kard/src/model"
 	"kard/src/model/dto"
 	"strings"
@@ -22,15 +23,18 @@ func DownloadPathsFactory() *DownloadPathsRepository {
 	return &DownloadPathsRepository{IsEnable: isEnable, DB: db}
 }
 
-func (repository *DownloadPathsRepository) Exists(fileSum string) bool {
+func (repository *DownloadPathsRepository) Exists(db *gorm.DB, fileSum string, esIndex string) bool {
 	if !repository.IsEnable {
 		return false
 	}
 
-	dl := new(model.Downloads)
+	dp := new(model.DownloadPaths)
 	// repository.DB.Where("download_url=?", taskDto.DownloadUrl).Or("name=? and lan=?", taskDto.Name, taskDto.Lan).First(dl)
-	repository.DB.Where("file_sum=?", fileSum).First(dl)
-	return dl.Id > 0
+	if err := db.Table("download_paths").Select("download_paths.id").Joins("left join downloads ON download_paths.download_id = downloads.id").Where("downloads.es_index=? and download_paths.file_sum=?", esIndex, fileSum).First(dp).Error; err != nil {
+		fmt.Print(err)
+		return false
+	}
+	return dp.Id > 0
 }
 
 func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
@@ -46,12 +50,13 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 		DownloadUrlFileName: dto.DownloadUrlFileName,
 		Lan:                 dto.Lan,
 		SubtitlesType:       dto.SubtitlesType,
+		EsIndex:             dto.EsIndex,
 	}
 
 	trans := repository.DB.Begin()
 	// result := trans.Debug().FirstOrCreate(df, model.Downloads{DownloadUrl: dto.DownloadUrl})
 	// result := trans.Where(model.Downloads{DownloadUrl: dto.DownloadUrl}).FirstOrCreate(df)
-	result := trans.Where("download_url=?", dto.DownloadUrl).Or("name=? and lan=?", dto.Name, dto.Lan).FirstOrCreate(df)
+	result := trans.Where("es_index=? and (download_url=? or name=?)", dto.EsIndex, dto.DownloadUrl, dto.Name).FirstOrCreate(df)
 	// result := trans.Debug().Where("download_url=?", dto.DownloadUrl).FirstOrCreate(df)
 	// result := trans.Debug().Where("name=? and lan=?", dto.Name, dto.Lan).FirstOrCreate(df)
 
@@ -72,11 +77,18 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 
 	if len(dto.SubtitlesFiles) > 0 {
 		for _, subtitlesFile := range dto.SubtitlesFiles {
+
+			if repository.Exists(trans, subtitlesFile.FileSum, dto.EsIndex) {
+				subtitlesFile.DbNew = false
+				continue
+			}
+
 			downloadPath := &model.DownloadPaths{
 				BaseModel:  model.BaseModel{CreateTime: df.CreateTime},
 				DownloadId: df.Id,
 				FileName:   subtitlesFile.FileName,
 				FilePath:   subtitlesFile.FilePath,
+				FileSum:    subtitlesFile.FileSum,
 			}
 
 			result = trans.Create(downloadPath)
@@ -86,7 +98,7 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 			}
 
 			subtitlesFile.DownloadPathId = downloadPath.Id
-
+			subtitlesFile.DbNew = true
 			// downloadPathSubtitlesSlice := []*model.DownloadPathSubtitles{}
 			// for _, subtitleItems := range subtitlesFile.SubtitleItems {
 
