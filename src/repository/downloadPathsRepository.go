@@ -23,14 +23,21 @@ func DownloadPathsFactory() *DownloadPathsRepository {
 	return &DownloadPathsRepository{IsEnable: isEnable, DB: db}
 }
 
-func (repository *DownloadPathsRepository) Exists(db *gorm.DB, fileSum string, esIndex string) bool {
+func (repository *DownloadPathsRepository) Exists(db *gorm.DB, fileName, fileSum, esIndex string) bool {
 	if !repository.IsEnable {
 		return false
 	}
 
 	dp := new(model.DownloadPaths)
 	// repository.DB.Where("download_url=?", taskDto.DownloadUrl).Or("name=? and lan=?", taskDto.Name, taskDto.Lan).First(dl)
-	if err := db.Table("download_paths").Select("download_paths.id").Joins("left join downloads ON download_paths.download_id = downloads.id").Where("downloads.es_index=? and download_paths.file_sum=?", esIndex, fileSum).First(dp).Error; err != nil {
+	err := db.
+		Table("download_paths").
+		Select("download_paths.id").
+		Joins("left join downloads ON download_paths.download_id = downloads.id").
+		Where("downloads.es_index=? and (download_paths.file_sum=? or download_paths.file_name=?)", esIndex, fileSum, fileName).
+		First(dp).
+		Error
+	if err != nil {
 		fmt.Print(err)
 		return false
 	}
@@ -54,6 +61,7 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	}
 
 	trans := repository.DB.Begin()
+
 	// result := trans.Debug().FirstOrCreate(df, model.Downloads{DownloadUrl: dto.DownloadUrl})
 	// result := trans.Where(model.Downloads{DownloadUrl: dto.DownloadUrl}).FirstOrCreate(df)
 	result := trans.Where("es_index=? and (download_url=? or name=?)", dto.EsIndex, dto.DownloadUrl, dto.Name).FirstOrCreate(df)
@@ -78,7 +86,11 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	if len(dto.SubtitlesFiles) > 0 {
 		for _, subtitlesFile := range dto.SubtitlesFiles {
 
-			if repository.Exists(trans, subtitlesFile.FileSum, dto.EsIndex) {
+			if len(subtitlesFile.SubtitleItems) <= 0 {
+				continue
+			}
+
+			if repository.Exists(trans, subtitlesFile.FileName, subtitlesFile.FileSum, dto.EsIndex) {
 				subtitlesFile.DbNew = false
 				continue
 			}

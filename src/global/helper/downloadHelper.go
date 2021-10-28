@@ -4,11 +4,13 @@ import (
 	"archive/zip"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"kard/src/model/dto"
 	"log"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -68,6 +70,17 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 	//拷贝
 	fileName, err := GetDownloadFileName(taskDto.DownloadUrl, res)
 	if err != nil {
+
+		html, err := getHtml(res)
+		if err != nil {
+			fmt.Printf("\nread html error %v", err)
+			return nil, err
+		}
+
+		if strings.Contains(*html, "已超出字幕下载个数限制，涉嫌恶意采集") {
+			panic("被拦截")
+		}
+
 		return nil, err
 	}
 
@@ -302,7 +315,8 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 		if !strings.Contains(fileName, "繁") {
 			filePtah, content := ChangeCharset(md5Seed, fileName, rc)
 			if len(filePtah) > 0 {
-				result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileName, Content: content})
+				fileNameWithoutExt := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+				result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileNameWithoutExt, Content: content})
 			}
 		}
 	}

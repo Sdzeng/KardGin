@@ -93,7 +93,7 @@ func ParseFile(taskDto *dto.TaskDto) {
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
 		subtitlesFile.SubtitleItems = []*dto.SubtitlesItemDto{}
 
-		subtitles, err := open(subtitlesFile.FileName, subtitlesFile.Content)
+		subtitles, err := open(filepath.Base(subtitlesFile.FilePath), subtitlesFile.Content)
 		if err != nil {
 			continue
 		}

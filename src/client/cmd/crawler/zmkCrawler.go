@@ -30,7 +30,7 @@ var (
 	// visited     sync.Map
 
 	// zmkPageNum         = `<a class="num" href="([^"]+)">(\d+)?</a>`
-	zmkPageNum         = `<a class="next" href="(.+)=(\d+)">»</a>`
+	zmkPageNum         = `<a class="end" href="(.+)=(\d+)">\d+</a>`
 	zmkFetchPageRegexp = regexp.MustCompile(zmkPageNum)
 
 	zmkDownloadButtonReg = `<a href="(/detail/\d+\.html)" target="_blank" `
@@ -78,10 +78,10 @@ func (obj *ZmkCrawler) search(store func(taskDto *dto.TaskDto)) {
 	var pageNum int = 1
 	if len(seedUrlStr) > 0 {
 		reqUrl = seedUrlStr
-		if values, err := url.ParseQuery(seedUrlStr); err != nil {
+		if values, err := url.ParseQuery(strings.Split(seedUrlStr, "?")[1]); err != nil {
 			pageNum = 1
-		} else if p, err2 := strconv.Atoi(values.Get("p")); err2 != nil {
-			pageNum = p + 1
+		} else if p, err2 := strconv.Atoi(values.Get("p")); err2 == nil {
+			pageNum = p
 		}
 	} else if len(qStr) > 0 {
 		v := url.Values{}
@@ -100,6 +100,15 @@ func (obj *ZmkCrawler) search(store func(taskDto *dto.TaskDto)) {
 func (obj *ZmkCrawler) insertQueue(newDto *dto.TaskDto) {
 	if !obj.Open {
 		return
+	}
+	now := time.Now()
+	if now.Hour() >= 2 && now.Hour() < 6 {
+		// next := now.Add(time.Hour * 24)
+		next := time.Date(now.Year(), now.Month(), now.Day(), 6, 0, 0, 0, now.Location())
+		fmt.Printf("\n 现在是%v 休眠到%v", now, next)
+		time.Sleep(next.Sub(now))
+
+		fmt.Printf("\n 开始工作...")
 	}
 
 	rand.Seed(time.Now().Unix())
@@ -143,7 +152,7 @@ func (obj *ZmkCrawler) fetchPage(taskDto *dto.TaskDto) {
 	}
 
 	for pageNum <= endPageNum {
-		fmt.Printf("\n处理第%v页", pageNum)
+		fmt.Printf("\n处理第%v页 共%v页", pageNum, endPageNum)
 		url := pathUrl + "=" + strconv.Itoa(pageNum)
 		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
 		obj.insertQueue(newDto)

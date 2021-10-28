@@ -20,6 +20,7 @@ mkdir elastic7_13_2
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.13.2-x86_64.rpm
 rpm -ivh elasticsearch-7.13.2-x86_64.rpm
 
+
 修改配置
 Elasticsearch 数据存储在 /var/lib/elasticsearch目录，配置文件在/etc/elasticsearch
 cd /etc/elasticsearch/
@@ -56,8 +57,11 @@ vi song.options
 3.设置开机启动
 sudo systemctl daemon-reload      # 重新加载systemd程序的配置文件
 sudo systemctl enable elasticsearch.service     # 设置开机自启动
+sudo systemctl disable elasticsearch.service    # 删除开机自启动
 sudo systemctl start elasticsearch.service     # 启动服务
 sudo systemctl restart elasticsearch # 重启服务
+
+
 
 使用elasticsearch-setup-passwords interactive命令生成用户密码 （ rpm -qal |grep elasticsearch查找es安装路径）
 /usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
@@ -86,6 +90,11 @@ sudo firewall-cmd --reload
  
 firewall-cmd --query-port=5601/tcp
 
+
+
+4.删除ES7.13.2
+sudo systemctl stop elasticsearch.service
+sudo yum remove elasticsearch 或 rpm -e elasticsearch 删除es
 
 
 安装Kibana 7.13.2
@@ -117,6 +126,14 @@ sudo systemctl restart kibana # 重启服务
 防火墙开启5601端口（公共域）
 sudo firewall-cmd --zone=public --add-port=5601/tcp --permanent
 sudo firewall-cmd --reload
+
+5.删除kibana7.13.2
+sudo systemctl disable kibana.service 删除开机启动
+sudo systemctl stop kibana.service
+sudo yum remove kibana 或 rpm -e kibana 删除kibana
+
+
+
 
 安装 nginx
 yum install nginx
@@ -150,11 +167,12 @@ vi /etc/my.cnf.d/mysql-server.cnf
 port=3306
 bind-address=0.0.0.0
 
-#innodb_buffer_pool_size=576M ->128M InnoDB引擎缓冲区占了大头，首要就是拿它开刀
+innodb_buffer_pool_size=512M ->128M InnoDB引擎缓冲区占了大头，首要就是拿它开刀
 #query_cache_size=100M          ->8M 查询缓存
 #tmp_table_size=102M                ->16M 临时表大小
-#key_buffer_size=256m                ->16M
-
+key_buffer_size=256M                ->16M
+innodb_buffer_pool_chunk_size=256M
+sql_mode = STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION -- 执行sql:select @@global.sql_mode可以查处理
 
 
 1.设置 root 密码
