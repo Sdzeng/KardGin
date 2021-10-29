@@ -288,6 +288,9 @@ func (obj *ZmkCrawler) parse(taskDto *dto.TaskDto) {
 	//清洗数据2
 	newDto, err := helper.Download(taskDto)
 	if err != nil {
+		// if err.Error() == "被拦截" {
+		// 	obj.Open = false
+		// }
 		return
 	}
 

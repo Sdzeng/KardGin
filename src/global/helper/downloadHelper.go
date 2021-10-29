@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"kard/src/model/dto"
@@ -71,15 +70,15 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 	fileName, err := GetDownloadFileName(taskDto.DownloadUrl, res)
 	if err != nil {
 
-		html, err := getHtml(res)
-		if err != nil {
-			fmt.Printf("\nread html error %v", err)
-			return nil, err
-		}
+		// html, err := getHtml(res)
+		// if err != nil {
+		// 	fmt.Printf("\nread html error %v", err)
+		// 	return nil, err
+		// }
 
-		if strings.Contains(*html, "已超出字幕下载个数限制，涉嫌恶意采集") {
-			panic("被拦截")
-		}
+		// if strings.Contains(*html, "已超出字幕下载个数限制，涉嫌恶意采集") {
+		// 	return nil, errors.New("被拦截")
+		// }
 
 		return nil, err
 	}

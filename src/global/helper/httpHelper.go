@@ -4,6 +4,7 @@ import (
 	"errors"
 	"kard/src/model/dto"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
@@ -60,6 +61,13 @@ func GetRequest(urlDto *dto.TaskDto) (*http.Request, error) {
 }
 
 func GetResponse(req *http.Request) (*http.Response, error) {
+
+	urlproxy, _ := url.Parse("http:/183.147.223.1:9000")
+
+	client.Transport = &http.Transport{
+		Proxy: http.ProxyURL(urlproxy),
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, errors.New("http request error:" + err.Error())
