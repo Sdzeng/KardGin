@@ -23,9 +23,9 @@ import (
 
 func main() {
 
-	zmkCrawler := &crawler.ZmkCrawler{Open: true}
+	crawler := &crawler.A4KCrawler{Open: true}
 
-	crawlerWork(zmkCrawler)
+	crawlerWork(crawler)
 
 	var q string
 	fmt.Scan(&q)

@@ -105,10 +105,10 @@ func (obj *ZmkCrawler) insertQueue(newDto *dto.TaskDto) {
 		helper.Sleep(newDto.WorkType, "s", 1, 10)
 		obj.fetchPage(newDto)
 	case variable.FecthList:
-		helper.WorkClock()
 		helper.Sleep(newDto.WorkType, "s", 1, 10)
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
+		helper.WorkClock()
 		helper.Sleep(newDto.WorkType, "m", 30, 50)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
