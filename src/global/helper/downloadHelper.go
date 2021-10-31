@@ -503,7 +503,7 @@ func Convert(src string, srcCode string, tagCode string) string {
 
 func WorkClock() {
 	now := time.Now()
-	if now.Hour() < 9 && now.Hour() > 21 {
+	if now.Hour() < 9 || now.Hour() > 22 {
 		next := now.Add(time.Hour * 24)
 		next = time.Date(next.Year(), next.Month(), next.Day(), 9, 0, 0, 0, now.Location())
 		fmt.Printf("\n 现在是%v 休眠到%v", now, next)
