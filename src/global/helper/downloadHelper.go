@@ -4,15 +4,18 @@ import (
 	"archive/zip"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"kard/src/model/dto"
 	"log"
+	"math/rand"
 	"net/http"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/axgle/mahonia"
 	"github.com/mholt/archiver"
@@ -70,15 +73,15 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 	fileName, err := GetDownloadFileName(taskDto.DownloadUrl, res)
 	if err != nil {
 
-		// html, err := getHtml(res)
-		// if err != nil {
-		// 	fmt.Printf("\nread html error %v", err)
-		// 	return nil, err
-		// }
+		html, err := getHtml(res)
+		if err != nil {
+			fmt.Printf("\nread html error %v", err)
+			return nil, err
+		}
 
-		// if strings.Contains(*html, "已超出字幕下载个数限制，涉嫌恶意采集") {
-		// 	return nil, errors.New("被拦截")
-		// }
+		if strings.Contains(*html, "已超出字幕下载个数限制，涉嫌恶意采集") {
+			return nil, errors.New("被拦截")
+		}
 
 		return nil, err
 	}
@@ -497,3 +500,35 @@ func Convert(src string, srcCode string, tagCode string) string {
 // 	}
 // 	return num
 // }
+
+func WorkClock() {
+	now := time.Now()
+	if now.Hour() < 9 && now.Hour() > 21 {
+		next := now.Add(time.Hour * 24)
+		next = time.Date(next.Year(), next.Month(), next.Day(), 9, 0, 0, 0, now.Location())
+		fmt.Printf("\n 现在是%v 休眠到%v", now, next)
+		time.Sleep(next.Sub(now))
+
+		fmt.Printf("\n 开始工作...")
+	}
+}
+
+func Sleep(workType, timeType string, min, max int) {
+
+	sleepTime := RandInt(min, max)
+	fmt.Printf("\n休眠%v%v 后面执行%v", sleepTime, timeType, workType)
+	switch timeType {
+	case "m":
+		time.Sleep(time.Duration(sleepTime) * time.Minute)
+	case "s":
+		time.Sleep(time.Duration(sleepTime) * time.Second)
+	}
+}
+
+func RandInt(min, max int) int {
+	if min >= max || min == 0 || max == 0 {
+		return max
+	}
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(max-min) + min
+}

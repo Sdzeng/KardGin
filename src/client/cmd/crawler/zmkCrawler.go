@@ -3,13 +3,11 @@ package crawler
 import (
 	"flag"
 	"fmt"
-	"math/rand"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"kard/src/global/helper"
 	"kard/src/global/variable"
@@ -101,29 +99,20 @@ func (obj *ZmkCrawler) insertQueue(newDto *dto.TaskDto) {
 	if !obj.Open {
 		return
 	}
-	now := time.Now()
-	if now.Hour() >= 2 && now.Hour() < 6 {
-		// next := now.Add(time.Hour * 24)
-		next := time.Date(now.Year(), now.Month(), now.Day(), 6, 0, 0, 0, now.Location())
-		fmt.Printf("\n 现在是%v 休眠到%v", now, next)
-		time.Sleep(next.Sub(now))
-
-		fmt.Printf("\n 开始工作...")
-	}
-
-	rand.Seed(time.Now().Unix())
-	second := rand.Intn(10)
-	fmt.Printf("\n休眠%v秒 后面执行%v", second, newDto.WorkType)
-	time.Sleep(time.Duration(second) * time.Second)
 
 	switch newDto.WorkType {
 	case variable.FecthPage:
+		helper.Sleep(newDto.WorkType, "s", 1, 10)
 		obj.fetchPage(newDto)
 	case variable.FecthList:
+		helper.WorkClock()
+		helper.Sleep(newDto.WorkType, "s", 1, 10)
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
+		helper.Sleep(newDto.WorkType, "m", 30, 50)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
+		helper.Sleep(newDto.WorkType, "s", 1, 5)
 		obj.parse(newDto)
 	}
 }
@@ -288,9 +277,9 @@ func (obj *ZmkCrawler) parse(taskDto *dto.TaskDto) {
 	//清洗数据2
 	newDto, err := helper.Download(taskDto)
 	if err != nil {
-		// if err.Error() == "被拦截" {
-		// 	obj.Open = false
-		// }
+		if err.Error() == "被拦截" {
+			obj.Open = false
+		}
 		return
 	}
 

@@ -26,6 +26,10 @@ func main() {
 	zmkCrawler := &crawler.ZmkCrawler{Open: true}
 
 	crawlerWork(zmkCrawler)
+
+	var q string
+	fmt.Scan(&q)
+	fmt.Print("\n 退出")
 }
 
 func crawlerWork(crawler crawler.ICrawler) {
