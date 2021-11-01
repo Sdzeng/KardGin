@@ -28,19 +28,16 @@ var (
 	a4kFetchPageRegexp = regexp.MustCompile(a4kPageNum)
 
 	// a4kTitleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
-	a4kLanListReg        = `<div class="language">(\s|\n)*<span class="h4">(\s|\n)*(<i class="[^"]+?" data-content="[^"]+?"[^>]+?></i>)+`
+	a4kLanListReg        = `<div class="language">(\s|\n)*<span class="h4">(\s|\n)*(<i class="[^"]+?" data-content="[^"]+?"[^>]+?></i>\s*)+`
 	a4kDownloadButtonReg = `(\s|\S)+?<div class="content">(\s|\n)*<h3>(\s|\n)*<a href="([^"]+?)"[^>]+?>`
 	a4kTitleReg          = `(.+)</a>(\s|\n)*</h3>`
 	a4kFetchListRegexp   = regexp.MustCompile(a4kLanListReg + a4kDownloadButtonReg + a4kTitleReg)
 
-	a4kLanReg    = `<i class="[^"]+?" data-content="([^"]+?)"[^>]+?></i>`
+	a4kLanReg    = `<i class="[^"]+?" data-content="([^"]+?)"[^>]+?></i>\s*`
 	a4kLanRegexp = regexp.MustCompile(a4kLanReg)
 
 	a4kDownloadReg     = `<div class="download">(\s|\S)+?<a class="ui green button" href="([^"]+?)"(\s|\S)+?下载字幕</a>`
 	a4kFetchInfoRegexp = regexp.MustCompile(a4kDownloadReg)
-
-	a4kDx1DownloadReg       = `<a rel="nofollow" href="(.+dx1)"(.|\n)+电信高速下载（一）</a>`
-	a4kFetchSelectDx1Regexp = regexp.MustCompile(a4kDx1DownloadReg)
 
 	a4kJsPageDownloadReg    = `location.href="([^"]+)";`
 	a4kJsPageDownloadRegexp = regexp.MustCompile(a4kJsPageDownloadReg)
