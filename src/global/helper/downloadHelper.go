@@ -28,11 +28,28 @@ import (
 )
 
 var (
-	detector *chardet.Detector
+	detector         *chardet.Detector
+	fileNameReplacer *strings.Replacer
 )
 
 func init() {
 	detector = chardet.NewTextDetector()
+	replaceKeywords := []string{
+		"简体&英文", "",
+		"繁体&英文", "",
+		"简体", "",
+		"英文", "",
+		"繁体", "",
+		".srt", "",
+		".ssa", "",
+		".ass", "",
+		".stl", "",
+		".ts", "",
+		".ttml", "",
+		".vtt", "",
+	}
+
+	fileNameReplacer = strings.NewReplacer(replaceKeywords...)
 }
 
 type WriterCounter struct {
@@ -93,7 +110,7 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 	// fileName = ToUtf8Str(fileName)
 	// md5Seed := ToUtf8Str(taskDto.DownloadUrl)
 	//checkErrorName(fileName)
-	taskDto.SubtitlesFiles = downloadFiles(taskDto.DownloadUrl, fileName, res.Body)
+	taskDto.SubtitlesFiles = downloadFiles(taskDto.DownloadUrl, fileName, &res.Body)
 
 	// taskDto.SubtitlesFiles = make([]*dto.SubtitlesFileDto, 0)
 	// for _, filePath := range filePaths {
@@ -159,14 +176,14 @@ func getFileNameExtension(fileName string) string {
 	return fileNameExtension
 }
 
-func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesFileDto {
+func downloadFiles(md5Seed, fileName string, rc *io.ReadCloser) []*dto.SubtitlesFileDto {
 	result := []*dto.SubtitlesFileDto{}
 
 	fileNameExtension := getFileNameExtension(fileName)
-
+	itemDtos := []*dto.FileItemFilterDto{}
 	switch fileNameExtension {
 	case "zip":
-		body, err := ioutil.ReadAll(rc)
+		body, err := ioutil.ReadAll(*rc)
 		if err != nil {
 			break
 		}
@@ -177,23 +194,25 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 		}
 
 		for _, f := range zipReader.File {
-			//fpath := filepath.Join(destDir, f.Name)
+
 			if f.FileInfo().IsDir() {
 				continue
 			}
 
+			childFileName := f.Name
+
 			//如果标致位是0  则是默认的本地编码   默认为gbk
 			//如果标志为是 1 << 11也就是 2048  则是utf-8编码
-			childFileName := ""
+
 			if f.Flags != 2048 {
 				// i := bytes.NewReader([]byte(f.Name))
 				// decoder := transform.NewReader(i, simplifiedchinese.GB18030.NewDecoder())
 				// content, _ := ioutil.ReadAll(decoder)
-				content := ToUtf8Str(f.Name)
-				childFileName = strconv.Itoa(int(f.Flags)) + "_" + string(content)
+
+				childFileName = strconv.Itoa(int(f.Flags)) + "_" + ToUtf8Str(childFileName)
 
 			} else {
-				childFileName = "2048_" + f.Name
+				childFileName = "2048_" + childFileName
 			}
 
 			if strings.Contains(childFileName, "/") || strings.Contains(childFileName, "\\") {
@@ -207,14 +226,15 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 			}
 			defer inFile.Close()
 
-			childFilePath := downloadFiles(md5Seed+"/"+fileName, childFileName, inFile)
-			result = append(result, childFilePath...)
+			itemDtos = append(itemDtos, &dto.FileItemFilterDto{Md5Seed: md5Seed + "/" + fileName, FileName: childFileName, FilePointer: &inFile})
 		}
+
+		result = append(result, greate(itemDtos)...)
 
 	case "7z":
 
 		//todo
-		body, err := ioutil.ReadAll(rc)
+		body, err := ioutil.ReadAll(*rc)
 		if err != nil {
 			break
 		}
@@ -247,10 +267,13 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 				childFileName = getFileName(childFileName)
 			}
 
-			rc := io.NopCloser(go7zReader)
-			defer rc.Close()
-			childFilePath := downloadFiles(md5Seed+"/"+fileName, childFileName, rc)
-			result = append(result, childFilePath...)
+			newrc := io.NopCloser(go7zReader)
+			defer newrc.Close()
+
+			itemDtos = append(itemDtos, &dto.FileItemFilterDto{Md5Seed: md5Seed + "/" + fileName, FileName: childFileName, FilePointer: &newrc})
+
+			// childFilePath := downloadFiles(md5Seed+"/"+fileName, childFileName, &newrc)
+			// result = append(result, childFilePath...)
 
 			// f, err := os.Create(hdr.Name)
 			// if err != nil {
@@ -263,9 +286,11 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 			// }
 		}
 
+		result = append(result, greate(itemDtos)...)
+
 	case "rar":
 		r := archiver.NewRar()
-		err := r.Open(rc, 0)
+		err := r.Open(*rc, 0)
 		if err != nil {
 			break
 		}
@@ -304,8 +329,9 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 
 				childFileName = getFileName(childFileName)
 			}
-			childFilePath := downloadFiles(md5Seed+"/"+fileName, childFileName, f.ReadCloser)
-			result = append(result, childFilePath...)
+			itemDtos = append(itemDtos, &dto.FileItemFilterDto{Md5Seed: md5Seed + "/" + fileName, FileName: childFileName, FilePointer: &f.ReadCloser})
+			// childFilePath := downloadFiles(md5Seed+"/"+fileName, childFileName, &f.ReadCloser)
+			// result = append(result, childFilePath...)
 
 			// err = f.Close()
 			// if err != nil {
@@ -313,16 +339,84 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 			// }
 		}
 
+		result = append(result, greate(itemDtos)...)
+
 	default:
 		//清洗数据2
-		if !strings.Contains(fileName, "繁") {
+		itemDtos = append(itemDtos, &dto.FileItemFilterDto{Md5Seed: md5Seed, FileName: fileName, FilePointer: rc})
+		check := greate(itemDtos)
+		if len(check) > 0 {
 			filePtah, content := ChangeCharset(md5Seed, fileName, rc)
 			if len(filePtah) > 0 {
 				fileNameWithoutExt := strings.TrimSuffix(fileName, filepath.Ext(fileName))
 				result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileNameWithoutExt, Content: content})
 			}
 		}
+
 	}
+	return result
+}
+
+func greate(itemDtos []*dto.FileItemFilterDto) []*dto.SubtitlesFileDto {
+	result := []*dto.SubtitlesFileDto{}
+	fileMap := map[string]*dto.FileFilterDto{}
+	for _, itemDto := range itemDtos {
+
+		fn := strings.ToLower(itemDto.FileName)
+		mapKey := fileNameReplacer.Replace(fn)
+
+		level := 0
+		if strings.Contains(fn, "繁体") {
+			level = 0
+		} else if strings.Contains(fn, "简体&英文") {
+			level = 300
+		} else if strings.Contains(fn, "简体") || strings.Contains(fn, "英文") {
+			level = 200
+		} else {
+			level = 100
+		}
+
+		if strings.Contains(fn, ".srt") {
+			level += 7
+		} else if strings.Contains(fn, ".ssa") {
+			level += 6
+		} else if strings.Contains(fn, ".ass") {
+			level += 5
+		} else if strings.Contains(fn, ".stl") {
+			level += 4
+		} else if strings.Contains(fn, ".ts") {
+			level += 3
+		} else if strings.Contains(fn, ".ttml") {
+			level += 2
+		} else if strings.Contains(fn, ".vtt") {
+			level += 1
+		} else {
+			continue
+		}
+
+		itemDto.Level = level
+
+		if fileMap[mapKey] == nil {
+			fileMap[mapKey] = &dto.FileFilterDto{Level: level, Files: []*dto.FileItemFilterDto{itemDto}}
+
+		} else {
+			if fileMap[mapKey].Level < level {
+				fileMap[mapKey].Level = level
+			}
+
+			fileMap[mapKey].Files = append(fileMap[mapKey].Files, itemDto)
+		}
+	}
+
+	for _, ffd := range fileMap {
+		for _, item := range ffd.Files {
+			if item.Level == ffd.Level {
+				childFilePath := downloadFiles(item.Md5Seed, item.FileName, item.FilePointer)
+				result = append(result, childFilePath...)
+			}
+		}
+	}
+
 	return result
 }
 
@@ -382,12 +476,12 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 // 	return filePath
 // }
 
-func ChangeCharset(md5Seed, fileName string, reader io.Reader) (string, *string) {
+func ChangeCharset(md5Seed, fileName string, reader *io.ReadCloser) (string, *string) {
 
 	md5Str := StrMd5(md5Seed)
 	filePath := md5Str + `\` + fileName
 
-	bytes, err := ioutil.ReadAll(reader)
+	bytes, err := ioutil.ReadAll(*reader)
 	if err != nil {
 		return "", nil
 	}
@@ -504,7 +598,7 @@ func Convert(src string, srcCode string, tagCode string) string {
 
 func WorkClock(name string) {
 	now := time.Now()
-	if now.Hour() < 8 || now.Hour() > 19 {
+	if now.Hour() < 8 || now.Hour() > 22 {
 		next := now.Add(time.Hour * 24)
 		next = time.Date(next.Year(), next.Month(), next.Day(), 9, 0, 0, 0, now.Location())
 		// 5.初始化全局日志句柄，并载入日志钩子处理函数
