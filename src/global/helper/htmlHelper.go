@@ -63,15 +63,19 @@ func ReplaceTitle(source string) string {
 	source = strings.ReplaceAll(source, "特效", "")
 	source = strings.ReplaceAll(source, "蓝光", "")
 	source = strings.ReplaceAll(source, "官方", "")
+	source = strings.ReplaceAll(source, "译本", "")
 	source = strings.ReplaceAll(source, "对照", "")
 	source = strings.ReplaceAll(source, "简英", "")
 	source = strings.ReplaceAll(source, "中英", "")
 	source = strings.ReplaceAll(source, "中文", "")
+	source = strings.ReplaceAll(source, "简繁", "")
 	source = strings.ReplaceAll(source, "简繁英", "")
 	source = strings.ReplaceAll(source, "机翻", "")
 	source = strings.ReplaceAll(source, "字幕", "")
 	source = strings.ReplaceAll(source, "下载", "")
 	source = strings.ReplaceAll(source, " ]", "")
+	source = strings.ReplaceAll(source, "【", " ")
+	source = strings.ReplaceAll(source, "】", " ")
 	source = strings.ReplaceAll(source, "/", " ")
 	source = MergerOfSpace(source)
 	return source
@@ -83,20 +87,13 @@ func MergerOfSpace(source string) string {
 	}
 
 	arr := strings.Fields(source)
-	hadJoinSpace := false
-	var builder strings.Builder
+	newArr := []string{}
 
 	for _, str := range arr {
-		if len(str) == 0 {
-			if !hadJoinSpace {
-				builder.WriteString(" ")
-				hadJoinSpace = true
-			}
-		} else {
-			builder.WriteString(str)
-			hadJoinSpace = false
+		if len(str) > 0 {
+			newArr = append(newArr, str)
 		}
 	}
 
-	return builder.String()
+	return strings.Join(newArr, " ")
 }
