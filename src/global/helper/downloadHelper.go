@@ -607,8 +607,11 @@ func Convert(src string, srcCode string, tagCode string) string {
 func WorkClock(name string) {
 	now := time.Now()
 	if now.Hour() < 8 || now.Hour() > 20 {
-		next := now.Add(time.Hour * 24)
-		next = time.Date(next.Year(), next.Month(), next.Day(), 9, 0, 0, 0, now.Location())
+		next := now
+		if now.Hour() > 20 {
+			next = now.Add(time.Hour * 24)
+		}
+		next = time.Date(next.Year(), next.Month(), next.Day(), 8, 0, 0, 0, now.Location())
 		// 5.初始化全局日志句柄，并载入日志钩子处理函数
 		variable.ZapLog.Sugar().Infof("%v 现在是%v 休眠到%v", name, now.Format("2006-01-02 15:04:05"), next.Format("2006-01-02 15:04:05"))
 		// variable.ZapLog.Sugar().Infof("%v 现在是%v 休眠到%v", name, now.Format("2006-01-02 15:04:05"), next.Format("2006-01-02 15:04:05"))
