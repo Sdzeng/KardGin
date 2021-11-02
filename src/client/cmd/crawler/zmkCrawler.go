@@ -232,7 +232,7 @@ func (obj *ZmkCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 			return
 		}
 
-		downloadUrl := items[0][1]
+		downloadUrl := helper.ToUtf8Str(items[0][1])
 		if !strings.HasPrefix(downloadUrl, "http:") && !strings.HasPrefix(downloadUrl, "https:") {
 			downloadUrl = helper.UrlJoin(downloadUrl, "http://zimuku.org")
 		}

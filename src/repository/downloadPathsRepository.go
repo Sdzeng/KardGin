@@ -51,13 +51,13 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 
 	createTime := time.Now()
 	df := &model.Downloads{
-		BaseModel:           model.BaseModel{CreateTime: createTime},
-		Name:                dto.Name,
-		DownloadUrl:         dto.DownloadUrl,
-		DownloadUrlFileName: dto.DownloadUrlFileName,
-		Lan:                 dto.Lan,
-		SubtitlesType:       dto.SubtitlesType,
-		EsIndex:             dto.EsIndex,
+		BaseModel:   model.BaseModel{CreateTime: createTime},
+		Name:        dto.Name,
+		DownloadUrl: dto.DownloadUrl,
+		// DownloadUrlFileName: dto.DownloadUrlFileName,
+		Lan:           dto.Lan,
+		SubtitlesType: dto.SubtitlesType,
+		EsIndex:       dto.EsIndex,
 	}
 
 	trans := repository.DB.Begin()

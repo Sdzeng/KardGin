@@ -90,9 +90,10 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 		return nil, errors.New("GetDownloadFileName:获取不到文件名")
 	}
 
-	taskDto.DownloadUrlFileName = ToUtf8Str(fileName)
+	// fileName = ToUtf8Str(fileName)
+	// md5Seed := ToUtf8Str(taskDto.DownloadUrl)
 	//checkErrorName(fileName)
-	taskDto.SubtitlesFiles = downloadFiles(taskDto.DownloadUrl, taskDto.DownloadUrlFileName, res.Body)
+	taskDto.SubtitlesFiles = downloadFiles(taskDto.DownloadUrl, fileName, res.Body)
 
 	// taskDto.SubtitlesFiles = make([]*dto.SubtitlesFileDto, 0)
 	// for _, filePath := range filePaths {

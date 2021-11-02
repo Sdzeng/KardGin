@@ -203,7 +203,7 @@ func (obj *A4KCrawler) fetchInfo(taskDto *dto.TaskDto) {
 		return
 	}
 
-	url := helper.UrlJoin(items[0][2], "https://www.a4k.net")
+	url := helper.UrlJoin(helper.ToUtf8Str(items[0][2]), "https://www.a4k.net")
 
 	taskDto.Refers = append(taskDto.Refers, taskDto.DownloadUrl)
 	taskDto.DownloadUrl = url
