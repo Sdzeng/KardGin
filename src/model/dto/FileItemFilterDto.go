@@ -7,4 +7,5 @@ type FileItemFilterDto struct {
 	Md5Seed     string
 	FileName    string
 	FilePointer *io.ReadCloser
+	// FilePointer interface{}
 }

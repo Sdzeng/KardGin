@@ -100,7 +100,7 @@ func (obj *A4KCrawler) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(name)
-		helper.Sleep(name, newDto.WorkType, "s", 30, 50)
+		helper.Sleep(name, newDto.WorkType, "s", 10, 15)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(name, newDto.WorkType, "s", 1, 5)

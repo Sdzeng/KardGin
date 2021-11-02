@@ -47,6 +47,9 @@ func init() {
 		".ts", "",
 		".ttml", "",
 		".vtt", "",
+		".zip", "",
+		".rar", "",
+		".7z", "",
 	}
 
 	fileNameReplacer = strings.NewReplacer(replaceKeywords...)
@@ -342,10 +345,8 @@ func downloadFiles(md5Seed, fileName string, rc *io.ReadCloser) []*dto.Subtitles
 		result = append(result, greate(itemDtos)...)
 
 	default:
-		//清洗数据2
-		itemDtos = append(itemDtos, &dto.FileItemFilterDto{Md5Seed: md5Seed, FileName: fileName, FilePointer: rc})
-		check := greate(itemDtos)
-		if len(check) > 0 {
+		fn := strings.ToLower(fileName)
+		if strings.HasSuffix(fn, ".srt") || strings.HasSuffix(fn, ".ssa") || strings.HasSuffix(fn, ".ass") || strings.HasSuffix(fn, ".stl") || strings.HasSuffix(fn, ".ts") || strings.HasSuffix(fn, ".ttml") || strings.HasSuffix(fn, ".vtt") {
 			filePtah, content := ChangeCharset(md5Seed, fileName, rc)
 			if len(filePtah) > 0 {
 				fileNameWithoutExt := strings.TrimSuffix(fileName, filepath.Ext(fileName))
@@ -358,6 +359,7 @@ func downloadFiles(md5Seed, fileName string, rc *io.ReadCloser) []*dto.Subtitles
 }
 
 func greate(itemDtos []*dto.FileItemFilterDto) []*dto.SubtitlesFileDto {
+	//清洗数据2
 	result := []*dto.SubtitlesFileDto{}
 	fileMap := map[string]*dto.FileFilterDto{}
 	for _, itemDto := range itemDtos {
@@ -367,7 +369,7 @@ func greate(itemDtos []*dto.FileItemFilterDto) []*dto.SubtitlesFileDto {
 
 		level := 0
 		if strings.Contains(fn, "繁体") {
-			level = 0
+			continue
 		} else if strings.Contains(fn, "简体&英文") {
 			level = 300
 		} else if strings.Contains(fn, "简体") || strings.Contains(fn, "英文") {
@@ -376,19 +378,25 @@ func greate(itemDtos []*dto.FileItemFilterDto) []*dto.SubtitlesFileDto {
 			level = 100
 		}
 
-		if strings.Contains(fn, ".srt") {
-			level += 7
-		} else if strings.Contains(fn, ".ssa") {
-			level += 6
-		} else if strings.Contains(fn, ".ass") {
-			level += 5
-		} else if strings.Contains(fn, ".stl") {
-			level += 4
-		} else if strings.Contains(fn, ".ts") {
+		if strings.HasSuffix(fn, ".srt") {
+			level += 70
+		} else if strings.HasSuffix(fn, ".ssa") {
+			level += 60
+		} else if strings.HasSuffix(fn, ".ass") {
+			level += 50
+		} else if strings.HasSuffix(fn, ".stl") {
+			level += 40
+		} else if strings.HasSuffix(fn, ".ts") {
+			level += 30
+		} else if strings.HasSuffix(fn, ".ttml") {
+			level += 20
+		} else if strings.HasSuffix(fn, ".vtt") {
+			level += 10
+		} else if strings.HasSuffix(fn, ".zip") {
 			level += 3
-		} else if strings.Contains(fn, ".ttml") {
+		} else if strings.HasSuffix(fn, ".rar") {
 			level += 2
-		} else if strings.Contains(fn, ".vtt") {
+		} else if strings.HasSuffix(fn, ".7z") {
 			level += 1
 		} else {
 			continue
@@ -598,7 +606,7 @@ func Convert(src string, srcCode string, tagCode string) string {
 
 func WorkClock(name string) {
 	now := time.Now()
-	if now.Hour() < 8 || now.Hour() > 22 {
+	if now.Hour() < 8 || now.Hour() > 23 {
 		next := now.Add(time.Hour * 24)
 		next = time.Date(next.Year(), next.Month(), next.Day(), 9, 0, 0, 0, now.Location())
 		// 5.初始化全局日志句柄，并载入日志钩子处理函数
