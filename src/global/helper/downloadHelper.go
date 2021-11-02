@@ -606,7 +606,7 @@ func Convert(src string, srcCode string, tagCode string) string {
 
 func WorkClock(name string) {
 	now := time.Now()
-	if now.Hour() < 8 || now.Hour() > 23 {
+	if now.Hour() < 8 || now.Hour() > 20 {
 		next := now.Add(time.Hour * 24)
 		next = time.Date(next.Year(), next.Month(), next.Day(), 9, 0, 0, 0, now.Location())
 		// 5.初始化全局日志句柄，并载入日志钩子处理函数
