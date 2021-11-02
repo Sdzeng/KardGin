@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	_ "kard/src/client"
 	"kard/src/client/cmd/crawler"
@@ -23,17 +24,28 @@ import (
 
 func main() {
 
-	crawler := &crawler.A4KCrawler{Open: true}
+	seedUrl := flag.String("seed-url", "", "useage to search")
+	q := flag.String("q", "", "useage to search")
+	flag.Parse()
 
-	crawlerWork(crawler)
+	variable.ZapLog.Sugar().Infof("seedUrl=%s\n", *seedUrl)
+	variable.ZapLog.Sugar().Infof("q=%s\n", *q)
+	seedUrlStr := *seedUrl
+	qStr := *q
 
-	var q string
-	fmt.Scan(&q)
-	fmt.Print("\n 退出")
+	a4kCrawler := &crawler.A4KCrawler{Open: true}
+	zmkCrawler := &crawler.ZmkCrawler{Open: true}
+	crawlerWork(seedUrlStr, qStr, a4kCrawler, zmkCrawler)
+
+	var quit string
+	fmt.Scan(&quit)
+	variable.ZapLog.Info("退出")
 }
 
-func crawlerWork(crawler crawler.ICrawler) {
-	crawler.Work(store)
+func crawlerWork(seedUrlStr, qStr string, crawlers ...crawler.ICrawler) {
+	for _, crawler := range crawlers {
+		go crawler.Work(seedUrlStr, qStr, store)
+	}
 }
 
 func store(taskDto *dto.TaskDto) {
@@ -44,7 +56,7 @@ func store(taskDto *dto.TaskDto) {
 		return
 	}
 
-	fmt.Printf("\n新加数据：%v", taskDto.Name)
+	variable.ZapLog.Sugar().Infof("新加数据：%v", taskDto.Name)
 
 	if variable.ES == nil {
 		toConsole(taskDto)
@@ -56,7 +68,7 @@ func store(taskDto *dto.TaskDto) {
 
 func toEs(taskDto *dto.TaskDto) {
 	if !taskDto.DbNew {
-		fmt.Printf("\n跳过已存在数据(漏网之鱼)：%v", taskDto.Name)
+		variable.ZapLog.Sugar().Infof("跳过已存在数据(漏网之鱼)：%v", taskDto.Name)
 		return
 	}
 
@@ -100,13 +112,13 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 
 	bulkResponse, err := bulkRequest.Do(context.TODO())
 	if err != nil {
-		fmt.Printf("批量插入es失败：%v", err)
+		variable.ZapLog.Sugar().Infof("批量插入es失败：%v", err)
 	}
 	if bulkResponse == nil {
-		fmt.Printf("批量插入es：expected bulkResponse to be != nil; got nil")
+		variable.ZapLog.Sugar().Infof("批量插入es：expected bulkResponse to be != nil; got nil")
 	}
 	if bulkRequest.NumberOfActions() != 0 {
-		fmt.Printf("expected bulkRequest.NumberOfActions %d; got %d", 0, bulkRequest.NumberOfActions())
+		variable.ZapLog.Sugar().Infof("expected bulkRequest.NumberOfActions %d; got %d", 0, bulkRequest.NumberOfActions())
 	}
 
 }
@@ -114,9 +126,9 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 func toConsole(taskDto *dto.TaskDto) {
 
 	// for _, dto := range dtoSlice {
-	// 	fmt.Printf("\n%v:%v", dto.TimeDuration, dto.Text)
+	// 	variable.ZapLog.Sugar().Infof("%v:%v", dto.TimeDuration, dto.Text)
 	// }
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
-		fmt.Printf("\n解析成功：%v-%v", taskDto.Name, subtitlesFile.FileName)
+		variable.ZapLog.Sugar().Infof("解析成功：%v-%v", taskDto.Name, subtitlesFile.FileName)
 	}
 }

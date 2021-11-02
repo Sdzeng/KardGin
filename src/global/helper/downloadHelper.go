@@ -4,9 +4,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
+	"kard/src/global/variable"
 	"kard/src/model/dto"
 	"log"
 	"math/rand"
@@ -44,8 +44,8 @@ type WriterCounter struct {
 //var flake *sonyflake.Sonyflake
 
 func (wc *WriterCounter) PrintProgress() {
-	//fmt.Printf("\n%s", strings.Repeat(" ", 50))
-	//fmt.Printf("\nDownloading... %s complete %s(%s)", humanize.Bytes(wc.Total), wc.taskDto.name, wc.taskDto.fileName)
+	//variable.ZapLog.Sugar().Infof("%s", strings.Repeat(" ", 50))
+	//variable.ZapLog.Sugar().Infof("Downloading... %s complete %s(%s)", humanize.Bytes(wc.Total), wc.taskDto.name, wc.taskDto.fileName)
 
 }
 
@@ -75,7 +75,7 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 
 		html, err := getHtml(res)
 		if err != nil {
-			fmt.Printf("\nread html error %v", err)
+			variable.ZapLog.Sugar().Infof("read html error %v", err)
 			return nil, err
 		}
 
@@ -334,10 +334,10 @@ func downloadFiles(md5Seed, fileName string, rc io.ReadCloser) []*dto.SubtitlesF
 
 // 	_, err := os.Stat(sysFilePath)
 // 	if err == nil {
-// 		fmt.Printf("\n跳过已下载文件：%v", fileName)
+// 		variable.ZapLog.Sugar().Infof("跳过已下载文件：%v", fileName)
 // 		return ""
 // 	} else if !os.IsNotExist(err) {
-// 		fmt.Printf("\n判断文件是否存在发生异常：%v", fileName)
+// 		variable.ZapLog.Sugar().Infof("判断文件是否存在发生异常：%v", fileName)
 // 		return ""
 // 	}
 
@@ -501,22 +501,24 @@ func Convert(src string, srcCode string, tagCode string) string {
 // 	return num
 // }
 
-func WorkClock() {
+func WorkClock(name string) {
 	now := time.Now()
-	if now.Hour() < 9 || now.Hour() > 22 {
+	if now.Hour() < 8 || now.Hour() > 19 {
 		next := now.Add(time.Hour * 24)
 		next = time.Date(next.Year(), next.Month(), next.Day(), 9, 0, 0, 0, now.Location())
-		fmt.Printf("\n 现在是%v 休眠到%v", now, next)
+		// 5.初始化全局日志句柄，并载入日志钩子处理函数
+		variable.ZapLog.Sugar().Infof("%v 现在是%v 休眠到%v", name, now.Format("2006-01-02 15:04:05"), next.Format("2006-01-02 15:04:05"))
+		// variable.ZapLog.Sugar().Infof("%v 现在是%v 休眠到%v", name, now.Format("2006-01-02 15:04:05"), next.Format("2006-01-02 15:04:05"))
 		time.Sleep(next.Sub(now))
 
-		fmt.Printf("\n 开始工作...")
+		variable.ZapLog.Sugar().Infof("%v 开始工作...", name)
 	}
 }
 
-func Sleep(workType, timeType string, min, max int) {
+func Sleep(name, workType, timeType string, min, max int) {
 
 	sleepTime := RandInt(min, max)
-	fmt.Printf("\n休眠%v%v 后面执行%v", sleepTime, timeType, workType)
+	variable.ZapLog.Sugar().Infof("%v 休眠%v%v 后面执行%v", name, sleepTime, timeType, workType)
 	switch timeType {
 	case "m":
 		time.Sleep(time.Duration(sleepTime) * time.Minute)

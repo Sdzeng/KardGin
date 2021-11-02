@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"flag"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -38,31 +37,28 @@ var (
 
 	a4kDownloadReg     = `<div class="download">(\s|\S)+?<a class="ui green button" href="([^"]+?)"(\s|\S)+?下载字幕</a>`
 	a4kFetchInfoRegexp = regexp.MustCompile(a4kDownloadReg)
-
-	a4kJsPageDownloadReg    = `location.href="([^"]+)";`
-	a4kJsPageDownloadRegexp = regexp.MustCompile(a4kJsPageDownloadReg)
 )
 
-func (obj *A4KCrawler) Work(store func(taskDto *dto.TaskDto)) {
+func (obj *A4KCrawler) Work(seedUrlStr, qStr string, store func(taskDto *dto.TaskDto)) {
 	defer func() {
 		if err := recover(); err != nil {
 			helper.PrintError("Work", err.(error).Error(), true)
 		}
 	}()
 
-	obj.search(store)
+	obj.search(seedUrlStr, qStr, store)
 }
 
-func (obj *A4KCrawler) search(store func(taskDto *dto.TaskDto)) {
+func (obj *A4KCrawler) search(seedUrlStr, qStr string, store func(taskDto *dto.TaskDto)) {
 
-	seedUrl := flag.String("seed-url", "", "useage to search")
-	q := flag.String("q", "", "useage to search")
-	flag.Parse()
+	// seedUrl := flag.String("seed-url", "", "useage to search")
+	// q := flag.String("q", "", "useage to search")
+	// flag.Parse()
 
-	fmt.Printf("seedUrl=%s\n", *seedUrl)
-	fmt.Printf("q=%s\n", *q)
-	seedUrlStr := *seedUrl
-	qStr := *q
+	// fmt.Printf("seedUrl=%s\n", *seedUrl)
+	// fmt.Printf("q=%s\n", *q)
+	// seedUrlStr := *seedUrl
+	// qStr := *q
 
 	var reqUrl string
 	var pageNum int = 1
@@ -94,20 +90,20 @@ func (obj *A4KCrawler) insertQueue(newDto *dto.TaskDto) {
 	if !obj.Open {
 		return
 	}
-
+	name := "a4k"
 	switch newDto.WorkType {
 	case variable.FecthPage:
-		helper.Sleep(newDto.WorkType, "s", 1, 8)
+		helper.Sleep(name, newDto.WorkType, "s", 1, 8)
 		obj.fetchPage(newDto)
 	case variable.FecthList:
-		helper.Sleep(newDto.WorkType, "s", 1, 10)
+		helper.Sleep(name, newDto.WorkType, "s", 1, 10)
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
-		helper.WorkClock()
-		helper.Sleep(newDto.WorkType, "m", 30, 50)
+		helper.WorkClock(name)
+		helper.Sleep(name, newDto.WorkType, "m", 30, 50)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
-		helper.Sleep(newDto.WorkType, "s", 1, 5)
+		helper.Sleep(name, newDto.WorkType, "s", 1, 5)
 		obj.parse(newDto)
 	}
 }
@@ -136,7 +132,7 @@ func (obj *A4KCrawler) fetchPage(taskDto *dto.TaskDto) {
 	}
 
 	for pageNum <= endPageNum {
-		fmt.Printf("\n处理第%v页 共%v页", pageNum, endPageNum)
+		variable.ZapLog.Sugar().Infof("处理第%v页 共%v页", pageNum, endPageNum)
 		url := pathUrl + "=" + strconv.Itoa(pageNum)
 		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
 		obj.insertQueue(newDto)
@@ -159,7 +155,7 @@ func (obj *A4KCrawler) fetchList(taskDto *dto.TaskDto) {
 		title := item[8]
 
 		if len(taskDto.SearchKeyword) > 0 && !taskDto.ContainsKeyword(title) {
-			fmt.Printf("\n忽略下载 %v", title)
+			variable.ZapLog.Sugar().Infof("忽略下载 %v", title)
 			// obj.Open = false
 			continue
 		}
@@ -174,6 +170,20 @@ func (obj *A4KCrawler) fetchList(taskDto *dto.TaskDto) {
 			continue
 		}
 
+		title = strings.ReplaceAll(title, ".WEBDL.FIX字幕侠", "")
+		title = strings.ReplaceAll(title, "双语", "")
+		title = strings.ReplaceAll(title, "特效", "")
+		title = strings.ReplaceAll(title, "蓝光", "")
+		title = strings.ReplaceAll(title, "官方", "")
+		title = strings.ReplaceAll(title, "对照", "")
+		title = strings.ReplaceAll(title, "简英", "")
+		title = strings.ReplaceAll(title, "中英", "")
+		title = strings.ReplaceAll(title, "中文", "")
+		title = strings.ReplaceAll(title, "简繁英", "")
+		title = strings.ReplaceAll(title, "机翻", "")
+		title = strings.ReplaceAll(title, "字幕", "")
+		title = strings.ReplaceAll(title, "下载", "")
+		title = strings.ReplaceAll(title, "/", "")
 		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[7], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: "", Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
@@ -220,7 +230,7 @@ func (obj *A4KCrawler) parse(taskDto *dto.TaskDto) {
 	downloadRepository := repository.DownloadsFactory()
 	//清洗数据1
 	if downloadRepository.Exists(taskDto) {
-		fmt.Printf("\n跳过已存在数据：%v", taskDto.Name)
+		variable.ZapLog.Sugar().Infof("跳过已存在数据：%v", taskDto.Name)
 		return
 	}
 

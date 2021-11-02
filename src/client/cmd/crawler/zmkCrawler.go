@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"flag"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -51,26 +50,17 @@ var (
 	zmkJsPageDownloadRegexp = regexp.MustCompile(zmkJsPageDownloadReg)
 )
 
-func (obj *ZmkCrawler) Work(store func(taskDto *dto.TaskDto)) {
+func (obj *ZmkCrawler) Work(seedUrlStr, qStr string, store func(taskDto *dto.TaskDto)) {
 	defer func() {
 		if err := recover(); err != nil {
 			helper.PrintError("Work", err.(error).Error(), true)
 		}
 	}()
 
-	obj.search(store)
+	obj.search(seedUrlStr, qStr, store)
 }
 
-func (obj *ZmkCrawler) search(store func(taskDto *dto.TaskDto)) {
-
-	seedUrl := flag.String("seed-url", "", "useage to search")
-	q := flag.String("q", "", "useage to search")
-	flag.Parse()
-
-	fmt.Printf("seedUrl=%s\n", *seedUrl)
-	fmt.Printf("q=%s\n", *q)
-	seedUrlStr := *seedUrl
-	qStr := *q
+func (obj *ZmkCrawler) search(seedUrlStr, qStr string, store func(taskDto *dto.TaskDto)) {
 
 	var reqUrl string
 	var pageNum int = 1
@@ -99,20 +89,20 @@ func (obj *ZmkCrawler) insertQueue(newDto *dto.TaskDto) {
 	if !obj.Open {
 		return
 	}
-
+	name := "zmk"
 	switch newDto.WorkType {
 	case variable.FecthPage:
-		helper.Sleep(newDto.WorkType, "s", 1, 10)
+		helper.Sleep(name, newDto.WorkType, "s", 1, 10)
 		obj.fetchPage(newDto)
 	case variable.FecthList:
-		helper.Sleep(newDto.WorkType, "s", 1, 10)
+		helper.Sleep(name, newDto.WorkType, "s", 1, 10)
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
-		helper.WorkClock()
-		helper.Sleep(newDto.WorkType, "m", 30, 50)
+		helper.WorkClock(name)
+		helper.Sleep(name, newDto.WorkType, "m", 30, 50)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
-		helper.Sleep(newDto.WorkType, "s", 1, 5)
+		helper.Sleep(name, newDto.WorkType, "s", 1, 5)
 		obj.parse(newDto)
 	}
 }
@@ -141,7 +131,7 @@ func (obj *ZmkCrawler) fetchPage(taskDto *dto.TaskDto) {
 	}
 
 	for pageNum <= endPageNum {
-		fmt.Printf("\n处理第%v页 共%v页", pageNum, endPageNum)
+		variable.ZapLog.Sugar().Infof("处理第%v页 共%v页", pageNum, endPageNum)
 		url := pathUrl + "=" + strconv.Itoa(pageNum)
 		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
 		obj.insertQueue(newDto)
@@ -164,7 +154,7 @@ func (obj *ZmkCrawler) fetchList(taskDto *dto.TaskDto) {
 		title := item[2]
 
 		if len(taskDto.SearchKeyword) > 0 && !taskDto.ContainsKeyword(title) {
-			fmt.Printf("\n忽略下载 %v", title)
+			variable.ZapLog.Sugar().Infof("忽略下载 %v", title)
 			// obj.Open = false
 			continue
 		}
@@ -270,7 +260,7 @@ func (obj *ZmkCrawler) parse(taskDto *dto.TaskDto) {
 	downloadRepository := repository.DownloadsFactory()
 	//清洗数据1
 	if downloadRepository.Exists(taskDto) {
-		fmt.Printf("\n跳过已存在数据：%v", taskDto.Name)
+		variable.ZapLog.Sugar().Infof("跳过已存在数据：%v", taskDto.Name)
 		return
 	}
 
