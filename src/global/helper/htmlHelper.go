@@ -6,6 +6,7 @@ import (
 	"kard/src/model/dto"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 func LoadHtml(taskDto *dto.TaskDto) (*string, []*http.Cookie, error) {
@@ -54,4 +55,48 @@ func UrlJoin(href, base string) string {
 		return " "
 	}
 	return baseUrl.ResolveReference(uri).String()
+}
+
+func ReplaceTitle(source string) string {
+	source = strings.ReplaceAll(source, ".WEBDL.FIX字幕侠", "")
+	source = strings.ReplaceAll(source, "双语", "")
+	source = strings.ReplaceAll(source, "特效", "")
+	source = strings.ReplaceAll(source, "蓝光", "")
+	source = strings.ReplaceAll(source, "官方", "")
+	source = strings.ReplaceAll(source, "对照", "")
+	source = strings.ReplaceAll(source, "简英", "")
+	source = strings.ReplaceAll(source, "中英", "")
+	source = strings.ReplaceAll(source, "中文", "")
+	source = strings.ReplaceAll(source, "简繁英", "")
+	source = strings.ReplaceAll(source, "机翻", "")
+	source = strings.ReplaceAll(source, "字幕", "")
+	source = strings.ReplaceAll(source, "下载", "")
+	source = strings.ReplaceAll(source, " ]", "")
+	source = strings.ReplaceAll(source, "/", " ")
+	source = MergerOfSpace(source)
+	return source
+}
+
+func MergerOfSpace(source string) string {
+	if len(source) <= 0 {
+		return source
+	}
+
+	arr := strings.Fields(source)
+	hadJoinSpace := false
+	var builder strings.Builder
+
+	for _, str := range arr {
+		if len(str) == 0 {
+			if !hadJoinSpace {
+				builder.WriteString(" ")
+				hadJoinSpace = true
+			}
+		} else {
+			builder.WriteString(str)
+			hadJoinSpace = false
+		}
+	}
+
+	return builder.String()
 }

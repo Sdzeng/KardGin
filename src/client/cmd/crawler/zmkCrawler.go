@@ -176,6 +176,7 @@ func (obj *ZmkCrawler) fetchList(taskDto *dto.TaskDto) {
 			continue
 		}
 
+		title = helper.ReplaceTitle(title)
 		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[1], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: item[4], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {

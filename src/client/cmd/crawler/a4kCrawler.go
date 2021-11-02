@@ -170,20 +170,7 @@ func (obj *A4KCrawler) fetchList(taskDto *dto.TaskDto) {
 			continue
 		}
 
-		title = strings.ReplaceAll(title, ".WEBDL.FIX字幕侠", "")
-		title = strings.ReplaceAll(title, "双语", "")
-		title = strings.ReplaceAll(title, "特效", "")
-		title = strings.ReplaceAll(title, "蓝光", "")
-		title = strings.ReplaceAll(title, "官方", "")
-		title = strings.ReplaceAll(title, "对照", "")
-		title = strings.ReplaceAll(title, "简英", "")
-		title = strings.ReplaceAll(title, "中英", "")
-		title = strings.ReplaceAll(title, "中文", "")
-		title = strings.ReplaceAll(title, "简繁英", "")
-		title = strings.ReplaceAll(title, "机翻", "")
-		title = strings.ReplaceAll(title, "字幕", "")
-		title = strings.ReplaceAll(title, "下载", "")
-		title = strings.ReplaceAll(title, "/", "")
+		title = helper.ReplaceTitle(title)
 		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[7], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: "", Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {

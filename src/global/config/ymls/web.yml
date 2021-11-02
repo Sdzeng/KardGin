@@ -16,9 +16,9 @@ Token:
 
 ElasticSearch:
   Enable: true
-  Url: "http://192.168.0.107:9200"
+  Url: "http://211.149.133.167:9200"
   UserName: "elastic"
-  Password: "123456"
+  Password: "***"
 
 Redis:
   Host: "127.0.0.1"
