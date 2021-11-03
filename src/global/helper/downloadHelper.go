@@ -606,7 +606,7 @@ func Convert(src string, srcCode string, tagCode string) string {
 
 func WorkClock(name string) {
 	now := time.Now()
-	if now.Hour() < 8 || now.Hour() > 24 {
+	if now.Hour() < 8 || now.Hour() > 20 {
 		next := now
 		if now.Hour() > 20 {
 			next = now.Add(time.Hour * 24)
