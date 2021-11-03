@@ -102,11 +102,14 @@ func ParseFile(taskDto *dto.TaskDto) {
 			for _, line := range item.Lines {
 				//lineText := line.VoiceName + "："
 				for _, lineItem := range line.Items {
-					if len(strings.Trim(lineItem.Text, " ")) <= 0 {
+					lineText := strings.Trim(lineItem.Text, " ")
+					lineText = strings.ReplaceAll(lineText, "\\N", "")
+					lineText = strings.ReplaceAll(lineText, "\\n", "")
+					if len(strings.Trim(lineText, " ")) <= 0 {
 						continue
 					}
 
-					texts = append(texts, lineItem.Text)
+					texts = append(texts, lineText)
 					//分批
 					if (len(texts)-1)%batchNum == 0 {
 						startAt = item.StartAt

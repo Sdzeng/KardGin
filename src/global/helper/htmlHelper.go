@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	replacer *strings.Replacer
+	titleReplacer *strings.Replacer
 )
 
 func init() {
@@ -24,13 +24,16 @@ func init() {
 		"双语", "",
 		"特效", "",
 		"蓝光", "",
+		"碟机", "",
 		"官方", "",
 		"译本", "",
+		"外挂", "",
 		"对照", "",
 		"BD原盘", "",
 		"-加长版", "",
 		"加长版", "",
 		"精译版", "",
+		"中英文", "",
 		"日版", "",
 		"双字", "",
 		"简体", "",
@@ -38,6 +41,7 @@ func init() {
 		"简英", "",
 		"中英", "",
 		"中文", "",
+		"中字", "",
 		"简繁", "",
 		"简繁英", "",
 		"英文", "",
@@ -74,7 +78,7 @@ func init() {
 		";", " ",
 	}
 
-	replacer = strings.NewReplacer(replaceKeywords...)
+	titleReplacer = strings.NewReplacer(replaceKeywords...)
 }
 
 func LoadHtml(taskDto *dto.TaskDto) (*string, []*http.Cookie, error) {
@@ -200,7 +204,7 @@ func ReplaceTitle(source string) string {
 	// source = strings.ReplaceAll(source, "(", " ")
 	// source = strings.ReplaceAll(source, ")", " ")
 	// source = strings.ReplaceAll(source, "/", " ")
-	source = replacer.Replace(source)
+	source = titleReplacer.Replace(source)
 	source = MergerOfSpace(source)
 	return source
 }

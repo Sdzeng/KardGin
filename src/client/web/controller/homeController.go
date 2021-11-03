@@ -2,17 +2,33 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"kard/src/client/web/response"
 	"kard/src/global/variable"
 	"kard/src/model/dto"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/olivere/elastic/v7"
 )
 
 type HomeController struct {
+}
+
+var (
+	hitReplacer *strings.Replacer
+)
+
+func init() {
+
+	replaceKeywords := []string{
+		"<em>", "",
+		"</em>", "",
+	}
+
+	hitReplacer = strings.NewReplacer(replaceKeywords...)
 }
 
 func (c *HomeController) Search(context *gin.Context) {
@@ -124,9 +140,7 @@ func search(pageCount int, search_word string) *dto.SearchResultDto {
 	// 	return searchResultDto
 	// }
 
-	searchResultDto.ScrollId = res.ScrollId
-	searchResultDto.SearchHits = res.Hits.Hits
-	return searchResultDto
+	return buildResult(res)
 }
 
 func scrollSearch(scrollId string) *dto.SearchResultDto {
@@ -157,8 +171,45 @@ func scrollSearch(scrollId string) *dto.SearchResultDto {
 	// 	return searchResultDto
 	// }
 
+	return buildResult(res)
+}
+
+func buildResult(res *elastic.SearchResult) *dto.SearchResultDto {
+	searchResultDto := new(dto.SearchResultDto)
+
+	dtos := []*dto.SubtitlesIndexDto{}
+	for _, hit := range res.Hits.Hits {
+		dto := new(dto.SubtitlesIndexDto)
+		if err := json.Unmarshal(hit.Source, dto); err != nil {
+			continue
+		}
+
+		for key, highlight := range hit.Highlight {
+			switch key {
+			case "title":
+				dto.Title = highlight[0]
+			case "subtitle":
+				dto.SubTitle = highlight[0]
+			case "texts":
+				for _, hl := range highlight {
+					t := hitReplacer.Replace(hl)
+					for index, text := range dto.Texts {
+						if text == t {
+							dto.Texts[index] = hl
+						}
+					}
+				}
+			}
+		}
+
+		dtos = append(dtos, dto)
+	}
+
 	searchResultDto.ScrollId = res.ScrollId
-	searchResultDto.SearchHits = res.Hits.Hits
+	searchResultDto.TookInMillis = res.TookInMillis
+	searchResultDto.Total = res.Hits.TotalHits.Value
+	searchResultDto.SearchHits = dtos
+
 	return searchResultDto
 }
 

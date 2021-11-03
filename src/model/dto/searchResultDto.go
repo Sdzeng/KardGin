@@ -1,8 +1,8 @@
 package dto
 
-import "github.com/olivere/elastic/v7"
-
 type SearchResultDto struct {
-	ScrollId   string //rar路径
-	SearchHits []*elastic.SearchHit
+	ScrollId     string               `json:"scroll_id"`
+	TookInMillis int64                `json:"took_in_millis"` //耗时ms
+	Total        int64                `json:"total"`          //总数
+	SearchHits   []*SubtitlesIndexDto `json:"search_hits"`
 }
