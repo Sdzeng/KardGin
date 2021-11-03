@@ -81,7 +81,7 @@ func search(pageCount int, search_word string) *dto.SearchResultDto {
 		elastic.NewMatchPhraseQuery("texts", search_word),
 	)
 
-	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "lan", "pic_path")
+	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "part_id", "title", "subtitle", "texts", "lan", "pic_path", "create_time")
 
 	hl := elastic.NewHighlight().Fields(
 		elastic.NewHighlighterField("title"),
@@ -196,6 +196,12 @@ func buildResult(res *elastic.SearchResult) *dto.SearchResultDto {
 					for index, text := range dto.Texts {
 						if text == t {
 							dto.Texts[index] = hl
+							break
+						}
+
+						if strings.Contains(text, t) {
+							dto.Texts[index] = strings.ReplaceAll(text, t, hl)
+							break
 						}
 					}
 				}

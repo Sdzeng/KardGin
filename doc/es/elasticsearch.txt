@@ -460,3 +460,19 @@ GET /subtitles2_20060102/_doc/_search?scroll=10m
   "sort" : ["_doc"], 
   "size": 20
 }
+
+GET /subtitles_20211101/_doc/_search
+{
+  "query": {
+    "term": {
+      "part_id": 1
+    }
+  },
+  "sort": [
+    {
+      "create_time": {
+        "order": "desc"
+      }
+    }
+  ]
+}
