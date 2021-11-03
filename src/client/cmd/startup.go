@@ -75,20 +75,20 @@ func toEs(taskDto *dto.TaskDto) {
 
 	indexName := variable.IndexName //+ time.Now().Format("20060102")
 	indexType := "_doc"             // time.Now().Format("20060102")
-	now := time.Now()
+	nowStr := time.Now().Format(variable.TimeFormat)
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
 		if subtitlesFile.DbNew {
-			toEsByBulk(indexName, indexType, now, taskDto, subtitlesFile)
+			toEsByBulk(indexName, indexType, nowStr, taskDto, subtitlesFile)
 		}
 	}
 }
 
-func toEsByBulk(indexName, indexType string, now time.Time, taskDto *dto.TaskDto, subtitlesFile *dto.SubtitlesFileDto) {
+func toEsByBulk(indexName, indexType string, nowStr string, taskDto *dto.TaskDto, subtitlesFile *dto.SubtitlesFileDto) {
 
 	bulkRequest := variable.ES.Bulk()
 
 	indexId := strconv.FormatInt(int64(subtitlesFile.DownloadPathId), 10)
-	partId := 0
+	partId := 1
 
 	for _, itemDto := range subtitlesFile.SubtitleItems {
 
@@ -100,7 +100,7 @@ func toEsByBulk(indexName, indexType string, now time.Time, taskDto *dto.TaskDto
 			Texts:          itemDto.Texts,
 			StartAt:        int32(itemDto.StartAt.Seconds()),
 			Lan:            taskDto.Lan,
-			CreateTime:     now,
+			CreateTime:     nowStr,
 			// PicPath:        "",
 		}
 		partId++

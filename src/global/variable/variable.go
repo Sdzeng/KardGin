@@ -18,7 +18,9 @@ const (
 	Parse string = "parse"
 	// ParseFile string = "parseFile"
 
-	IndexName string = "subtitles_20211103"
+	IndexName string = "subtitles_20211101"
+
+	TimeFormat string = "2006-01-02 15:04:05"
 
 	// 进程被结束
 	ProcessKilled string = "收到信号，进程被结束"
