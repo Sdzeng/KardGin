@@ -78,6 +78,20 @@ import (
 // 	taskDto.StoreFunc(taskDto)
 // }
 
+var (
+	lineTextReplacer *strings.Replacer
+)
+
+func init() {
+
+	replaceKeywords := []string{
+		"\\N", "",
+		"\\n", "",
+	}
+
+	lineTextReplacer = strings.NewReplacer(replaceKeywords...)
+}
+
 func ParseFile(taskDto *dto.TaskDto) {
 	defer func(dto *dto.TaskDto) {
 		dto.Wg.Done()
@@ -103,9 +117,8 @@ func ParseFile(taskDto *dto.TaskDto) {
 				//lineText := line.VoiceName + "："
 				for _, lineItem := range line.Items {
 					lineText := strings.Trim(lineItem.Text, " ")
-					lineText = strings.ReplaceAll(lineText, "\\N", "")
-					lineText = strings.ReplaceAll(lineText, "\\n", "")
-					if len(strings.Trim(lineText, " ")) <= 0 {
+					lineText = lineTextReplacer.Replace(lineText)
+					if len(lineText) <= 0 {
 						continue
 					}
 
