@@ -14,6 +14,9 @@
             "path_id": {
                 "type": "long"
             },
+            "part_id": {
+                "type": "long"
+            },
             "title": {
                 "type": "text"
             },
@@ -28,6 +31,10 @@
             },
             "lan": {
                 "type": "text"
+            },
+            "create_time":{
+                "type": "date",
+                "format":"yyyy-MM-dd HH:mm:ss"
             }
             // ,
             // "pic_path": {

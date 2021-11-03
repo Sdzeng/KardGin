@@ -10,6 +10,7 @@ import (
 	"kard/src/model/dto"
 	"kard/src/repository"
 	"strconv"
+	"time"
 
 	"github.com/olivere/elastic"
 )
@@ -74,15 +75,15 @@ func toEs(taskDto *dto.TaskDto) {
 
 	indexName := variable.IndexName //+ time.Now().Format("20060102")
 	indexType := "_doc"             // time.Now().Format("20060102")
-
+	now := time.Now()
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
 		if subtitlesFile.DbNew {
-			toEsByBulk(indexName, indexType, taskDto, subtitlesFile)
+			toEsByBulk(indexName, indexType, now, taskDto, subtitlesFile)
 		}
 	}
 }
 
-func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile *dto.SubtitlesFileDto) {
+func toEsByBulk(indexName, indexType string, now time.Time, taskDto *dto.TaskDto, subtitlesFile *dto.SubtitlesFileDto) {
 
 	bulkRequest := variable.ES.Bulk()
 
@@ -93,15 +94,17 @@ func toEsByBulk(indexName, indexType string, taskDto *dto.TaskDto, subtitlesFile
 
 		indexDto := &dto.SubtitlesIndexDto{
 			DownloadPathId: subtitlesFile.DownloadPathId,
+			PartId:         int32(partId),
 			Title:          taskDto.Name,
 			SubTitle:       subtitlesFile.FileName,
 			Texts:          itemDto.Texts,
 			StartAt:        int32(itemDto.StartAt.Seconds()),
 			Lan:            taskDto.Lan,
+			CreateTime:     now,
 			// PicPath:        "",
 		}
 		partId++
-		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_part" + strconv.Itoa(partId)).Doc(indexDto)
+		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_" + strconv.Itoa(partId)).Doc(indexDto)
 		bulkRequest = bulkRequest.Add(indexReq)
 
 	}
