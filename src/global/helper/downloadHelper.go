@@ -613,8 +613,8 @@ func WorkClock(name string) {
 		}
 		next = time.Date(next.Year(), next.Month(), next.Day(), 8, 0, 0, 0, now.Location())
 		// 5.初始化全局日志句柄，并载入日志钩子处理函数
-		variable.ZapLog.Sugar().Infof("%v 现在是%v 休眠到%v", name, now.Format("2006-01-02 15:04:05"), next.Format("2006-01-02 15:04:05"))
-		// variable.ZapLog.Sugar().Infof("%v 现在是%v 休眠到%v", name, now.Format("2006-01-02 15:04:05"), next.Format("2006-01-02 15:04:05"))
+		variable.ZapLog.Sugar().Infof("%v 现在是%v 休眠到%v", name, now.Format(variable.TimeFormat), next.Format(variable.TimeFormat))
+		// variable.ZapLog.Sugar().Infof("%v 现在是%v 休眠到%v", name, now.Format(variable.TimeFormat), next.Format(variable.TimeFormat))
 		time.Sleep(next.Sub(now))
 
 		variable.ZapLog.Sugar().Infof("%v 开始工作...", name)

@@ -16,6 +16,7 @@ type TaskDto struct {
 	Wg            *sync.WaitGroup
 
 	Name          string //页面显示的字幕名称
+	Crawler       string //爬虫
 	Lan           string //字幕采用的语言
 	SubtitlesType string //字幕文件格式 如SSA
 

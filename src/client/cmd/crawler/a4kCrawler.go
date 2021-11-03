@@ -80,7 +80,7 @@ func (obj *A4KCrawler) search(seedUrlStr, qStr string, store func(taskDto *dto.T
 
 	// workerQueue := make(chan *dto.UrlDto, 1)
 
-	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, PageNum: pageNum, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store, EsIndex: variable.IndexName}
+	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, PageNum: pageNum, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store, EsIndex: variable.IndexName, Crawler: "a4k"}
 
 	obj.insertQueue(taskDto)
 	taskDto.Wg.Wait()
@@ -90,20 +90,19 @@ func (obj *A4KCrawler) insertQueue(newDto *dto.TaskDto) {
 	if !obj.Open {
 		return
 	}
-	name := "a4k"
 	switch newDto.WorkType {
 	case variable.FecthPage:
-		helper.Sleep(name, newDto.WorkType, "s", 1, 8)
+		helper.Sleep(newDto.Crawler, newDto.WorkType, "s", 1, 8)
 		obj.fetchPage(newDto)
 	case variable.FecthList:
-		helper.Sleep(name, newDto.WorkType, "s", 1, 10)
+		helper.Sleep(newDto.Crawler, newDto.WorkType, "s", 1, 10)
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
-		helper.WorkClock(name)
-		helper.Sleep(name, newDto.WorkType, "s", 20, 45)
+		helper.WorkClock(newDto.Crawler)
+		helper.Sleep(newDto.Crawler, newDto.WorkType, "s", 20, 45)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
-		helper.Sleep(name, newDto.WorkType, "s", 1, 5)
+		helper.Sleep(newDto.Crawler, newDto.WorkType, "s", 1, 5)
 		obj.parse(newDto)
 	}
 }
@@ -134,7 +133,7 @@ func (obj *A4KCrawler) fetchPage(taskDto *dto.TaskDto) {
 	for pageNum <= endPageNum {
 		variable.ZapLog.Sugar().Infof("处理第%v页 共%v页", pageNum, endPageNum)
 		url := pathUrl + "=" + strconv.Itoa(pageNum)
-		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex, Crawler: taskDto.Crawler}
 		obj.insertQueue(newDto)
 		pageNum++
 	}
@@ -171,7 +170,7 @@ func (obj *A4KCrawler) fetchList(taskDto *dto.TaskDto) {
 		}
 
 		title = helper.ReplaceTitle(title)
-		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[7], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: "", Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[7], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: "", Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex, Crawler: taskDto.Crawler}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
 			continue

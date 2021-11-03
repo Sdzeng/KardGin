@@ -53,6 +53,7 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	df := &model.Downloads{
 		BaseModel:   model.BaseModel{CreateTime: createTime},
 		Name:        dto.Name,
+		Crawler:     dto.Crawler,
 		DownloadUrl: dto.DownloadUrl,
 		// DownloadUrlFileName: dto.DownloadUrlFileName,
 		Lan:           dto.Lan,

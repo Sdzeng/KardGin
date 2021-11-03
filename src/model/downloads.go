@@ -4,6 +4,7 @@ package model
 type Downloads struct {
 	BaseModel
 	Name        string `gorm:"column:name"`
+	Crawler     string `gorm:"column:crawler"`
 	DownloadUrl string `gorm:"download_url"`
 	// DownloadUrlFileName string `gorm:"download_url_file_name"`
 	Lan           string `gorm:"lan"`

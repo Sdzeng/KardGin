@@ -79,7 +79,7 @@ func (obj *ZmkCrawler) search(seedUrlStr, qStr string, store func(taskDto *dto.T
 		reqUrl = "https://zimuku.org/"
 	}
 
-	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, PageNum: pageNum, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store, EsIndex: variable.IndexName}
+	taskDto := &dto.TaskDto{SearchKeyword: qStr, WorkType: variable.FecthPage, PageNum: pageNum, DownloadUrl: reqUrl, Wg: &sync.WaitGroup{}, StoreFunc: store, EsIndex: variable.IndexName, Crawler: "zmk"}
 
 	obj.insertQueue(taskDto)
 	taskDto.Wg.Wait()
@@ -89,20 +89,20 @@ func (obj *ZmkCrawler) insertQueue(newDto *dto.TaskDto) {
 	if !obj.Open {
 		return
 	}
-	name := "zmk"
+
 	switch newDto.WorkType {
 	case variable.FecthPage:
-		helper.Sleep(name, newDto.WorkType, "s", 1, 10)
+		helper.Sleep(newDto.Crawler, newDto.WorkType, "s", 1, 10)
 		obj.fetchPage(newDto)
 	case variable.FecthList:
-		helper.Sleep(name, newDto.WorkType, "s", 1, 10)
+		helper.Sleep(newDto.Crawler, newDto.WorkType, "s", 1, 10)
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
-		helper.WorkClock(name)
-		helper.Sleep(name, newDto.WorkType, "s", 20, 45)
+		helper.WorkClock(newDto.Crawler)
+		helper.Sleep(newDto.Crawler, newDto.WorkType, "s", 20, 45)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
-		helper.Sleep(name, newDto.WorkType, "s", 1, 5)
+		helper.Sleep(newDto.Crawler, newDto.WorkType, "s", 1, 5)
 		obj.parse(newDto)
 	}
 }
@@ -133,7 +133,7 @@ func (obj *ZmkCrawler) fetchPage(taskDto *dto.TaskDto) {
 	for pageNum <= endPageNum {
 		variable.ZapLog.Sugar().Infof("处理第%v页 共%v页", pageNum, endPageNum)
 		url := pathUrl + "=" + strconv.Itoa(pageNum)
-		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex, Crawler: taskDto.Crawler}
 		obj.insertQueue(newDto)
 		pageNum++
 	}
@@ -177,7 +177,7 @@ func (obj *ZmkCrawler) fetchList(taskDto *dto.TaskDto) {
 		}
 
 		title = helper.ReplaceTitle(title)
-		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[1], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: item[4], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex}
+		newDto := &dto.TaskDto{SearchKeyword: taskDto.SearchKeyword, Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[1], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: item[4], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, EsIndex: taskDto.EsIndex, Crawler: taskDto.Crawler}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
 			continue
