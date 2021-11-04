@@ -50,6 +50,7 @@ func init() {
 		".zip", "",
 		".rar", "",
 		".7z", "",
+		".", "",
 	}
 
 	fileNameReplacer = strings.NewReplacer(replaceKeywords...)
