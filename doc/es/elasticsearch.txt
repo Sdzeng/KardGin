@@ -464,13 +464,61 @@ GET /subtitles2_20060102/_doc/_search?scroll=10m
 GET /subtitles_20211101/_doc/_search
 {
   "query": {
+    "multi_match": {
+      "query": "中国",
+      "fields": ["title","subtitle","texts"],
+      "type": "phrase"
+    }
+  },
+  "_source": ["path_id","title","subtitle","texts","lan"],
+  "highlight": {
+    "fields": {
+      "title": {"force_source" : true},
+      "subtitle": {"force_source" : true},
+      "texts": {"force_source" : true}
+    }
+  },
+  "sort" : ["_doc"], 
+  "size": 20
+}
+
+
+GET /subtitles_20211101/_doc/_search
+{
+ "query": {
+    "bool": {
+      "should": [
+        {
+          "term": {
+            "part_id":1
+          }
+        },{
+          "term":{
+            "part_id":2
+          }
+        }
+      ]
+    }
+  },
+  "sort": [
+    {
+      "path_id": {
+        "order": "desc"
+      }
+    }
+  ]
+}
+
+GET /subtitles_20211101/_doc/_search
+{
+  "query": {
     "term": {
       "part_id": 1
     }
   },
   "sort": [
     {
-      "create_time": {
+      "path_id": {
         "order": "desc"
       }
     }

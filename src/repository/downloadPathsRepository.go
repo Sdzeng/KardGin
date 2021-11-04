@@ -99,6 +99,7 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 			downloadPath := &model.DownloadPaths{
 				BaseModel:  model.BaseModel{CreateTime: df.CreateTime},
 				DownloadId: df.Id,
+				Name:       subtitlesFile.Name,
 				FileName:   subtitlesFile.FileName,
 				FilePath:   subtitlesFile.FilePath,
 				FileSum:    subtitlesFile.FileSum,

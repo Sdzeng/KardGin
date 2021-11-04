@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -30,6 +29,7 @@ import (
 var (
 	detector         *chardet.Detector
 	fileNameReplacer *strings.Replacer
+	nameReplacer     *strings.Replacer
 )
 
 func init() {
@@ -53,6 +53,17 @@ func init() {
 	}
 
 	fileNameReplacer = strings.NewReplacer(replaceKeywords...)
+
+	nameReplaceKeywords := []string{
+		"简体&英文", "",
+		"繁体&英文", "",
+		"简体", "",
+		"英文", "",
+		"繁体", "",
+		".", " ",
+	}
+
+	nameReplacer = strings.NewReplacer(nameReplaceKeywords...)
 }
 
 type WriterCounter struct {
@@ -212,11 +223,12 @@ func downloadFiles(md5Seed, fileName string, rc *io.ReadCloser) []*dto.Subtitles
 				// decoder := transform.NewReader(i, simplifiedchinese.GB18030.NewDecoder())
 				// content, _ := ioutil.ReadAll(decoder)
 
-				childFileName = strconv.Itoa(int(f.Flags)) + "_" + ToUtf8Str(childFileName)
+				childFileName = ToUtf8Str(childFileName) //strconv.Itoa(int(f.Flags)) + "_" + ToUtf8Str(childFileName)
 
-			} else {
-				childFileName = "2048_" + childFileName
 			}
+			// else {
+			// 	childFileName = "2048_" + childFileName
+			// }
 
 			if strings.Contains(childFileName, "/") || strings.Contains(childFileName, "\\") {
 
@@ -349,8 +361,8 @@ func downloadFiles(md5Seed, fileName string, rc *io.ReadCloser) []*dto.Subtitles
 		if strings.HasSuffix(fn, ".srt") || strings.HasSuffix(fn, ".ssa") || strings.HasSuffix(fn, ".ass") || strings.HasSuffix(fn, ".stl") || strings.HasSuffix(fn, ".ts") || strings.HasSuffix(fn, ".ttml") || strings.HasSuffix(fn, ".vtt") {
 			filePtah, content := ChangeCharset(md5Seed, fileName, rc)
 			if len(filePtah) > 0 {
-				fileNameWithoutExt := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-				result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, FileName: fileNameWithoutExt, Content: content})
+				name := nameReplacer.Replace(strings.TrimSuffix(fileName, filepath.Ext(fileName)))
+				result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, Name: name, FileName: fileName, Content: content})
 			}
 		}
 

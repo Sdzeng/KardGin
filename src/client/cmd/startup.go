@@ -96,7 +96,7 @@ func toEsByBulk(indexName, indexType string, nowStr string, taskDto *dto.TaskDto
 			DownloadPathId: subtitlesFile.DownloadPathId,
 			PartId:         int32(partId),
 			Title:          taskDto.Name,
-			SubTitle:       subtitlesFile.FileName,
+			SubTitle:       subtitlesFile.Name,
 			Texts:          itemDto.Texts,
 			StartAt:        int32(itemDto.StartAt.Seconds()),
 			Lan:            taskDto.Lan,

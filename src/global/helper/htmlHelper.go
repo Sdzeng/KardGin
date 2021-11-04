@@ -76,6 +76,7 @@ func init() {
 		")", " ",
 		"/", " ",
 		";", " ",
+		".", " ",
 	}
 
 	titleReplacer = strings.NewReplacer(replaceKeywords...)
