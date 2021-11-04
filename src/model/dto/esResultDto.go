@@ -1,6 +1,6 @@
 package dto
 
-type SearchResultDto struct {
+type EsResultDto struct {
 	ScrollId     string               `json:"scroll_id"`
 	TookInMillis int64                `json:"took_in_millis"` //耗时ms
 	Total        int64                `json:"total"`          //总数

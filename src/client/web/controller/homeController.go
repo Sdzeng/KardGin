@@ -31,14 +31,120 @@ func init() {
 	hitReplacer = strings.NewReplacer(replaceKeywords...)
 }
 
+func (c *HomeController) Index(context *gin.Context) {
+	json := make(map[string]interface{})
+	context.BindJSON(&json)
+
+	pageCount := 15
+	if json["page_count"] != nil {
+		pageCount = int(json["page_count"].(float64))
+	}
+
+	res := getIndexData(pageCount)
+	data := buildIndexResult(res)
+
+	if data != nil {
+		response.Success(context, variable.CurdStatusOkMsg, data)
+	} else {
+		response.Fail(context, variable.CurdSelectFailCode, variable.CurdSelectFailMsg, "")
+	}
+}
+
+func (c *HomeController) ScrollIndex(context *gin.Context) {
+	json := make(map[string]interface{})
+	context.BindJSON(&json)
+
+	if json["scroll_id"] == nil {
+		response.Fail(context, variable.CurdSelectFailCode, variable.CurdSelectFailMsg, "")
+		return
+	}
+	scrollId := json["scroll_id"].(string)
+
+	res := getScrollData(scrollId)
+	data := buildIndexResult(res)
+
+	if data != nil {
+		response.Success(context, variable.CurdStatusOkMsg, data)
+	} else {
+		response.Fail(context, variable.CurdSelectFailCode, variable.CurdSelectFailMsg, "")
+	}
+}
+
+func getIndexData(pageCount int) *elastic.SearchResult {
+
+	es_index := variable.IndexName
+
+	esq := elastic.NewTermQuery("part_id", 1)
+
+	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "lan", "pic_path", "create_time")
+
+	scroll := variable.ES.Scroll(es_index).
+		Scroll("5m").
+		Query(esq).
+		FetchSourceContext(fsc).
+		Size(pageCount).
+		TrackTotalHits(true).
+		FilterPath("hits.total", "hits.hits._source").
+		Sort("path_id", false)
+
+	res, err := scroll.Do(context.TODO())
+	if err == io.EOF {
+		return nil
+	}
+	if err != nil {
+		fmt.Print(err)
+		return nil
+	}
+	if res == nil {
+		fmt.Printf("expected results != nil; got nil")
+		return nil
+	}
+	if res.Hits == nil {
+		fmt.Printf("expected results.Hits != nil; got nil")
+		return nil
+	}
+
+	return res
+}
+
+func buildIndexResult(res *elastic.SearchResult) *dto.EsResultDto {
+	esResultDto := new(dto.EsResultDto)
+
+	dtos := []*dto.SubtitlesIndexDto{}
+	for _, hit := range res.Hits.Hits {
+		dto := new(dto.SubtitlesIndexDto)
+		if err := json.Unmarshal(hit.Source, dto); err != nil {
+			continue
+		}
+		dtos = append(dtos, dto)
+	}
+
+	esResultDto.ScrollId = res.ScrollId
+	esResultDto.TookInMillis = res.TookInMillis
+	esResultDto.Total = res.Hits.TotalHits.Value
+	esResultDto.SearchHits = dtos
+
+	return esResultDto
+}
+
 func (c *HomeController) Search(context *gin.Context) {
 	json := make(map[string]interface{})
 	context.BindJSON(&json)
-	searchWord := json["search_word"].(string)
-	pageCount := int(json["page_count"].(float64))
 
+	pageCount := 15
+	if json["page_count"] != nil {
+		pageCount = int(json["page_count"].(float64))
+	}
+
+	if json["search_word"] == nil {
+		response.Fail(context, variable.ValidatorParamsCheckFailCode, variable.ValidatorParamsCheckFailMsg, "")
+		return
+	}
+	searchWord := json["search_word"].(string)
 	// indexName := variable.IndexName //+ time.Now().Format("20060102")
-	data := search(pageCount, searchWord)
+
+	res := getSearchData(pageCount, searchWord)
+	data := buildSearchResult(res)
 
 	if data != nil {
 		response.Success(context, variable.CurdStatusOkMsg, data)
@@ -47,13 +153,17 @@ func (c *HomeController) Search(context *gin.Context) {
 	}
 }
 
-func (c *HomeController) SearchScroll(context *gin.Context) {
+func (c *HomeController) ScrollSearch(context *gin.Context) {
 	json := make(map[string]interface{})
 	context.BindJSON(&json)
+	if json["scroll_id"] == nil {
+		response.Fail(context, variable.CurdSelectFailCode, variable.CurdSelectFailMsg, "")
+		return
+	}
 	scrollId := json["scroll_id"].(string)
 
-	// indexName := variable.IndexName
-	data := scrollSearch(scrollId)
+	res := getScrollData(scrollId)
+	data := buildSearchResult(res)
 
 	if data != nil {
 		response.Success(context, variable.CurdStatusOkMsg, data)
@@ -62,8 +172,8 @@ func (c *HomeController) SearchScroll(context *gin.Context) {
 	}
 }
 
-func search(pageCount int, search_word string) *dto.SearchResultDto {
-	searchResultDto := new(dto.SearchResultDto)
+func getSearchData(pageCount int, search_word string) *elastic.SearchResult {
+
 	// p := (page - 1) * li
 	// collapsedata := elastic.NewCollapseBuilder("texts")
 	es_index := variable.IndexName
@@ -108,23 +218,24 @@ func search(pageCount int, search_word string) *dto.SearchResultDto {
 		TrackTotalHits(true).
 		FilterPath("hits.total", "hits.hits._source", "hits.hits.highlight").
 		// // Collapse(collapsedata).
-		Pretty(true)
+		// Pretty(true).
+		Sort("_score", false)
 
 	res, err := scroll.Do(context.TODO())
 	if err == io.EOF {
-		return searchResultDto
+		return nil
 	}
 	if err != nil {
 		fmt.Print(err)
-		return searchResultDto
+		return nil
 	}
 	if res == nil {
 		fmt.Printf("expected results != nil; got nil")
-		return searchResultDto
+		return nil
 	}
 	if res.Hits == nil {
 		fmt.Printf("expected results.Hits != nil; got nil")
-		return searchResultDto
+		return nil
 	}
 	// if want, have := int64(3), res.TotalHits(); want != have {
 	// 	fmt.Printf("expected results.TotalHits() = %d; got %d", want, have)
@@ -142,29 +253,29 @@ func search(pageCount int, search_word string) *dto.SearchResultDto {
 	// 	return searchResultDto
 	// }
 
-	return buildResult(res)
+	return res
 }
 
-func scrollSearch(scrollId string) *dto.SearchResultDto {
-	searchResultDto := new(dto.SearchResultDto)
+func getScrollData(scrollId string) *elastic.SearchResult {
+
 	//游标（缓存）有效期延长*分钟
 	scroll := variable.ES.Scroll().Scroll("2m").ScrollId(scrollId)
 
 	res, err := scroll.Do(context.TODO())
 	if err == io.EOF {
-		return searchResultDto
+		return nil
 	}
 	if err != nil {
 		fmt.Print(err)
-		return searchResultDto
+		return nil
 	}
 	if res == nil {
 		fmt.Printf("expected results != nil; got nil")
-		return searchResultDto
+		return nil
 	}
 	if res.Hits == nil {
 		fmt.Printf("expected results.Hits != nil; got nil")
-		return searchResultDto
+		return nil
 	}
 
 	// err = scroll.Clear(context.TODO())
@@ -173,11 +284,11 @@ func scrollSearch(scrollId string) *dto.SearchResultDto {
 	// 	return searchResultDto
 	// }
 
-	return buildResult(res)
+	return res
 }
 
-func buildResult(res *elastic.SearchResult) *dto.SearchResultDto {
-	searchResultDto := new(dto.SearchResultDto)
+func buildSearchResult(res *elastic.SearchResult) *dto.EsResultDto {
+	esResultDto := new(dto.EsResultDto)
 
 	dtos := []*dto.SubtitlesIndexDto{}
 	for _, hit := range res.Hits.Hits {
@@ -213,12 +324,12 @@ func buildResult(res *elastic.SearchResult) *dto.SearchResultDto {
 		dtos = append(dtos, dto)
 	}
 
-	searchResultDto.ScrollId = res.ScrollId
-	searchResultDto.TookInMillis = res.TookInMillis
-	searchResultDto.Total = res.Hits.TotalHits.Value
-	searchResultDto.SearchHits = dtos
+	esResultDto.ScrollId = res.ScrollId
+	esResultDto.TookInMillis = res.TookInMillis
+	esResultDto.Total = res.Hits.TotalHits.Value
+	esResultDto.SearchHits = dtos
 
-	return searchResultDto
+	return esResultDto
 }
 
 // func (c *HomeController) GetCover(context *gin.Context) {
