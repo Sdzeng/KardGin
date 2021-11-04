@@ -41,8 +41,12 @@ func (c *HomeController) Index(context *gin.Context) {
 	}
 
 	res := getIndexData(pageCount)
-	data := buildIndexResult(res)
+	if res == nil {
+		response.Success(context, variable.CurdStatusOkMsg, nil)
+		return
+	}
 
+	data := buildIndexResult(res)
 	if data != nil {
 		response.Success(context, variable.CurdStatusOkMsg, data)
 	} else {
@@ -61,8 +65,12 @@ func (c *HomeController) ScrollIndex(context *gin.Context) {
 	scrollId := json["scroll_id"].(string)
 
 	res := getScrollData(scrollId)
-	data := buildIndexResult(res)
+	if res == nil {
+		response.Success(context, variable.CurdStatusOkMsg, nil)
+		return
+	}
 
+	data := buildIndexResult(res)
 	if data != nil {
 		response.Success(context, variable.CurdStatusOkMsg, data)
 	} else {
@@ -76,7 +84,7 @@ func getIndexData(pageCount int) *elastic.SearchResult {
 
 	esq := elastic.NewTermQuery("part_id", 1)
 
-	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "lan", "pic_path", "create_time")
+	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "start_at", "lan", "pic_path", "create_time")
 
 	scroll := variable.ES.Scroll(es_index).
 		Scroll("5m").
@@ -144,8 +152,12 @@ func (c *HomeController) Search(context *gin.Context) {
 	// indexName := variable.IndexName //+ time.Now().Format("20060102")
 
 	res := getSearchData(pageCount, searchWord)
-	data := buildSearchResult(res)
+	if res == nil {
+		response.Success(context, variable.CurdStatusOkMsg, nil)
+		return
+	}
 
+	data := buildSearchResult(res)
 	if data != nil {
 		response.Success(context, variable.CurdStatusOkMsg, data)
 	} else {
@@ -163,8 +175,12 @@ func (c *HomeController) ScrollSearch(context *gin.Context) {
 	scrollId := json["scroll_id"].(string)
 
 	res := getScrollData(scrollId)
-	data := buildSearchResult(res)
+	if res == nil {
+		response.Success(context, variable.CurdStatusOkMsg, nil)
+		return
+	}
 
+	data := buildSearchResult(res)
 	if data != nil {
 		response.Success(context, variable.CurdStatusOkMsg, data)
 	} else {
@@ -193,7 +209,7 @@ func getSearchData(pageCount int, search_word string) *elastic.SearchResult {
 
 	esq := elastic.NewMultiMatchQuery(search_word, "title", "subtitle", "texts").Type("phrase")
 
-	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "part_id", "title", "subtitle", "texts", "lan", "pic_path", "create_time")
+	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "part_id", "title", "subtitle", "texts", "start_at", "lan", "pic_path", "create_time")
 
 	hl := elastic.NewHighlight().Fields(
 		elastic.NewHighlighterField("title"),

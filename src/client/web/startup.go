@@ -71,7 +71,7 @@ func runKard(router *gin.Engine) {
 		homeGroup.POST("/", homeController.Index)
 		homeGroup.POST("/scroll_index", homeController.ScrollIndex)
 		homeGroup.POST("/search", homeController.Search)
-		homeGroup.POST("/search_scroll", homeController.ScrollSearch)
+		homeGroup.POST("/scroll_search", homeController.ScrollSearch)
 	}
 
 	router.Run(variable.WebYml.GetString("HttpServer.Api.Port"))
