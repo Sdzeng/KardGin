@@ -82,7 +82,7 @@ func getIndexData(pageCount int) *elastic.SearchResult {
 
 	es_index := variable.IndexName
 
-	esq := elastic.NewTermQuery("part_id", 1)
+	esq := elastic.NewTermQuery("part_id", 3)
 
 	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "title", "subtitle", "texts", "start_at", "lan", "pic_path", "create_time")
 
