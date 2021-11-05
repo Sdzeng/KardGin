@@ -65,7 +65,7 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 
 	// result := trans.Debug().FirstOrCreate(df, model.Downloads{DownloadUrl: dto.DownloadUrl})
 	// result := trans.Where(model.Downloads{DownloadUrl: dto.DownloadUrl}).FirstOrCreate(df)
-	result := trans.Where("es_index=? and (download_url=? or name=?)", dto.EsIndex, dto.DownloadUrl, dto.Name).FirstOrCreate(df)
+	result := trans.Where("id=?", dto.DownloadId, dto.DownloadUrl, dto.Name).Update(df)
 	// result := trans.Debug().Where("download_url=?", dto.DownloadUrl).FirstOrCreate(df)
 	// result := trans.Debug().Where("name=? and lan=?", dto.Name, dto.Lan).FirstOrCreate(df)
 

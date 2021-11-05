@@ -264,7 +264,7 @@ func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 	if err != nil {
 		return
 	}
-
+	downloadRepository := repository.DownloadsFactory()
 	//获取子页信息
 	items := zmFetchListRegexp.FindAllStringSubmatch(*html, -1)
 
@@ -285,10 +285,16 @@ func (obj *ZimuCrawler) fetchList(taskDto *dto.TaskDto) {
 			newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, "https://www.zimutiantang.com")
 		}
 
-		// if _, ok := visited.Load(newDto.DownloadUrl); !ok {
-		// 	visited.Store(newDto.DownloadUrl, &struct{}{})
-		// 	obj.insertQueue(newDto)
-		// }
+		newDto.InfoUrl = newDto.DownloadUrl
+
+		//清洗数据1
+		if isCreate, id := downloadRepository.TryCreate(taskDto); !isCreate {
+			variable.ZapLog.Sugar().Infof("跳过已存在数据：%v", taskDto.Name)
+			continue
+		} else {
+			taskDto.DownloadId = id
+		}
+
 		obj.insertQueue(newDto)
 	}
 
@@ -379,11 +385,11 @@ func (obj *ZimuCrawler) fetchSelectDx1(taskDto *dto.TaskDto) {
 }
 
 func (obj *ZimuCrawler) parse(taskDto *dto.TaskDto) {
-	downloadRepository := repository.DownloadsFactory()
-	if downloadRepository.Exists(taskDto) {
-		fmt.Printf("\n跳过已存在数据：%v", taskDto.Name)
-		return
-	}
+	// downloadRepository := repository.DownloadsFactory()
+	// if downloadRepository.Exists(taskDto) {
+	// 	fmt.Printf("\n跳过已存在数据：%v", taskDto.Name)
+	// 	return
+	// }
 
 	newDto, err := helper.Download(taskDto)
 	if err != nil {

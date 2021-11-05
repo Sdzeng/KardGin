@@ -147,6 +147,8 @@ func (obj *A4KCrawler) fetchList(taskDto *dto.TaskDto) {
 		return
 	}
 
+	downloadRepository := repository.DownloadsFactory()
+
 	//获取子页信息
 	items := a4kFetchListRegexp.FindAllStringSubmatch(*html, -1)
 
@@ -177,6 +179,16 @@ func (obj *A4KCrawler) fetchList(taskDto *dto.TaskDto) {
 		}
 
 		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, "https://www.a4k.net")
+
+		newDto.InfoUrl = newDto.DownloadUrl
+
+		//清洗数据1
+		if isCreate, id := downloadRepository.TryCreate(taskDto); !isCreate {
+			variable.ZapLog.Sugar().Infof("跳过已存在数据：%v", taskDto.Name)
+			continue
+		} else {
+			taskDto.DownloadId = id
+		}
 
 		obj.insertQueue(newDto)
 	}
@@ -213,12 +225,12 @@ func (obj *A4KCrawler) fetchInfo(taskDto *dto.TaskDto) {
 }
 
 func (obj *A4KCrawler) parse(taskDto *dto.TaskDto) {
-	downloadRepository := repository.DownloadsFactory()
-	//清洗数据1
-	if downloadRepository.Exists(taskDto) {
-		variable.ZapLog.Sugar().Infof("跳过已存在数据：%v", taskDto.Name)
-		return
-	}
+	// downloadRepository := repository.DownloadsFactory()
+	// //清洗数据1
+	// if downloadRepository.Exists(taskDto) {
+	// 	variable.ZapLog.Sugar().Infof("跳过已存在数据：%v", taskDto.Name)
+	// 	return
+	// }
 
 	//清洗数据2
 	newDto, err := helper.Download(taskDto)
