@@ -212,7 +212,11 @@ func (obj *A4KRazor) fetchList(taskDto *dto.TaskDto) {
 		newDto.InfoUrl = newDto.DownloadUrl
 
 		//清洗数据1
-		if isCreate, id := downloadRepository.TryCreate(obj.EsIndex, obj.Name, newDto); !isCreate {
+		isCreate, id, err := downloadRepository.TryCreate(obj.EsIndex, obj.Name, newDto)
+		if err != nil {
+			variable.ZapLog.Sugar().Errorf("跳过插入失败的数据：%v %v", newDto.Name, err)
+			continue
+		} else if !isCreate {
 			variable.ZapLog.Sugar().Infof("跳过已存在数据：%v", newDto.Name)
 			continue
 		} else {

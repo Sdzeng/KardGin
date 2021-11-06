@@ -31,30 +31,52 @@ func DownloadsFactory() *DownloadsRepository {
 // 	return dl.Id > 0
 // }
 
-func (repository *DownloadsRepository) TryCreate(esIndex, razor string, taskDto *dto.TaskDto) (bool, int32) {
+func (repository *DownloadsRepository) TryCreate(esIndex, razor string, taskDto *dto.TaskDto) (bool, int32, error) {
 	if !repository.IsEnable {
-		return false, 0
+		return false, 0, nil
 	}
-
-	now := time.Now()
-	dl := &model.Downloads{
-		EsIndex:       esIndex,
-		BaseModel:     model.BaseModel{CreateTime: now},
-		Name:          taskDto.Name,
-		Page:          taskDto.PageNum,
-		Razor:         razor,
-		Lan:           taskDto.Lan,
-		SubtitlesType: taskDto.SubtitlesType,
-		InfoUrl:       taskDto.InfoUrl,
-		UpdateTime:    now,
-	}
-
-	repository.DB.Where("es_index=? and (info_url=? or download_url=? or name=?)", esIndex, taskDto.InfoUrl, taskDto.DownloadUrl, taskDto.Name).FirstOrCreate(dl)
 
 	isCreate := true
-	if dl.CreateTime.Before(now) {
-		isCreate = false
+	now := time.Now()
+	dl := &model.Downloads{}
+	err := repository.DB.Where("es_index=? and (info_url=? or download_url=? or name=?) ", esIndex, taskDto.InfoUrl, taskDto.DownloadUrl, taskDto.Name).First(dl).Error
+
+	if err != nil {
+		return false, 0, err
 	}
 
-	return isCreate, dl.Id
+	if dl.Id <= 0 {
+		dl = &model.Downloads{
+			EsIndex:       esIndex,
+			BaseModel:     model.BaseModel{CreateTime: now},
+			Name:          taskDto.Name,
+			Page:          taskDto.PageNum,
+			Razor:         razor,
+			Lan:           taskDto.Lan,
+			SubtitlesType: taskDto.SubtitlesType,
+			InfoUrl:       taskDto.InfoUrl,
+			UpdateTime:    now,
+		}
+
+		err = repository.DB.Create(dl).Error
+		isCreate = true
+	} else {
+		if len(dl.DownloadUrl) <= 0 {
+			dl.Name = taskDto.Name
+			dl.Page = taskDto.PageNum
+			dl.Razor = razor
+			dl.Lan = taskDto.Lan
+			dl.SubtitlesType = taskDto.SubtitlesType
+			dl.InfoUrl = taskDto.InfoUrl
+			dl.CreateTime = now
+			dl.UpdateTime = now
+			err = repository.DB.Model(&model.Downloads{BaseModel: model.BaseModel{Id: dl.Id}}).Updates(dl).Error
+			isCreate = true
+		} else {
+			err = nil
+			isCreate = false
+		}
+	}
+
+	return isCreate, dl.Id, err
 }
