@@ -7,7 +7,8 @@ type Downloads struct {
 	BaseModel
 	EsIndex     string `gorm:"es_index"` //es索引名称
 	Name        string `gorm:"column:name"`
-	Crawler     string `gorm:"column:crawler"`
+	Page        int    `gorm:"column:page"`
+	Razor       string `gorm:"column:razor"`
 	InfoUrl     string `gorm:"info_url"`
 	DownloadUrl string `gorm:"download_url"`
 	// DownloadUrlFileName string `gorm:"download_url_file_name"`

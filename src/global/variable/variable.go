@@ -10,7 +10,7 @@ import (
 
 const (
 	//爬虫
-	FecthPage string = "fecthPage"
+	// FecthPage string = "fecthPage"
 	FecthList string = "fecthList"
 	FecthInfo string = "fecthInfo"
 	// FecthSelectDx1 string = "fecthSelectDx1"

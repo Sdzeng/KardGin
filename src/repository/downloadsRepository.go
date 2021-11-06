@@ -31,27 +31,28 @@ func DownloadsFactory() *DownloadsRepository {
 // 	return dl.Id > 0
 // }
 
-func (repository *DownloadsRepository) TryCreate(taskDto *dto.TaskDto) (bool, int32) {
+func (repository *DownloadsRepository) TryCreate(esIndex, razor string, taskDto *dto.TaskDto) (bool, int32) {
 	if !repository.IsEnable {
 		return false, 0
 	}
 
-	createTime := time.Now()
+	now := time.Now()
 	dl := &model.Downloads{
-		EsIndex:       taskDto.EsIndex,
-		BaseModel:     model.BaseModel{CreateTime: createTime},
+		EsIndex:       esIndex,
+		BaseModel:     model.BaseModel{CreateTime: now},
 		Name:          taskDto.Name,
-		Crawler:       taskDto.Crawler,
+		Page:          taskDto.PageNum,
+		Razor:         razor,
 		Lan:           taskDto.Lan,
 		SubtitlesType: taskDto.SubtitlesType,
 		InfoUrl:       taskDto.InfoUrl,
-		UpdateTime:    createTime,
+		UpdateTime:    now,
 	}
 
-	repository.DB.Where("es_index=? and (info_url=? and download_url=? or name=?)", taskDto.EsIndex, taskDto.InfoUrl, taskDto.DownloadUrl, taskDto.Name).FirstOrCreate(dl)
+	repository.DB.Where("es_index=? and (info_url=? or download_url=? or name=?)", esIndex, taskDto.InfoUrl, taskDto.DownloadUrl, taskDto.Name).FirstOrCreate(dl)
 
 	isCreate := true
-	if dl.CreateTime.Before(createTime) {
+	if dl.CreateTime.Before(now) {
 		isCreate = false
 	}
 

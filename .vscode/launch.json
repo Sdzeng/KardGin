@@ -11,7 +11,7 @@
                 "GOPATH": "D:\\GitRepository\\GoPath",
                 "GOROOT": "D:\\Program Files\\Go"
             },
-            "args": ["-seed-url","","-q",""],
+            "args": ["-seed-url","","-page",""],
             //"showLog": true
             "dlvLoadConfig": {
                 "followPointers": true,

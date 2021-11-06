@@ -3,6 +3,7 @@ package repository
 import (
 	"fmt"
 
+	"kard/src/global/variable"
 	"kard/src/model"
 	"kard/src/model/dto"
 	"strings"
@@ -49,25 +50,17 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 		return nil
 	}
 
-	createTime := time.Now()
-	df := &model.Downloads{
-		BaseModel:   model.BaseModel{CreateTime: createTime},
-		Name:        dto.Name,
-		Crawler:     dto.Crawler,
-		DownloadUrl: dto.DownloadUrl,
-		// DownloadUrlFileName: dto.DownloadUrlFileName,
-		Lan:           dto.Lan,
-		SubtitlesType: dto.SubtitlesType,
-		EsIndex:       dto.EsIndex,
+	now := time.Now()
+	dl := &model.Downloads{
+		BaseModel: model.BaseModel{Id: dto.DownloadId},
 	}
 
 	trans := repository.DB.Begin()
 
 	// result := trans.Debug().FirstOrCreate(df, model.Downloads{DownloadUrl: dto.DownloadUrl})
 	// result := trans.Where(model.Downloads{DownloadUrl: dto.DownloadUrl}).FirstOrCreate(df)
-	result := trans.Where("id=?", dto.DownloadId, dto.DownloadUrl, dto.Name).Update(df)
-	// result := trans.Debug().Where("download_url=?", dto.DownloadUrl).FirstOrCreate(df)
-	// result := trans.Debug().Where("name=? and lan=?", dto.Name, dto.Lan).FirstOrCreate(df)
+
+	result := trans.Model(dl).Select("download_url", "update_time").Updates(model.Downloads{DownloadUrl: dto.DownloadUrl, UpdateTime: now})
 
 	if result.Error != nil {
 		trans.Rollback()
@@ -75,14 +68,13 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	}
 
 	//result.RowsAffected <= 0 ||
-	if df.CreateTime.Before(createTime) {
-		trans.Commit()
-		dto.DbNew = false
-		return nil
-	} else {
-		dto.DbNew = true
-		// fmt.Printf("\n数据库新加：%v", dto.Name)
-	}
+	// if df.CreateTime.Before(createTime) {
+	// 	trans.Commit()
+	// 	dto.DbNew = false
+	// 	return nil
+	// } else {
+	// 	dto.DbNew = true
+	// }
 
 	if len(dto.SubtitlesFiles) > 0 {
 		for _, subtitlesFile := range dto.SubtitlesFiles {
@@ -91,14 +83,14 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 				continue
 			}
 
-			if repository.Exists(trans, subtitlesFile.FileName, subtitlesFile.FileSum, dto.EsIndex) {
+			if repository.Exists(trans, subtitlesFile.FileName, subtitlesFile.FileSum, variable.IndexName) {
 				subtitlesFile.DbNew = false
 				continue
 			}
 
 			downloadPath := &model.DownloadPaths{
-				BaseModel:  model.BaseModel{CreateTime: df.CreateTime},
-				DownloadId: df.Id,
+				BaseModel:  model.BaseModel{CreateTime: now},
+				DownloadId: dto.DownloadId,
 				Name:       subtitlesFile.Name,
 				FileName:   subtitlesFile.FileName,
 				FilePath:   subtitlesFile.FilePath,
@@ -146,10 +138,10 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 		for _, refer := range dto.Refers {
 			sort++
 			valueStrings = append(valueStrings, "(?, ?, ?, ?)")
-			valueArgs = append(valueArgs, df.Id)
+			valueArgs = append(valueArgs, dto.DownloadId)
 			valueArgs = append(valueArgs, refer)
 			valueArgs = append(valueArgs, sort)
-			valueArgs = append(valueArgs, df.CreateTime)
+			valueArgs = append(valueArgs, now)
 		}
 		stmt := fmt.Sprintf("INSERT INTO `kard_gin`.`download_refers` ( `download_id`, `refer`,`sort`, `create_time`) VALUES %s", strings.Join(valueStrings, ","))
 		result = trans.Exec(stmt, valueArgs...)

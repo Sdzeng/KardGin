@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	_ "kard/src/client"
-	"kard/src/client/cmd/crawler"
+	"kard/src/client/cmd/razor"
 	"kard/src/global/variable"
 	"kard/src/model/dto"
 	"kard/src/repository"
@@ -26,26 +26,26 @@ import (
 func main() {
 
 	seedUrl := flag.String("seed-url", "", "useage to search")
-	q := flag.String("q", "", "useage to search")
+	page := flag.String("page", "", "useage to page")
 	flag.Parse()
 
 	variable.ZapLog.Sugar().Infof("seedUrl=%s\n", *seedUrl)
-	variable.ZapLog.Sugar().Infof("q=%s\n", *q)
+	variable.ZapLog.Sugar().Infof("page=%s\n", *page)
 	seedUrlStr := *seedUrl
-	qStr := *q
+	pageInt, _ := strconv.Atoi(*page)
 
-	a4kCrawler := &crawler.A4KCrawler{Open: true}
-	zmkCrawler := &crawler.ZmkCrawler{Open: true}
-	crawlerWork(seedUrlStr, qStr, a4kCrawler, zmkCrawler)
+	a4kRazor := razor.NewA4KRazor(seedUrlStr, pageInt)
+	zmkRazor := razor.NewZmkRazor(seedUrlStr, pageInt)
+	razorWork(a4kRazor, zmkRazor)
 
 	var quit string
 	fmt.Scan(&quit)
 	variable.ZapLog.Info("退出")
 }
 
-func crawlerWork(seedUrlStr, qStr string, crawlers ...crawler.ICrawler) {
-	for _, crawler := range crawlers {
-		go crawler.Work(seedUrlStr, qStr, store)
+func razorWork(razors ...razor.IRazor) {
+	for _, raz := range razors {
+		go raz.Work(store)
 	}
 }
 
@@ -68,11 +68,6 @@ func store(taskDto *dto.TaskDto) {
 }
 
 func toEs(taskDto *dto.TaskDto) {
-	if !taskDto.DbNew {
-		variable.ZapLog.Sugar().Infof("跳过已存在数据(漏网之鱼)：%v", taskDto.Name)
-		return
-	}
-
 	indexName := variable.IndexName //+ time.Now().Format("20060102")
 	indexType := "_doc"             // time.Now().Format("20060102")
 	nowStr := time.Now().Format(variable.TimeFormat)
