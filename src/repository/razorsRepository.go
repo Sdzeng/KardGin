@@ -21,7 +21,7 @@ func RazorsFactory() *RazorsRepository {
 	return &RazorsRepository{IsEnable: isEnable, DB: db}
 }
 
-func (repository *RazorsRepository) FirstOrCreate(razor, seedUrl string, page int) *model.Razors {
+func (repository *RazorsRepository) FirstOrCreate(razor, seedUrl, esIndex string, page int) *model.Razors {
 	if !repository.IsEnable {
 		return nil
 	}
@@ -29,12 +29,13 @@ func (repository *RazorsRepository) FirstOrCreate(razor, seedUrl string, page in
 	raz := &model.Razors{
 		BaseModel:  model.BaseModel{CreateTime: now},
 		Razor:      razor,
+		EsIndex:    esIndex,
 		SeedUrl:    seedUrl,
 		Page:       page,
 		UpdateTime: now,
 	}
 
-	result := repository.DB.Where("razor=?", razor).FirstOrCreate(raz)
+	result := repository.DB.Where("razor=? and es_index=?", razor, esIndex).FirstOrCreate(raz)
 
 	if result.Error != nil {
 		return nil
@@ -43,13 +44,13 @@ func (repository *RazorsRepository) FirstOrCreate(razor, seedUrl string, page in
 	return raz
 }
 
-func (repository *RazorsRepository) CreateOrUpdate(razor, seedUrl string, page int) bool {
+func (repository *RazorsRepository) CreateOrUpdate(razor, seedUrl, esIndex string, page int) bool {
 	if !repository.IsEnable {
 		return false
 	}
 	now := time.Now()
 	raz := &model.Razors{}
-	repository.DB.Where("razor=?", razor).First(raz)
+	repository.DB.Where("razor=? and es_index=?", razor, esIndex).First(raz)
 
 	var result *gorm.DB
 	if raz.Id > 0 {
@@ -57,6 +58,7 @@ func (repository *RazorsRepository) CreateOrUpdate(razor, seedUrl string, page i
 	} else {
 		raz.BaseModel = model.BaseModel{CreateTime: now}
 		raz.Razor = razor
+		raz.EsIndex = esIndex
 		raz.SeedUrl = seedUrl
 		raz.Page = page
 		raz.UpdateTime = now
@@ -70,14 +72,14 @@ func (repository *RazorsRepository) CreateOrUpdate(razor, seedUrl string, page i
 	return true
 }
 
-func (repository *RazorsRepository) Update(razor, seedUrl string, page int) bool {
+func (repository *RazorsRepository) Update(razor, seedUrl, esIndex string, page int) bool {
 	if !repository.IsEnable {
 		return false
 	}
 
 	createTime := time.Now()
 	raz := model.Razors{SeedUrl: seedUrl, Page: page, UpdateTime: createTime}
-	result := repository.DB.Model(&model.Razors{}).Where("razor=?", razor).Select("seed_url", "page", "update_time").Updates(raz)
+	result := repository.DB.Model(&model.Razors{}).Where("razor=? and es_index=?", razor, esIndex).Select("seed_url", "page", "update_time").Updates(raz)
 
 	if result.Error != nil {
 		json, _ := json.Marshal(raz)

@@ -5,7 +5,7 @@ var basejs = {
     defaults: {
         type: "POST",
         async: true,
-        contentType: "application/x-www-form-urlencoded",//"application/json;charset=utf-8",
+        contentType: "application/json;charset=utf-8",//"application/x-www-form-urlencoded"
         traditional: false,
         processData: true,
         data: null,
@@ -182,16 +182,17 @@ $.extend(httpHelper.prototype, {
     // 发送数据
     send: function () {
         var _this = this;
+        debugger;
         //return $.Deferred(function ($dfd) {
         $.ajax({
             url: _this.opts.url,
             type: _this.opts.type,
-            xhrFields: {
-                withCredentials: true //配置http跨域请求中携带cookie
-            },
+            // xhrFields: {
+            //     withCredentials: true //配置http跨域请求中携带cookie
+            // },
             crossDomain: true,
             async: _this.opts.async,
-            data: _this.opts.data,
+            data: JSON.stringify(_this.opts.data),
             contentType: _this.opts.contentType,
             traditional: _this.opts.traditional,
             processData: _this.opts.processData,

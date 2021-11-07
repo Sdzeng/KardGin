@@ -11,7 +11,7 @@
                 "GOPATH": "D:\\GitRepository\\GoPath",
                 "GOROOT": "D:\\Program Files\\Go"
             },
-            "args": ["-seed-url","","-page",""],
+            "args": ["-seed-url","https://zimuku.org/newsubs?p=50"],
             //"showLog": true
             "dlvLoadConfig": {
                 "followPointers": true,

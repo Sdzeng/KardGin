@@ -2,6 +2,7 @@ package razor
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,24 +18,24 @@ type A4KRazor struct {
 	BaseRazor
 }
 
-func NewA4KRazor(seedUrl string, page int) *A4KRazor {
+func NewA4KRazor(seedUrl string) *A4KRazor {
 	return &A4KRazor{
 		BaseRazor{
-			Name:     "a4k",
-			BaseUrl:  "https://www.a4k.net",
-			BasePage: 1,
-			EsIndex:  variable.IndexName,
-			Enable:   true,
-			SeedUrl:  seedUrl,
-			Page:     page,
+			Name:        "a4k",
+			BaseSeedUrl: "https://www.a4k.net",
+			BasePage:    1,
+			EsIndex:     variable.IndexName,
+			Enable:      true,
+			SeedUrl:     seedUrl,
 		},
 	}
 }
 
 var (
-	a4kPageNum         = `<a class="item pager__item--last" href="(\?page)=(\d+)"[^>]+?>(\s|\S)+?</a>`
-	a4kFetchPageRegexp = regexp.MustCompile(a4kPageNum)
-
+	a4kPageNum             = `<a class="item pager__item--last" href="(\?page)=(\d+)"[^>]+?>(\s|\S)+?</a>`
+	a4kFetchPageRegexp     = regexp.MustCompile(a4kPageNum)
+	a4kLastPageNum         = `<a class="item active" href="(\?page)=(\d+)"[^>]+?>(\s|\n)*<span(\s|\S)+?</span>(\s|\n)*(\d+)</a>`
+	a4kLastFetchPageRegexp = regexp.MustCompile(a4kLastPageNum)
 	// a4kTitleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
 	a4kLanListReg        = `<div class="language">(\s|\n)*<span class="h4">(\s|\n)*(<i class="[^"]+?" data-content="[^"]+?"[^>]+?></i>\s*)+`
 	a4kDownloadButtonReg = `(\s|\S)+?<div class="content">(\s|\n)*<h3>(\s|\n)*<a href="([^"]+?)"[^>]+?>`
@@ -90,15 +91,16 @@ func (obj *A4KRazor) search(store func(taskDto *dto.TaskDto)) {
 	// workerQueue := make(chan *dto.UrlDto, 1)
 
 	razorsRepository := repository.RazorsFactory()
-	if len(obj.SeedUrl) > 0 || obj.Page > 0 {
-		if len(obj.SeedUrl) <= 0 {
-			obj.SeedUrl = obj.BaseUrl
-		} else if obj.Page <= 0 {
+	if len(obj.SeedUrl) > 0 {
+		if values, err := url.ParseQuery(strings.Split(obj.SeedUrl, "?")[1]); err != nil {
 			obj.Page = obj.BasePage
+		} else {
+			obj.Page, _ = strconv.Atoi(values.Get("page"))
+			obj.Page += 1
 		}
-		razorsRepository.CreateOrUpdate(obj.Name, obj.SeedUrl, obj.Page)
+		razorsRepository.CreateOrUpdate(obj.Name, obj.SeedUrl, obj.EsIndex, obj.Page)
 	} else {
-		raz := razorsRepository.FirstOrCreate(obj.Name, obj.BaseUrl, obj.BasePage)
+		raz := razorsRepository.FirstOrCreate(obj.Name, obj.BaseSeedUrl, obj.EsIndex, obj.BasePage)
 		obj.SeedUrl = raz.SeedUrl
 		obj.Page = raz.Page
 	}
@@ -123,24 +125,24 @@ func (obj *A4KRazor) fetchPage(wg *sync.WaitGroup, store func(taskDto *dto.TaskD
 	endPageNum := 0
 
 	if len(pageItems) <= 0 {
-		pathUrl = helper.UrlJoin("?page", obj.BaseUrl)
-		endPageNum = 4700
+		pageItems = a4kLastFetchPageRegexp.FindAllStringSubmatch(*html, -1)
+		pathUrl = pageItems[0][1]
+		endPageNum, _ = strconv.Atoi(pageItems[0][2])
 	} else {
 		pathUrl = pageItems[0][1]
-
-		if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
-			pathUrl = helper.UrlJoin(pathUrl, obj.BaseUrl)
-		}
-
 		endPageNum, _ = strconv.Atoi(pageItems[0][2])
-		endPageNum += 1
 	}
+
+	if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
+		pathUrl = helper.UrlJoin(pathUrl, obj.BaseSeedUrl)
+	}
+	endPageNum += 1
 
 	for pageNum <= endPageNum {
 		variable.ZapLog.Sugar().Infof("处理第%v页 共%v页", pageNum, endPageNum)
 		url := pathUrl + "=" + strconv.Itoa(pageNum-1)
 
-		razorsRepository.Update(obj.Name, url, pageNum)
+		razorsRepository.Update(obj.Name, url, obj.EsIndex, pageNum)
 
 		newDto := &dto.TaskDto{WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, PageNum: pageNum}
 		obj.insertQueue(newDto)
@@ -208,7 +210,7 @@ func (obj *A4KRazor) fetchList(taskDto *dto.TaskDto) {
 			continue
 		}
 
-		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, obj.BaseUrl)
+		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, obj.BaseSeedUrl)
 		newDto.InfoUrl = newDto.DownloadUrl
 
 		//清洗数据1
@@ -247,7 +249,7 @@ func (obj *A4KRazor) fetchInfo(taskDto *dto.TaskDto) {
 		return
 	}
 
-	url := helper.UrlJoin(helper.ToUtf8Str(items[0][2]), obj.BaseUrl)
+	url := helper.UrlJoin(helper.ToUtf8Str(items[0][2]), obj.BaseSeedUrl)
 
 	taskDto.Refers = append(taskDto.Refers, taskDto.DownloadUrl)
 	taskDto.DownloadUrl = url

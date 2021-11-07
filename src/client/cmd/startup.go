@@ -26,17 +26,14 @@ import (
 func main() {
 
 	seedUrl := flag.String("seed-url", "", "useage to search")
-	page := flag.String("page", "", "useage to page")
 	flag.Parse()
 
 	variable.ZapLog.Sugar().Infof("seedUrl=%s\n", *seedUrl)
-	variable.ZapLog.Sugar().Infof("page=%s\n", *page)
 	seedUrlStr := *seedUrl
-	pageInt, _ := strconv.Atoi(*page)
 
-	a4kRazor := razor.NewA4KRazor(seedUrlStr, pageInt)
-	zmkRazor := razor.NewZmkRazor(seedUrlStr, pageInt)
-	razorWork(a4kRazor, zmkRazor)
+	// a4kRazor := razor.NewA4KRazor(seedUrlStr)
+	zmkRazor := razor.NewZmkRazor(seedUrlStr)
+	razorWork(zmkRazor)
 
 	var quit string
 	fmt.Scan(&quit)

@@ -13,26 +13,20 @@
         var _this = this;
  
         _this.bindSearchResult();
-        _this.bindRecommendList();
+ 
 
         $('.go-to-top', _this.data.scope).goToTop();
     },
     template: {
         searchResultRow: ("<div class='search-result-warp'>" +
-            "<div class='result-score'><div class='essay-score'>#{start_at}</div><div class='essay-score-head-count'>#{lan}</div></div>" +
-
+            "<div class='result-score'><div class='essay-score'>#{startAt}</div><div class='essay-score-head-count'>#{lan}</div></div>" +
             "<div class='result-entity'>" +
-
             "<div class='result-info'>" +
-
-            "<div class='result-header'><a href='#{essayDetailPage}' class='essay-title'>#{title}</a></div>" +
-            "<div class='result-header'><a href='#{essayDetailPage}' class='essay-title'>#{subtitle}</a></div>" +
-            "<div class='result-content'><a href='#{essayDetailPage}' class='essay-content'>#{texts}</a></div>" +
-           
-            "<div class='result-footer'><span class='essay-nickname'><a>#{lan}</a></span> <span class='essay-creationtime'>#{create_time}</span></div>" +
-
+            "<div class='result-header'><a href='#{detailPage}' class='essay-title'>#{title}</a></div>" +
+            "<div class='result-header'><a href='#{detailPage}' class='essay-title'>#{subtitle}</a></div>" +
+            "<div class='result-content'><a href='#{detailPage}' class='essay-content'>#{texts}</a></div>" +
+            "<div class='result-footer'><span class='essay-nickname'><a>#{lan}</a></span> <span class='essay-creationtime'>#{creationTime}</span></div>" +
             "</div>" +
-
             "</div >" +
             "</div >")
     }, 
@@ -49,19 +43,15 @@
         }
         var httpPars = {
             url: basejs.requestDomain + "/home/search",
-            type: "GET",
-            data: { search_word: keyword, page_count: 10 },
+            data: { search_word: "老", page_count: 10 },
             success: function (resultDto) {
+                debugger;
                 //设置essays加载更多
                 if (resultDto.code!=200) {
                     return;
                 }
 
                 _this.bindResultInfo(resultDto.data.search_hits);
-                //图片懒加载
-                $imageLazy = $(".search-result-warp img.lazy", _this.data.scope);
-                basejs.lazyInof($imageLazy);
-                $imageLazy.removeClass("lazy");
 
                 if (resultDto.data.hasNextPage) {
                     _this.data.loadMorePars.offOn = true;
@@ -116,50 +106,35 @@
         });
 
     },
-    bindResultInfo: function (data) {
+    bindResultInfo: function (searchHitDtos) {
 
         var _this = this;
         var titleTagArr = [];
         var resultHtml = "";
 
-        if (data) {
+        if (searchHitDtos) {
             var resultRowHtml = "";
 
-            for (var index in data) {
-                var searchHitDto = data[index];
-                var essayDetailPage = "/" + searchHitDto.pageUrl;
-                var defaultPicturePath = basejs.cdnDomain +"/image/default-picture_100x100.jpg";
-                var pictureCropPath = "";
-                switch (searchHitDto.coverMediaType) {
-                    case "picture": pictureCropPath = basejs.cdnDomain + "/" + searchHitDto.coverPath + "_100x100." + searchHitDto.coverExtension; break;
-                    case "video": pictureCropPath = basejs.cdnDomain + "/" + searchHitDto.coverPath + "_100x100.jpg"; break;
+            for (var index in searchHitDtos) {
+                var searchHitDto = searchHitDtos[index];
+                var detailPage = "/detail.html?path_id=" + searchHitDto.path_id;
+         
+                var texts="";
+               if(searchHitDto.texts&&searchHitDto.texts.length>0) {
+                    texts=searchHitDto.texts.join(" ")
                 }
-
-
-                var tagSpan = "";
-                if (searchHitDto.tagList && searchHitDto.tagList.length > 0) {
-                    tagSpan += "<span class='essay-tag' title='" + searchHitDto.tagList[0].tagName + "'>" + searchHitDto.tagList[0].tagName + "</span>";//(topMediaDto.tagList[0].tagName.length > 4 ? topMediaDto.tagList[0].tagName.substr(0, 3) + "..." : topMediaDto.tagList[0].tagName);
-                    titleTagArr.push(searchHitDto.tagList[0].tagName);
-                }
-                var categorySpan = "<span class='essay-category' title='" + searchHitDto.category + "'>" + searchHitDto.category + "</span>";
 
                 resultRowHtml += _this.template.searchResultRow.format({
-                    essayDetailPage: essayDetailPage,
-                    defaultPicturePath: defaultPicturePath,
-                    pictureCropPath: pictureCropPath,
+                    startAt: searchHitDto.start_at,
+                    lan: searchHitDto.lan,
+                    detailPage: detailPage,
 
                     title: searchHitDto.title,
-                    subContent: searchHitDto.subContent,
+                    subtitle: searchHitDto.subtitle,
 
-                    score: searchHitDto.score,
-                    likeNum:(searchHitDto.likeNum>0?searchHitDto.likeNum + "喜欢":""),
-                    creatorNickName: searchHitDto.creatorNickName,
-
-                    browseNum: basejs.getNumberDiff(searchHitDto.browseNum),
-                    tagSpan: tagSpan,
-                    categorySpan: categorySpan,
-
-                    creationTime: basejs.getDateDiff(basejs.getDateTimeStamp(searchHitDto.creationTime))
+                    texts: texts ,
+         
+                    creationTime: basejs.getDateDiff(basejs.getDateTimeStamp(searchHitDto.creation_time))
 
                 });
 
@@ -178,42 +153,8 @@
         }
 
 
-    },
-    bindRecommendList: function () {
-        var _this=this;
-        var httpPars = {
-            url: basejs.requestDomain + "/home/essays",
-            type: "GET",
-            data: { keyword: "", pageIndex: 1, pageSize: 10, orderBy: "choiceness" },
-            success: function (resultDto) {
-
-                if (!resultDto.result) {
-                    return;
-                }
-                if ((!resultDto.data)||(!resultDto.data.essayList)||resultDto.data.essayList.length<=0) {
-                    return;
-                }
-                var data=resultDto.data.essayList;
-                var essayRecommendAObj = $(".essay-recommend-a", _this.data.scope);
-
-                for (var index in data) {
-                    
-                    var topMediaDto = data[index];
-                     
-                    var essayDetailPage = "/" + topMediaDto.pageUrl;
-                    essayRecommendAObj.append("<a href='" + essayDetailPage + "' title='"+topMediaDto.title+"'><span class='recommend-list-number'>" + (parseInt(index)+1)+"</span>"+topMediaDto.title + "</a>");
-                }
-            },
-            error: function () {
-                _this.data.loadMorePars.offOn = true;
-
-                $(".search-result-left", _this.data.scope).empty();
-            }
-        };
-
-        var essaysHttpHelper = new httpHelper(httpPars);
-        essaysHttpHelper.send();
-    }
+    } 
+    
 };
 
 $(function () {

@@ -2,6 +2,7 @@ package razor
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,23 +18,24 @@ type ZmkRazor struct {
 	BaseRazor
 }
 
-func NewZmkRazor(seedUrl string, page int) *ZmkRazor {
+func NewZmkRazor(seedUrl string) *ZmkRazor {
 	return &ZmkRazor{
 		BaseRazor{
-			Name:     "zmk",
-			BaseUrl:  "https://zimuku.org",
-			BasePage: 1,
-			EsIndex:  variable.IndexName,
-			Enable:   true,
-			SeedUrl:  seedUrl,
-			Page:     page,
+			Name:        "zmk",
+			BaseSeedUrl: "https://zimuku.org",
+			BasePage:    1,
+			EsIndex:     variable.IndexName,
+			Enable:      true,
+			SeedUrl:     seedUrl,
 		},
 	}
 }
 
 var (
-	zmkPageNum         = `<a class="end" href="(.+)=(\d+)">\d+</a>`
-	zmkFetchPageRegexp = regexp.MustCompile(zmkPageNum)
+	zmkPageNum             = `<a class="end" href="(.+)=(\d+)">\d+</a>`
+	zmkFetchPageRegexp     = regexp.MustCompile(zmkPageNum)
+	zmkLastPageNum         = `</a><span class="current">(\d+)</span>(\s|\n)*<span class="rows">共\s*(\d+)\s*条记录`
+	zmkLastFetchPageRegexp = regexp.MustCompile(zmkLastPageNum)
 
 	zmkDownloadButtonReg = `<a href="(/detail/\d+\.html)" target="_blank" `
 	zmkTitleReg          = `title="([^"]+?)">.+</a>`
@@ -85,15 +87,15 @@ func (obj *ZmkRazor) search(store func(taskDto *dto.TaskDto)) {
 	// }
 
 	razorsRepository := repository.RazorsFactory()
-	if len(obj.SeedUrl) > 0 || obj.Page > 0 {
-		if len(obj.SeedUrl) <= 0 {
-			obj.SeedUrl = obj.BaseUrl
-		} else if obj.Page <= 0 {
+	if len(obj.SeedUrl) > 0 {
+		if values, err := url.ParseQuery(strings.Split(obj.SeedUrl, "?")[1]); err != nil {
 			obj.Page = obj.BasePage
+		} else {
+			obj.Page, _ = strconv.Atoi(values.Get("p"))
 		}
-		razorsRepository.CreateOrUpdate(obj.Name, obj.SeedUrl, obj.Page)
+		razorsRepository.CreateOrUpdate(obj.Name, obj.SeedUrl, obj.EsIndex, obj.Page)
 	} else {
-		raz := razorsRepository.FirstOrCreate(obj.Name, obj.BaseUrl, obj.BasePage)
+		raz := razorsRepository.FirstOrCreate(obj.Name, obj.BaseSeedUrl, obj.EsIndex, obj.BasePage)
 		obj.SeedUrl = raz.SeedUrl
 		obj.Page = raz.Page
 	}
@@ -118,22 +120,27 @@ func (obj *ZmkRazor) fetchPage(wg *sync.WaitGroup, store func(taskDto *dto.TaskD
 	endPageNum := 0
 
 	if len(pageItems) <= 0 {
-		pathUrl = helper.UrlJoin("/newsubs?p", obj.BaseUrl)
-		endPageNum = 50
+		pageItems = zmkLastFetchPageRegexp.FindAllStringSubmatch(*html, -1)
+		pathUrl = "/newsubs?p"
+		endPageNum, _ = strconv.Atoi(pageItems[0][1])
 	} else {
 		pathUrl = pageItems[0][1]
 
 		if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
-			pathUrl = helper.UrlJoin(pathUrl, obj.BaseUrl)
+			pathUrl = helper.UrlJoin(pathUrl, obj.BaseSeedUrl)
 		}
 		endPageNum, _ = strconv.Atoi(pageItems[0][2])
+	}
+
+	if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
+		pathUrl = helper.UrlJoin(pathUrl, obj.BaseSeedUrl)
 	}
 
 	for pageNum <= endPageNum {
 		variable.ZapLog.Sugar().Infof("处理第%v页 共%v页", pageNum, endPageNum)
 		url := pathUrl + "=" + strconv.Itoa(pageNum)
 
-		razorsRepository.Update(obj.Name, url, pageNum)
+		razorsRepository.Update(obj.Name, url, obj.EsIndex, pageNum)
 
 		newDto := &dto.TaskDto{WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, PageNum: pageNum}
 		obj.insertQueue(newDto)
@@ -207,7 +214,7 @@ func (obj *ZmkRazor) fetchList(taskDto *dto.TaskDto) {
 			continue
 		}
 
-		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, obj.BaseUrl)
+		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, obj.BaseSeedUrl)
 		newDto.InfoUrl = newDto.DownloadUrl
 
 		//清洗数据1
@@ -246,7 +253,7 @@ func (obj *ZmkRazor) fetchInfo(taskDto *dto.TaskDto) {
 		return
 	}
 
-	url := helper.UrlJoin(items[0][1], obj.BaseUrl)
+	url := helper.UrlJoin(items[0][1], obj.BaseSeedUrl)
 
 	taskDto.Refers = append(taskDto.Refers, taskDto.DownloadUrl)
 	taskDto.DownloadUrl = url
@@ -271,7 +278,7 @@ func (obj *ZmkRazor) fetchSelectDx1(taskDto *dto.TaskDto) {
 
 		downloadUrl := helper.ToUtf8Str(items[0][1])
 		if !strings.HasPrefix(downloadUrl, "http:") && !strings.HasPrefix(downloadUrl, "https:") {
-			downloadUrl = helper.UrlJoin(downloadUrl, obj.BaseUrl)
+			downloadUrl = helper.UrlJoin(downloadUrl, obj.BaseSeedUrl)
 		}
 
 		taskDto.Refers = append(taskDto.Refers, taskDto.DownloadUrl)
