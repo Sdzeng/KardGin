@@ -60,7 +60,7 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	// result := trans.Debug().FirstOrCreate(df, model.Downloads{DownloadUrl: dto.DownloadUrl})
 	// result := trans.Where(model.Downloads{DownloadUrl: dto.DownloadUrl}).FirstOrCreate(df)
 
-	result := trans.Model(dl).Select("download_url", "update_time").Updates(model.Downloads{DownloadUrl: dto.DownloadUrl, UpdateTime: now})
+	result := trans.Model(dl).Select("download_url", "page", "update_time").Updates(model.Downloads{DownloadUrl: dto.DownloadUrl, Page: dto.PageNum, UpdateTime: now})
 
 	if result.Error != nil {
 		trans.Rollback()
