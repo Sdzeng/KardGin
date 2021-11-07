@@ -55,7 +55,7 @@
                 }
 
           
-                var resultHtml= _this.getResultHtml(clearHtml,resultDto.data.search_hits);
+                var resultHtml= _this.getResultHtml(resultDto.data.search_hits);
                 if (clearHtml) {
                     $htmlObj.html(resultHtml);
                 } else {
@@ -83,7 +83,7 @@
         $loadMore.text("加载中...");
  
         var url=basejs.requestDomain + "/home/index";
-        var data={page_count:10};
+        var data={page_count:6};
         var indexHttpPars=_this.getHttpPars(url,data,"index",true,$loadMore);
 
         var indexHttpHelper = new httpHelper(indexHttpPars);
@@ -96,7 +96,7 @@
         var $loadMore = $(".load-more>span", _this.data.scope);
 
         var searchHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/search",{},"search",true,$loadMore);
-        var indexHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/index",{page_count:10},"index",true,$loadMore);
+        var indexHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/index",{page_count:6},"index",true,$loadMore);
 
         $(".btn-search", _this.data.scope).click(function () {
            debugger;
@@ -107,7 +107,7 @@
             if(keyword&&keyword.length>0){
                 searchHttpPars.data={
                     search_word:keyword,
-                    page_count:10
+                    page_count:6
                 };
                 httpPars=searchHttpPars;
             }else{
@@ -152,13 +152,8 @@
             }
         });
     },
-    getResultHtml: function (clearHtml,searchHitDtos) {
-
+    getResultHtml: function (searchHitDtos) {
         var _this = this;
-
-        
-
-        var titleTagArr = [];
         var resultHtml = "";
 
         if (searchHitDtos) {
@@ -187,8 +182,6 @@
                 resultRowHtml = "";
 
             }
-
-            
         }
 
         return resultHtml;

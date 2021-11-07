@@ -240,7 +240,6 @@ var topMenu = {
         //菜单
         //$.when($.getJSON(basejs.requestDomain + '/assets/json/menu.json'), $.get(basejs.requestDomain + '/menu/'))
         $.getJSON('/json/menu.json', function (data) {
-
             _this.setMenu(data.menu || {});
             // _this.initShow();
         });
