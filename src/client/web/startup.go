@@ -49,7 +49,7 @@ func cors() gin.HandlerFunc {
 		c.Header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH, OPTIONS")
 		c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
 		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Header("Set-Cookie", "SameSite=Lax; Secure")
+		c.Header("Set-Cookie", "SameSite=Lax;Secure")
 
 		// 放行所有OPTIONS方法
 		if method == "OPTIONS" {
@@ -69,7 +69,7 @@ func runKard(router *gin.Engine) {
 	{
 		// homeGroup.GET("/", homeController.GetCover)
 		// homeGroup.GET("/subtitles", homeController.ExtractSubtitles)
-		homeGroup.POST("/", homeController.Index)
+		homeGroup.POST("/index", homeController.Index)
 		homeGroup.POST("/scroll_index", homeController.ScrollIndex)
 		homeGroup.POST("/search", homeController.Search)
 		homeGroup.POST("/scroll_search", homeController.ScrollSearch)

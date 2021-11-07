@@ -3,17 +3,16 @@
         scope: $("#searchPage"),
         queryString: basejs.getQueryString(),
         loadMorePars: {
-            //设置essays加载更多
             offOn: false,
-            page: 1
-
+            scrollType:"",
+            scrollId:""
         }
     },
     init: function () {
         var _this = this;
- 
+        _this.bindIndexResult();
         _this.bindSearchResult();
- 
+        _this.bindScrollResult();
 
         $('.go-to-top', _this.data.scope).goToTop();
     },
@@ -30,85 +29,135 @@
             "</div >" +
             "</div >")
     }, 
-    bindSearchResult: function () {
+    getHttpPars:function(url,data,scrollType,clearHtml,$loadMore){
+        var _this = this;
+        
+        var httpPars = {
+            url: url,
+            data:data,
+            success: function (resultDto) {
+        
+                if (!resultDto||resultDto.code!=200) {
+                    return;
+                }
+
+                var $htmlObj=$(".search-result-left", _this.data.scope);
+
+                if(resultDto.data==null){
+                    if(clearHtml){
+                        $htmlObj.html("");
+                        $loadMore.text("查无数据");
+                    }else{
+                        _this.data.loadMorePars.offOn = false;
+                        $loadMore.text("已经是底部");
+                    }
+                    return;
+                }
+
+          
+                var resultHtml= _this.getResultHtml(clearHtml,resultDto.data.search_hits);
+                if (clearHtml) {
+                    $htmlObj.html(resultHtml);
+                } else {
+                    $htmlObj.append(resultHtml);
+                }
+
+                _this.data.loadMorePars.scrollId = resultDto.data.scroll_id;
+                _this.data.loadMorePars.scrollType=scrollType;
+                _this.data.loadMorePars.offOn = true;
+                $loadMore.text("加载更多");
+                
+            },
+            error: function () {
+                _this.data.loadMorePars.offOn = false;
+                $(".search-result-left", _this.data.scope).empty();
+            }
+        };
+        return httpPars;
+    },
+    bindIndexResult: function () {
+     
         var _this = this;
 
         var $loadMore = $(".load-more>span", _this.data.scope);
         $loadMore.text("加载中...");
+ 
+        var url=basejs.requestDomain + "/home/index";
+        var data={page_count:10};
+        var indexHttpPars=_this.getHttpPars(url,data,"index",true,$loadMore);
 
-        var keyword = null;
-        if (_this.data.queryString && _this.data.queryString.keyword && _this.data.queryString.keyword.length > 0) {
-            keyword = decodeURI(_this.data.queryString.keyword);
-            $("#searchBox", _this.data.scope).val(keyword);
-        }
-        var httpPars = {
-            url: basejs.requestDomain + "/home/search",
-            data: { search_word: "老", page_count: 10 },
-            success: function (resultDto) {
-                debugger;
-                //设置essays加载更多
-                if (resultDto.code!=200) {
-                    return;
-                }
+        var indexHttpHelper = new httpHelper(indexHttpPars);
+        indexHttpHelper.send();
 
-                _this.bindResultInfo(resultDto.data.search_hits);
+    },
+    bindSearchResult: function () {
+        var _this = this;
 
-                if (resultDto.data.hasNextPage) {
-                    _this.data.loadMorePars.offOn = true;
-                    _this.data.loadMorePars.page++;
-                    $loadMore.text("加载更多");
-                }
-                else {
-                    _this.data.loadMorePars.offOn = false;
-                    $loadMore.text("已经是底部");
-                }
-            },
-            error: function () {
-                _this.data.loadMorePars.offOn = true;
+        var $loadMore = $(".load-more>span", _this.data.scope);
 
-                $(".search-result-left", _this.data.scope).empty();
-            }
-        };
-
-        var essaysHttpHelper = new httpHelper(httpPars);
-        essaysHttpHelper.send();
+        var searchHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/search",{},"search",true,$loadMore);
+        var indexHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/index",{page_count:10},"index",true,$loadMore);
 
         $(".btn-search", _this.data.scope).click(function () {
-
+           debugger;
             _this.data.loadMorePars.offOn = false;
-            _this.data.loadMorePars.page = 1;
-            httpPars.data.keyword = $("#searchBox", _this.data.scope).val();
-            httpPars.data.pageIndex = _this.data.loadMorePars.page;
+
+            var httpPars={};
+            var keyword=$("#searchBox", _this.data.scope).val()
+            if(keyword&&keyword.length>0){
+                searchHttpPars.data={
+                    search_word:keyword,
+                    page_count:10
+                };
+                httpPars=searchHttpPars;
+            }else{
+                httpPars=indexHttpPars
+            }
 
             $loadMore.text("加载中...");
-            essaysHttpHelper = new httpHelper(httpPars);
-            essaysHttpHelper.send();
+            var h = new httpHelper(httpPars);
+            h.send();
         });
 
-        $("body").keydown(function () {
-            if (event.keyCode == "13") {//keyCode=13是回车键；数字不同代表监听的按键不同
+        $("body").keydown(function (e) {
+            if (e.keyCode == "13") {//keyCode=13是回车键；数字不同代表监听的按键不同
                 $(".btn-search", _this.data.scope).click();
             }
         });
 
+    },
+    bindScrollResult:function(){
+        var _this = this;
+        var $loadMore = $(".load-more>span", _this.data.scope);
 
-        $loadMore.loadMore(50, function () {
+        var scrollIndexHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/scroll_index",{},"index",false,$loadMore);
+        var scrollSearchHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/scroll_search",{},"search",false,$loadMore);
+
+        $loadMore.loadMore(10, function () {
+            debugger;
             //这里用 [ off_on ] 来控制是否加载 （这样就解决了 当上页的条件满足时，一下子加载多次的问题啦）
             if (_this.data.loadMorePars.offOn) {
                 _this.data.loadMorePars.offOn = false;
 
-                httpPars.data.keyword = $("#searchBox", _this.data.scope).val();
-                httpPars.data.pageIndex = _this.data.loadMorePars.page;
+                var httpPars={};
+                switch(_this.data.loadMorePars.scrollType){
+                    case "index":  httpPars=scrollIndexHttpPars;break;
+                    case "search": httpPars=scrollSearchHttpPars;break;
+                }
+                httpPars.data={"scroll_id": _this.data.loadMorePars.scrollId }
+
                 $loadMore.text("加载中...");
-                essaysHttpHelper = new httpHelper(httpPars);
-                essaysHttpHelper.send();
+                var h = new httpHelper(httpPars);
+                h.send();
             }
         });
-
     },
-    bindResultInfo: function (searchHitDtos) {
+    getResultHtml: function (clearHtml,searchHitDtos) {
 
         var _this = this;
+
+        
+
         var titleTagArr = [];
         var resultHtml = "";
 
@@ -128,31 +177,21 @@
                     startAt: searchHitDto.start_at,
                     lan: searchHitDto.lan,
                     detailPage: detailPage,
-
                     title: searchHitDto.title,
                     subtitle: searchHitDto.subtitle,
-
-                    texts: texts ,
-         
+                    texts: texts,
                     creationTime: basejs.getDateDiff(basejs.getDateTimeStamp(searchHitDto.creation_time))
-
                 });
-
-
 
                 resultHtml += resultRowHtml;
                 resultRowHtml = "";
 
             }
 
-            if (_this.data.loadMorePars.page == 1) {
-                $(".search-result-left", _this.data.scope).html(resultHtml);
-            } else {
-                $(".search-result-left", _this.data.scope).append(resultHtml);
-            }
+            
         }
 
-
+        return resultHtml;
     } 
     
 };

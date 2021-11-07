@@ -48,7 +48,7 @@ var basejs = {
         return this.src = basejs.cdnDomain + "/image/default/default-picture_190x180.png";
     },
     getDateTimeStamp: function (dateStr) {
-        return Date.parse(dateStr.replace(/T/g, ' ').replace(/-/gi, "/"));
+        return Date.parse(dateStr);
     },
     getDateDiff: function (dateTimeStamp) {
         var minute = 1000 * 60;
@@ -182,17 +182,21 @@ $.extend(httpHelper.prototype, {
     // 发送数据
     send: function () {
         var _this = this;
-        debugger;
+
+        var data=_this.opts.data;
+        if( _this.opts.contentType=="application/json;charset=utf-8"){
+            data=JSON.stringify(_this.opts.data)
+        }
         //return $.Deferred(function ($dfd) {
         $.ajax({
             url: _this.opts.url,
             type: _this.opts.type,
-            // xhrFields: {
-            //     withCredentials: true //配置http跨域请求中携带cookie
-            // },
+            xhrFields: {
+                withCredentials: true //配置http跨域请求中携带cookie
+            },
             crossDomain: true,
             async: _this.opts.async,
-            data: JSON.stringify(_this.opts.data),
+            data: data,
             contentType: _this.opts.contentType,
             traditional: _this.opts.traditional,
             processData: _this.opts.processData,
