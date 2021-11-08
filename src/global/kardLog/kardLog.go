@@ -2,7 +2,7 @@ package kardLog
 
 import (
 	"kard/src/global/variable"
-	"log"
+	"os"
 	"time"
 
 	"github.com/natefinch/lumberjack"
@@ -11,21 +11,9 @@ import (
 )
 
 func CreateZapFactory(entry func(zapcore.Entry) error) *zap.Logger {
-
 	// 获取程序所处的模式：  开发调试 、 生产
 	//variable.WebYml := yml_config.CreateYamlFactory()
-	appDebug := variable.WebYml.GetBool("AppDebug")
 
-	// 判断程序当前所处的模式，调试模式直接返回一个便捷的zap日志管理器地址，所有的日志打印到控制台即可
-	if appDebug == true {
-		if logger, err := zap.NewDevelopment(zap.Hooks(entry)); err == nil {
-			return logger
-		} else {
-			log.Fatal("创建zap日志包失败，详情：" + err.Error())
-		}
-	}
-
-	// 以下才是 非调试（生产）模式所需要的代码
 	encoderConfig := zap.NewProductionEncoderConfig()
 
 	timePrecision := variable.WebYml.GetString("Logs.TimePrecision")
@@ -69,8 +57,27 @@ func CreateZapFactory(entry func(zapcore.Entry) error) *zap.Logger {
 	//参数一：编码器
 	//参数二：写入器
 	//参数三：参数级别，debug级别支持后续调用的所有函数写日志，如果是 fatal 高级别，则级别>=fatal 才可以写日志
+
+	var allCore []zapcore.Core
 	zapCore := zapcore.NewCore(encoder, writer, zap.InfoLevel)
-	return zap.New(zapCore, zap.AddCaller(), zap.Hooks(entry))
+	allCore = append(allCore, zapCore)
+
+	// 以下是 调试（生产）模式所需要的代码
+	appDebug := variable.WebYml.GetBool("AppDebug")
+	// 判断程序当前所处的模式，调试模式直接返回一个便捷的zap日志管理器地址，所有的日志打印到控制台
+	if appDebug {
+		consoleDebugging := zapcore.AddSync(os.Stdout)
+		allCore = append(allCore, zapcore.NewCore(encoder, consoleDebugging, zap.DebugLevel))
+
+		// if logger, err := zap.NewDevelopment(zap.Hooks(entry)); err == nil {
+		// 	return logger
+		// } else {
+		// 	log.Fatal("创建zap日志包失败，详情：" + err.Error())
+		// }
+	}
+
+	core := zapcore.NewTee(allCore...)
+	return zap.New(core, zap.AddCaller(), zap.Hooks(entry))
 }
 
 // GoSkeleton 系统运行日志钩子函数
