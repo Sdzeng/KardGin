@@ -38,6 +38,7 @@ func (repository *RazorsRepository) FirstOrCreate(razor, seedUrl, esIndex string
 	result := repository.DB.Where("razor=? and es_index=?", razor, esIndex).FirstOrCreate(raz)
 
 	if result.Error != nil {
+		variable.ZapLog.Sugar().Errorf("记录进度失败：%v", result)
 		return nil
 	}
 
