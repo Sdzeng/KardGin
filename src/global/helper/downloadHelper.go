@@ -102,8 +102,8 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 	defer res.Body.Close()
 
 	//拷贝
-	fileName, err := GetDownloadFileName(taskDto.DownloadUrl, res)
-	if err != nil {
+	fileName, getErr := GetDownloadFileName(taskDto.DownloadUrl, res)
+	if getErr != nil {
 
 		html, err := getHtml(res)
 		if err != nil {
@@ -115,7 +115,7 @@ func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
 			return nil, errors.New("被拦截")
 		}
 
-		return nil, err
+		return nil, getErr
 	}
 
 	if len(fileName) == 0 {
@@ -145,7 +145,7 @@ func GetDownloadFileName(url string, resp *http.Response) (string, error) {
 	fileNameLower := strings.ToLower(fileName)
 	urlRp := regexp.MustCompile(`\d+.html`)
 
-	if strings.HasSuffix(fileNameLower, ".rar") || strings.HasSuffix(fileNameLower, ".zip") || strings.HasSuffix(fileNameLower, ".ass") || strings.HasSuffix(fileNameLower, ".srt") || strings.HasSuffix(fileNameLower, ".7z") {
+	if strings.HasSuffix(fileNameLower, ".rar") || strings.HasSuffix(fileNameLower, ".zip") || strings.HasSuffix(fileNameLower, ".ass") || strings.HasSuffix(fileNameLower, ".ssa") || strings.HasSuffix(fileNameLower, ".srt") || strings.HasSuffix(fileNameLower, ".7z") {
 		return fileName, nil
 
 	} else if fileNameLower == "dx1" {
@@ -619,7 +619,7 @@ func Convert(src string, srcCode string, tagCode string) string {
 
 func WorkClock(name string) {
 	now := time.Now()
-	if now.Hour() < 8 || now.Hour() > 20 {
+	if now.Hour() < 8 || now.Hour() > 23 {
 		next := now
 		if now.Hour() > 20 {
 			next = now.Add(time.Hour * 24)

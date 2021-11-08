@@ -40,7 +40,7 @@ var (
 	zmkDownloadButtonReg = `<a href="(/detail/\d+\.html)" target="_blank" `
 	zmkTitleReg          = `title="([^"]+?)">.+</a>`
 	zmkSubtitleReg       = `(\s|\n)*<span class="label label-info">([ASTRUPIDX\+/]*)</span>`
-	zmkLanImgReg         = `(\s|\S)+?(<img .+ alt="[^"]+?"[^>]+?>)+`
+	zmkLanImgReg         = `(\s|\S)+?((<img .+ alt="[^"]+?"[^>]+?>)+)`
 
 	zmkFetchListRegexp = regexp.MustCompile(zmkDownloadButtonReg + zmkTitleReg + zmkSubtitleReg + zmkLanImgReg)
 
