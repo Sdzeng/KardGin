@@ -231,6 +231,12 @@ func (obj *A4KRazor) fetchList(taskDto *dto.TaskDto) {
 }
 
 func (obj *A4KRazor) fetchInfo(taskDto *dto.TaskDto) {
+	defer func() {
+		if err := recover(); err != nil {
+			helper.PrintError("fetchInfo", err.(error).Error(), true)
+		}
+	}()
+
 	html, _, err := helper.LoadHtml(taskDto)
 	if err != nil {
 		return
