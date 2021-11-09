@@ -40,7 +40,7 @@ var (
 	zmkDownloadButtonReg = `<a href="(/detail/\d+\.html)" target="_blank" `
 	zmkTitleReg          = `title="([^"]+?)">.+</a>`
 	zmkSubtitleReg       = `(\s|\n)*<span class="label label-info">([ASTRUPIDX\+/]*)</span>`
-	zmkLanImgReg         = `(\s|\S)+?(<img .+ alt="[^"]+?"[^>]+?>)+`
+	zmkLanImgReg         = `(\s|\S)+?((<img .+ alt="[^"]+?"[^>]+?>)+)`
 
 	zmkFetchListRegexp = regexp.MustCompile(zmkDownloadButtonReg + zmkTitleReg + zmkSubtitleReg + zmkLanImgReg)
 
@@ -163,7 +163,7 @@ func (obj *ZmkRazor) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(obj.Name)
-		helper.Sleep(obj.Name, newDto.WorkType, "m", 20, 45)
+		helper.Sleep(obj.Name, newDto.WorkType, "m", 18, 35)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)

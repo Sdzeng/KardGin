@@ -37,7 +37,7 @@ var (
 	a4kLastPageNum         = `<a class="item active" href="(\?page)=(\d+)"[^>]+?>(\s|\n)*<span(\s|\S)+?</span>(\s|\n)*(\d+)</a>`
 	a4kLastFetchPageRegexp = regexp.MustCompile(a4kLastPageNum)
 	// a4kTitleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
-	a4kLanListReg        = `<div class="language">(\s|\n)*<span class="h4">(\s|\n)*(<i class="[^"]+?" data-content="[^"]+?"[^>]+?></i>\s*)+`
+	a4kLanListReg        = `<div class="language">(\s|\n)*<span class="h4">(\s|\n)*((<i class="[^"]+?" data-content="[^"]+?"[^>]+?></i>\s*)+)`
 	a4kDownloadButtonReg = `(\s|\S)+?<div class="content">(\s|\n)*<h3>(\s|\n)*<a href="([^"]+?)"[^>]+?>`
 	a4kTitleReg          = `(.+)</a>(\s|\n)*</h3>`
 	a4kFetchListRegexp   = regexp.MustCompile(a4kLanListReg + a4kDownloadButtonReg + a4kTitleReg)
@@ -164,7 +164,7 @@ func (obj *A4KRazor) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(obj.Name)
-		helper.Sleep(obj.Name, newDto.WorkType, "m", 10, 28)
+		helper.Sleep(obj.Name, newDto.WorkType, "m", 10, 19)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)
@@ -185,7 +185,7 @@ func (obj *A4KRazor) fetchList(taskDto *dto.TaskDto) {
 	items := a4kFetchListRegexp.FindAllStringSubmatch(*html, -1)
 
 	for _, item := range items {
-		title := item[8]
+		title := item[9]
 
 		// if len(taskDto.SearchKeyword) > 0 && !taskDto.ContainsKeyword(title) {
 		// 	variable.ZapLog.Sugar().Infof("忽略下载 %v", title)
@@ -204,7 +204,7 @@ func (obj *A4KRazor) fetchList(taskDto *dto.TaskDto) {
 		}
 
 		title = helper.ReplaceTitle(title)
-		newDto := &dto.TaskDto{Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[7], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: "", Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, PageNum: taskDto.PageNum}
+		newDto := &dto.TaskDto{Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[8], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: "", Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, PageNum: taskDto.PageNum}
 
 		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
 			continue

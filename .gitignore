@@ -16,3 +16,4 @@
 assert
 wwwroot
 __debug_bin
+/src/logs
