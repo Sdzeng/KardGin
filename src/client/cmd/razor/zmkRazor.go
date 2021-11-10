@@ -235,6 +235,12 @@ func (obj *ZmkRazor) fetchList(taskDto *dto.TaskDto) {
 }
 
 func (obj *ZmkRazor) fetchInfo(taskDto *dto.TaskDto) {
+	defer func() {
+		if err := recover(); err != nil {
+			helper.PrintError("fetchInfo", err.(error).Error(), true)
+		}
+	}()
+
 	html, _, err := helper.LoadHtml(taskDto)
 	if err != nil {
 		return
