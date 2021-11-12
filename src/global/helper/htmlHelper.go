@@ -6,11 +6,14 @@ import (
 	"kard/src/model/dto"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 )
 
 var (
 	titleReplacer *strings.Replacer
+	seasonFmt     = `(s|S)([0-9]+)((e|E)[0-9]+)`
+	seasonRegexp  = regexp.MustCompile(seasonFmt)
 )
 
 func init() {
@@ -18,6 +21,7 @@ func init() {
 	replaceKeywords := []string{
 		".WEBDL", "",
 		"FIX字幕侠", "",
+		"擦枪字幕组", "",
 		"擦枪组", "",
 		"YYeTs组", "",
 		"WEB调轴", "",
@@ -34,6 +38,7 @@ func init() {
 		"加长版", "",
 		"精译版", "",
 		"中英文", "",
+		"简繁英", "",
 		"日版", "",
 		"双字", "",
 		"简体", "",
@@ -43,11 +48,12 @@ func init() {
 		"中文", "",
 		"中字", "",
 		"简繁", "",
-		"简繁英", "",
 		"英文", "",
 		"机翻", "",
 		"字幕", "",
 		"下载", "",
+		"H264-", "",
+		"h264-", "",
 		".zip", "",
 		".rar", "",
 		".7z", "",
@@ -206,8 +212,19 @@ func ReplaceTitle(source string) string {
 	// source = strings.ReplaceAll(source, ")", " ")
 	// source = strings.ReplaceAll(source, "/", " ")
 	source = titleReplacer.Replace(source)
+	source = ReplaceSeason(source)
 	source = MergerOfSpace(source)
 	return source
+}
+
+func ReplaceSeason(source string) string {
+
+	items := seasonRegexp.FindStringSubmatch(source)
+	if len(items) <= 0 {
+		return source
+	}
+
+	return "第" + items[1] + "季第" + items[3] + "集"
 }
 
 func MergerOfSpace(source string) string {
@@ -224,5 +241,5 @@ func MergerOfSpace(source string) string {
 	// 	}
 	// }
 
-	return strings.Join(arr, " ")
+	return strings.Join(arr, ".")
 }

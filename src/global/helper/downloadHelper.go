@@ -27,9 +27,9 @@ import (
 )
 
 var (
-	detector         *chardet.Detector
-	fileNameReplacer *strings.Replacer
-	nameReplacer     *strings.Replacer
+	detector       *chardet.Detector
+	mapKeyReplacer *strings.Replacer
+	// nameReplacer   *strings.Replacer
 )
 
 func init() {
@@ -53,18 +53,19 @@ func init() {
 		".", "",
 	}
 
-	fileNameReplacer = strings.NewReplacer(replaceKeywords...)
+	mapKeyReplacer = strings.NewReplacer(replaceKeywords...)
 
-	nameReplaceKeywords := []string{
-		"简体&英文", "",
-		"繁体&英文", "",
-		"简体", "",
-		"英文", "",
-		"繁体", "",
-		".", " ",
-	}
+	// nameReplaceKeywords := []string{
+	// 	"简体&英文", "",
+	// 	"繁体&英文", "",
+	// 	"简体", "",
+	// 	"英文", "",
+	// 	"繁体", "",
+	// 	".", " ",
+	// 	".", " ",
+	// }
 
-	nameReplacer = strings.NewReplacer(nameReplaceKeywords...)
+	// nameReplacer = strings.NewReplacer(nameReplaceKeywords...)
 }
 
 type WriterCounter struct {
@@ -362,7 +363,7 @@ func downloadFiles(md5Seed, fileName string, rc *io.ReadCloser) []*dto.Subtitles
 		if strings.HasSuffix(fn, ".srt") || strings.HasSuffix(fn, ".ssa") || strings.HasSuffix(fn, ".ass") || strings.HasSuffix(fn, ".stl") || strings.HasSuffix(fn, ".ts") || strings.HasSuffix(fn, ".ttml") || strings.HasSuffix(fn, ".vtt") {
 			filePtah, content := ChangeCharset(md5Seed, fileName, rc)
 			if len(filePtah) > 0 {
-				name := nameReplacer.Replace(strings.TrimSuffix(fileName, filepath.Ext(fileName)))
+				name := ReplaceTitle(strings.TrimSuffix(fileName, filepath.Ext(fileName)))
 				result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, Name: name, FileName: fileName, Content: content})
 			}
 		}
@@ -378,7 +379,7 @@ func greate(itemDtos []*dto.FileItemFilterDto) []*dto.SubtitlesFileDto {
 	for _, itemDto := range itemDtos {
 
 		fn := strings.ToLower(itemDto.FileName)
-		mapKey := fileNameReplacer.Replace(fn)
+		mapKey := mapKeyReplacer.Replace(fn)
 
 		level := 0
 		if strings.Contains(fn, "繁体") {
