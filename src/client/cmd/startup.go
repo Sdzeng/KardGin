@@ -33,7 +33,7 @@ func main() {
 
 	a4kRazor := razor.NewA4KRazor(seedUrlStr)
 	zmkRazor := razor.NewZmkRazor(seedUrlStr)
-	razorWork(zmkRazor, a4kRazor)
+	razorWork(a4kRazor, zmkRazor)
 
 	var quit string
 	fmt.Scan(&quit)

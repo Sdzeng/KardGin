@@ -12,7 +12,7 @@ import (
 
 var (
 	titleReplacer *strings.Replacer
-	seasonFmt     = `(s|S)([0-9]+)((e|E)[0-9]+)`
+	seasonFmt     = `(s|S)([0-9]+)(e|E)([0-9]+)`
 	seasonRegexp  = regexp.MustCompile(seasonFmt)
 )
 
@@ -218,13 +218,12 @@ func ReplaceTitle(source string) string {
 }
 
 func ReplaceSeason(source string) string {
-
 	items := seasonRegexp.FindStringSubmatch(source)
 	if len(items) <= 0 {
 		return source
 	}
 
-	return "第" + items[1] + "季第" + items[3] + "集"
+	return strings.Replace(source, items[0], "第"+items[2]+"季第"+items[4]+"集", -1)
 }
 
 func MergerOfSpace(source string) string {
