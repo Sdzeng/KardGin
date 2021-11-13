@@ -218,6 +218,10 @@ func ReplaceTitle(source string) string {
 }
 
 func ReplaceSeason(source string) string {
+	if strings.Contains(source, "季") && strings.Contains(source, "集") {
+		return source
+	}
+
 	items := seasonRegexp.FindStringSubmatch(source)
 	if len(items) <= 0 {
 		return source
