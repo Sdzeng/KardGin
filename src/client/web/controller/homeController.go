@@ -193,21 +193,24 @@ func getSearchData(pageCount int, search_word string) *elastic.SearchResult {
 	// p := (page - 1) * li
 	// collapsedata := elastic.NewCollapseBuilder("texts")
 	es_index := variable.IndexName
-	// esq := elastic.NewBoolQuery()
+	esq := elastic.NewBoolQuery()
 
 	// // esq = esq.Should(
 	// // 	elastic.NewWildcardQuery("title", search_word),
 	// // 	elastic.NewWildcardQuery("subtitle", search_word),
 	// // 	elastic.NewWildcardQuery("texts", search_word),
 	// // )
+	words := strings.Fields(search_word)
+	for _, word := range words {
+		esq = esq.Should(
+			elastic.NewMatchPhraseQuery("title", word),
+			elastic.NewMatchPhraseQuery("subtitle", word),
+			elastic.NewMatchPhraseQuery("texts", word),
+		)
+	}
 
-	// esq = esq.Should(
-	// 	elastic.NewMatchPhraseQuery("title", search_word),
-	// 	elastic.NewMatchPhraseQuery("subtitle", search_word),
-	// 	elastic.NewMatchPhraseQuery("texts", search_word),
-	// )
-
-	esq := elastic.NewMultiMatchQuery(search_word, "title", "subtitle", "texts").Type("phrase")
+	// esq.QueryName()
+	// esq := elastic.NewMultiMatchQuery(search_word, "title", "subtitle", "texts").Type("phrase")
 
 	fsc := elastic.NewFetchSourceContext(true).Include("path_id", "part_id", "title", "subtitle", "texts", "start_at", "lan", "pic_path", "create_time")
 
