@@ -12,10 +12,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <link rel="icon" href="/image/logo-tab_16x16.ico" sizes="16x16">
-    <link rel="stylesheet" href="/css/kard.css" type="text/css" media="screen">
+    <!-- <link rel="stylesheet" href="/css/kard.css" type="text/css" media="screen"> -->
 
-    <!-- <link rel="stylesheet/less" href="/less/kard.less" type="text/css" media="screen">
-    <script type="text/javascript" src="/js/less.js?v=1.0.0"></script> -->
+    <link rel="stylesheet/less" href="/less/kard.less" type="text/css" media="screen">
+    <script type="text/javascript" src="/js/less.js?v=1.0.0"></script>
 
     <script>
             var _hmt = _hmt || [];
@@ -30,26 +30,24 @@
 </head>
 <body id="searchPage">
 
-    <nav id="navbar" class="navbar  bg-default navbar-bottom-shadow">
+    <nav id="navbar" class="navbar">
 
         <div class="navbar-logo">
             <a href="/"><span><img src="/image/logo-nav.png"></span></a>
         </div>
-        <div class="navbar-left">
+        <div class="navbar-info">
             <ul id="menuList" class="navbar-nav"></ul>
         </div>
     </nav>
 
-    <div class="section-style search-form">
+    <div class="search-form">
         <div class="btn-search"><div class="icon-search"></div><div class="icon-search-after"></div></div>
-        <input id="searchBox" type="text" placeholder="搜索问题或关键字" class="form-control" value="">
+        <input id="searchBox" type="text" placeholder="搜索台词或电影连续剧名称" class="form-control" value="">
 
     </div>
-    <div class="section-style search-result">
-        <div class="search-result-left">
-
+    <div class="search-result">
+        <div class="search-result-warp-list">
         </div>
-
     </div>
 
     <div class="go-to-top" style="display: block;">
@@ -57,7 +55,7 @@
     </div>
     
     <div class="load-more">
-        <span>加载更多</span>
+        <div>加载更多</div>
     </div>
 
 

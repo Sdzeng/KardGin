@@ -18,13 +18,13 @@
     },
     template: {
         searchResultRow: ("<div class='search-result-warp'>" +
-            "<div class='result-score'><div class='essay-score'>#{startAt}</div><div class='essay-score-head-count'>#{lan}</div></div>" +
+            "<div class='introduce-info'><div class='introduce-info-pic'></div></div>" +
             "<div class='result-entity'>" +
             "<div class='result-info'>" +
-            "<div class='result-header'><a href='#{detailPage}' class='essay-title'>#{title}</a></div>" +
-            "<div class='result-header'><a href='#{detailPage}' class='essay-title'>#{subtitle}</a></div>" +
+            "<div class='result-title'><a href='#{detailPage}'>#{title} [#{subtitle}]</a></div>" +
+            // "<div class='result-subtitle'><a href='#{detailPage}'>#{subtitle}</a></div>" +
             "<div class='result-content'><a href='#{detailPage}' class='essay-content'>#{texts}</a></div>" +
-            "<div class='result-footer'><span class='essay-nickname'><a>#{lan}</a></span> <span class='essay-creationtime'>#{creationTime}</span></div>" +
+            "<div class='result-footer'><span class='subtitls-startat'>片段摘自 #{startAt}</span><span class='subtitls-lan'>#{lan}</span> <span>#{creationTime}更新</span></div>" +
             "</div>" +
             "</div >" +
             "</div >")
@@ -41,7 +41,7 @@
                     return;
                 }
 
-                var $htmlObj=$(".search-result-left", _this.data.scope);
+                var $htmlObj=$(".search-result-warp-list", _this.data.scope);
 
                 if(resultDto.data==null){
                     if(clearHtml){
@@ -70,7 +70,7 @@
             },
             error: function () {
                 _this.data.loadMorePars.offOn = false;
-                $(".search-result-left", _this.data.scope).empty();
+                $(".search-result-warp-list", _this.data.scope).empty();
             }
         };
         return httpPars;
@@ -79,11 +79,11 @@
      
         var _this = this;
 
-        var $loadMore = $(".load-more>span", _this.data.scope);
+        var $loadMore = $(".load-more>div", _this.data.scope);
         $loadMore.text("加载中...");
  
         var url=basejs.requestDomain + "/home/index";
-        var data={page_count:6};
+        var data={page_count:5};
         var indexHttpPars=_this.getHttpPars(url,data,"index",true,$loadMore);
 
         var indexHttpHelper = new httpHelper(indexHttpPars);
@@ -93,13 +93,12 @@
     bindSearchResult: function () {
         var _this = this;
 
-        var $loadMore = $(".load-more>span", _this.data.scope);
+        var $loadMore = $(".load-more>div", _this.data.scope);
 
         var searchHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/search",{},"search",true,$loadMore);
-        var indexHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/index",{page_count:6},"index",true,$loadMore);
+        var indexHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/index",{page_count:5},"index",true,$loadMore);
 
         $(".btn-search", _this.data.scope).click(function () {
-           debugger;
             _this.data.loadMorePars.offOn = false;
 
             var httpPars={};
@@ -107,7 +106,7 @@
             if(keyword&&keyword.length>0){
                 searchHttpPars.data={
                     search_word:keyword,
-                    page_count:6
+                    page_count:5
                 };
                 httpPars=searchHttpPars;
             }else{
@@ -128,13 +127,12 @@
     },
     bindScrollResult:function(){
         var _this = this;
-        var $loadMore = $(".load-more>span", _this.data.scope);
+        var $loadMore = $(".load-more>div", _this.data.scope);
 
         var scrollIndexHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/scroll_index",{},"index",false,$loadMore);
         var scrollSearchHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/scroll_search",{},"search",false,$loadMore);
 
         $loadMore.loadMore(10, function () {
-            debugger;
             //这里用 [ off_on ] 来控制是否加载 （这样就解决了 当上页的条件满足时，一下子加载多次的问题啦）
             if (_this.data.loadMorePars.offOn) {
                 _this.data.loadMorePars.offOn = false;
@@ -165,17 +163,17 @@
          
                 var texts="";
                if(searchHitDto.texts&&searchHitDto.texts.length>0) {
-                    texts=searchHitDto.texts.join(" ")
+                    texts=searchHitDto.texts.join("<br/>")
                 }
 
                 resultRowHtml += _this.template.searchResultRow.format({
-                    startAt: searchHitDto.start_at,
+                    startAt: basejs.formatSeconds(searchHitDto.start_at),
                     lan: searchHitDto.lan,
                     detailPage: detailPage,
                     title: searchHitDto.title,
                     subtitle: searchHitDto.subtitle,
                     texts: texts,
-                    creationTime: basejs.getDateDiff(basejs.getDateTimeStamp(searchHitDto.creation_time))
+                    creationTime: basejs.getDateDiff(basejs.getDateTimeStamp(searchHitDto.create_time))
                 });
 
                 resultHtml += resultRowHtml;

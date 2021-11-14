@@ -50,6 +50,18 @@ var basejs = {
     getDateTimeStamp: function (dateStr) {
         return Date.parse(dateStr);
     },
+    formatSeconds:function(value) {
+        let result = parseInt(value)
+        let h = Math.floor(result / 3600) < 10 ? '0' + Math.floor(result / 3600) : Math.floor(result / 3600);
+        let m = Math.floor((result / 60 % 60)) < 10 ? '0' + Math.floor((result / 60 % 60)) : Math.floor((result / 60 % 60));
+        let s = Math.floor((result % 60)) < 10 ? '0' + Math.floor((result % 60)) : Math.floor((result % 60));
+     
+       let res =h+":"+m+":"+s;
+        // if(h !== '00') res += `${h}小时`;
+        // if(m !== '00') res += `${m}分钟`;
+        // res += `${s}秒`;
+        return res;
+    },
     getDateDiff: function (dateTimeStamp) {
         var minute = 1000 * 60;
         var hour = minute * 60;
