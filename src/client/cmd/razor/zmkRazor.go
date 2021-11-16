@@ -163,7 +163,7 @@ func (obj *ZmkRazor) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(obj.Name)
-		helper.Sleep(obj.Name, newDto.WorkType, "m", 18, 32)
+		helper.Sleep(obj.Name, newDto.WorkType, "m", 18, 25)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)

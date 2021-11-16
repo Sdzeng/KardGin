@@ -51,6 +51,7 @@ func store(taskDto *dto.TaskDto) {
 	//清洗数据4
 	err := downloadFileRepository.Save(taskDto)
 	if err != nil {
+		variable.ZapLog.Sugar().Errorf("保存数据报错：%v", err)
 		return
 	}
 
