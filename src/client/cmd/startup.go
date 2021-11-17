@@ -31,9 +31,10 @@ func main() {
 	variable.ZapLog.Sugar().Infof("seedUrl=%s\n", *seedUrl)
 	seedUrlStr := *seedUrl
 
-	a4kRazor := razor.NewA4KRazor(seedUrlStr)
+	// a4kRazor := razor.NewA4KRazor(seedUrlStr)
 	zmkRazor := razor.NewZmkRazor(seedUrlStr)
-	razorWork(a4kRazor, zmkRazor)
+	// razorWork(a4kRazor, zmkRazor)
+	zmkRazor.Test(store, 430)
 
 	var quit string
 	fmt.Scan(&quit)

@@ -163,12 +163,30 @@ func (obj *ZmkRazor) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(obj.Name)
-		helper.Sleep(obj.Name, newDto.WorkType, "m", 18, 25)
+		helper.Sleep(obj.Name, newDto.WorkType, "m", 18, 32)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)
 		obj.parse(newDto)
 	}
+}
+
+func (obj *ZmkRazor) Test(storeFunc func(taskDto *dto.TaskDto), downloadIds ...int32) {
+	downloadRepository := repository.DownloadsFactory()
+	downloadRefersRepository := repository.DownloadRefersFactory()
+	wg := &sync.WaitGroup{}
+	for _, downloadId := range downloadIds {
+		download := downloadRepository.KFirst(downloadId)
+		refers := downloadRefersRepository.KFind(downloadId)
+		referArr := []string{}
+		for _, refer := range refers {
+			referArr = append(referArr, refer.Refer)
+		}
+
+		taskDto := &dto.TaskDto{WorkType: variable.Parse, DownloadId: downloadId, DownloadUrl: download.DownloadUrl, Refers: referArr, Wg: wg, StoreFunc: storeFunc, PageNum: download.Page}
+		obj.insertQueue(taskDto)
+	}
+	wg.Wait()
 }
 
 func (obj *ZmkRazor) fetchList(taskDto *dto.TaskDto) {

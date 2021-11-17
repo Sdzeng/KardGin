@@ -20,16 +20,16 @@ func DownloadsFactory() *DownloadsRepository {
 	return &DownloadsRepository{IsEnable: isEnable, DB: db}
 }
 
-// func (repository *DownloadsRepository) Exists(taskDto *dto.TaskDto) bool {
-// 	if !repository.IsEnable {
-// 		return false
-// 	}
+func (repository *DownloadsRepository) KFirst(downloadId int32) *model.Downloads {
+	if !repository.IsEnable {
+		return nil
+	}
 
-// 	dl := new(model.Downloads)
-// 	// repository.DB.Where("download_url=?", taskDto.DownloadUrl).Or("name=? and lan=?", taskDto.Name, taskDto.Lan).First(dl)
-// 	repository.DB.Where("es_index=? and (download_url=? or name=?)", taskDto.EsIndex, taskDto.DownloadUrl, taskDto.Name).First(dl)
-// 	return dl.Id > 0
-// }
+	dl := new(model.Downloads)
+	// repository.DB.Where("download_url=?", taskDto.DownloadUrl).Or("name=? and lan=?", taskDto.Name, taskDto.Lan).First(dl)
+	repository.DB.First(dl, downloadId)
+	return dl
+}
 
 func (repository *DownloadsRepository) TryCreate(esIndex, razor string, taskDto *dto.TaskDto) (bool, int32, error) {
 	if !repository.IsEnable {
