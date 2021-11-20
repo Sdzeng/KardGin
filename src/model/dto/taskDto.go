@@ -25,6 +25,7 @@ type TaskDto struct {
 	SubtitlesFiles []*SubtitlesFileDto //解压后存储的文件列表
 	StoreFunc      func(taskDto *TaskDto)
 
+	Error error
 	// DbNew   bool //是否为新数据
 	// EsIndex string
 }

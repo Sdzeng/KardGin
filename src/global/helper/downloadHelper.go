@@ -89,62 +89,50 @@ func (wc *WriterCounter) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-func Download(taskDto *dto.TaskDto) (*dto.TaskDto, error) {
+func Download(taskDto *dto.TaskDto) *dto.TaskDto {
 	//请求资源
 	req, err := GetRequest(taskDto)
 	if err != nil {
-		return nil, err
+		taskDto.Error = err
+		return taskDto
 	}
 	var res *http.Response
 	res, err = GetResponse(req)
 	if err != nil {
-		return nil, err
+		taskDto.Error = err
+		return taskDto
 	}
 	defer res.Body.Close()
 
 	//拷贝
-	fileName, getErr := GetDownloadFileName(taskDto.DownloadUrl, res)
-	if getErr != nil {
-
-		html, err := getHtml(res)
-		if err != nil {
-			variable.ZapLog.Sugar().Infof("read html error %v", err)
-			return nil, err
-		}
-
-		if strings.Contains(*html, "已超出字幕下载个数限制，涉嫌恶意采集") {
-			return nil, errors.New("被拦截")
-		}
-
-		return nil, getErr
+	fileName, err := GetDownloadFileName(taskDto.DownloadUrl, res)
+	if err != nil {
+		taskDto.Error = err
+		return taskDto
 	}
 
-	if len(fileName) == 0 {
-		return nil, errors.New("GetDownloadFileName:获取不到文件名")
-	}
-
-	// fileName = ToUtf8Str(fileName)
-	// md5Seed := ToUtf8Str(taskDto.DownloadUrl)
-	//checkErrorName(fileName)
 	fileBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		taskDto.Error = err
+		return taskDto
 	}
 	defer res.Body.Close()
 
 	taskDto.SubtitlesFiles = downloadFiles(taskDto.DownloadUrl, fileName, fileBytes)
+	if len(taskDto.SubtitlesFiles) <= 0 {
+		taskDto.Error = errors.New("没有可下载的字幕文件")
+	}
 
-	return taskDto, nil
+	return taskDto
 }
 
 func GetDownloadFileName(url string, resp *http.Response) (string, error) {
 	fileName := getFileName(url)
 	fileNameLower := strings.ToLower(fileName)
-	urlRp := regexp.MustCompile(`\d+.html`)
-
-	if strings.HasSuffix(fileNameLower, ".rar") || strings.HasSuffix(fileNameLower, ".zip") || strings.HasSuffix(fileNameLower, ".ass") || strings.HasSuffix(fileNameLower, ".ssa") || strings.HasSuffix(fileNameLower, ".srt") || strings.HasSuffix(fileNameLower, ".7z") {
-		return fileName, nil
-
+	// urlRp := regexp.MustCompile(`\d+.html`)
+	result := ""
+	if strings.HasSuffix(fileNameLower, ".rar") || strings.HasSuffix(fileNameLower, ".zip") || strings.HasSuffix(fileNameLower, ".7z") || strings.HasSuffix(fileNameLower, ".ass") || strings.HasSuffix(fileNameLower, ".ssa") || strings.HasSuffix(fileNameLower, ".srt") || strings.HasSuffix(fileNameLower, ".stl") || strings.HasSuffix(fileNameLower, ".ts") || strings.HasSuffix(fileNameLower, ".ttml") || strings.HasSuffix(fileNameLower, ".vtt") || strings.HasSuffix(fileNameLower, ".sup") {
+		result = fileName
 	} else if fileNameLower == "dx1" {
 		//attachment; filename="[zmk.pw]海贼王15周年纪念特别篇幻之篇章「3D2Y跨越艾斯之死！与路飞伙伴的誓言[720p].Chs.rar""
 		contentDisposition := resp.Header.Get("Content-Disposition")
@@ -154,17 +142,25 @@ func GetDownloadFileName(url string, resp *http.Response) (string, error) {
 		items := headerRp.FindAllStringSubmatch(contentDisposition, -1)
 
 		if len(items) == 1 {
-			fileName = items[0][1]
-			return fileName, nil
+			result = items[0][1]
 		}
-
-	} else if fileNameLower == "target.php" {
-		return "", nil
-	} else if items := urlRp.FindAllStringSubmatch(fileNameLower, -1); items != nil {
-		return "", nil
+	} else {
+		html, err := getHtml(resp)
+		if err == nil && strings.Contains(*html, "已超出字幕下载个数限制，涉嫌恶意采集") {
+			return "", errors.New("被拦截")
+		}
 	}
 
-	return "", errors.New("不支持下载的文件" + fileName)
+	if len(result) == 0 {
+		result = fileName
+	}
+	// else if fileNameLower == "target.php" {
+	// 	return "", nil
+	// } else if items := urlRp.FindAllStringSubmatch(fileNameLower, -1); items != nil {
+	// 	return "", nil
+	// }
+
+	return result, nil
 }
 
 // func checkErrorName(fileName string) {
@@ -343,14 +339,14 @@ func downloadFiles(md5Seed, fileName string, sourceFileBytes []byte) []*dto.Subt
 		result = append(result, greate(itemDtos)...)
 
 	default:
-		fn := strings.ToLower(fileName)
-		if strings.HasSuffix(fn, ".srt") || strings.HasSuffix(fn, ".ssa") || strings.HasSuffix(fn, ".ass") || strings.HasSuffix(fn, ".stl") || strings.HasSuffix(fn, ".ts") || strings.HasSuffix(fn, ".ttml") || strings.HasSuffix(fn, ".vtt") {
-			filePtah, content := ChangeCharset(md5Seed, fileName, sourceFileBytes)
-			if len(filePtah) > 0 {
-				name := ReplaceTitle(strings.TrimSuffix(fileName, filepath.Ext(fileName)))
-				result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, Name: name, FileName: fileName, Content: content})
-			}
+		// fn := strings.ToLower(fileName)
+		// if strings.HasSuffix(fn, ".srt") || strings.HasSuffix(fn, ".ssa") || strings.HasSuffix(fn, ".ass") || strings.HasSuffix(fn, ".stl") || strings.HasSuffix(fn, ".ts") || strings.HasSuffix(fn, ".ttml") || strings.HasSuffix(fn, ".vtt") {
+		filePtah, content := ChangeCharset(md5Seed, fileName, sourceFileBytes)
+		if len(filePtah) > 0 {
+			name := ReplaceTitle(strings.TrimSuffix(fileName, filepath.Ext(fileName)))
+			result = append(result, &dto.SubtitlesFileDto{FilePath: filePtah, Name: name, FileName: fileName, Content: content})
 		}
+		// }
 
 	}
 	return result
@@ -377,27 +373,27 @@ func greate(itemDtos []*dto.FileItemFilterDto) []*dto.SubtitlesFileDto {
 		}
 
 		if strings.HasSuffix(fn, ".srt") {
-			level += 70
+			level += 80
 		} else if strings.HasSuffix(fn, ".ssa") {
-			level += 60
+			level += 70
 		} else if strings.HasSuffix(fn, ".ass") {
-			level += 50
+			level += 60
 		} else if strings.HasSuffix(fn, ".stl") {
-			level += 40
+			level += 50
 		} else if strings.HasSuffix(fn, ".ts") {
-			level += 30
+			level += 40
 		} else if strings.HasSuffix(fn, ".ttml") {
-			level += 20
+			level += 30
 		} else if strings.HasSuffix(fn, ".vtt") {
-			level += 10
+			level += 20
 		} else if strings.HasSuffix(fn, ".zip") {
-			level += 3
+			level += 4
 		} else if strings.HasSuffix(fn, ".rar") {
-			level += 2
+			level += 3
 		} else if strings.HasSuffix(fn, ".7z") {
-			level += 1
+			level += 2
 		} else {
-			continue
+			level += 1
 		}
 
 		itemDto.Level = level

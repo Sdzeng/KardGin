@@ -93,13 +93,6 @@ func init() {
 }
 
 func ParseFile(taskDto *dto.TaskDto) {
-	defer func(dto *dto.TaskDto) {
-		dto.Wg.Done()
-
-		if err := recover(); err != nil {
-			PrintError("ParseFile", err.(error).Error(), true)
-		}
-	}(taskDto)
 
 	batchNum := 10
 	startAt := 0 * time.Second
@@ -164,7 +157,6 @@ func ParseFile(taskDto *dto.TaskDto) {
 
 	}
 
-	taskDto.StoreFunc(taskDto)
 }
 
 // func getPathFileName(filePath string) string {

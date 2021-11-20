@@ -164,7 +164,7 @@ func (obj *A4KRazor) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(obj.Name)
-		helper.Sleep(obj.Name, newDto.WorkType, "m", 10, 18)
+		helper.Sleep(obj.Name, newDto.WorkType, "s", 10, 18)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)
@@ -184,7 +184,9 @@ func (obj *A4KRazor) CompletionData(storeFunc func(taskDto *dto.TaskDto), downlo
 			referArr = append(referArr, refer.Refer)
 		}
 
-		taskDto := &dto.TaskDto{WorkType: variable.Parse, DownloadId: downloadId, DownloadUrl: download.DownloadUrl, Name: download.Name, Lan: download.Lan, Refers: referArr, Wg: wg, StoreFunc: storeFunc, PageNum: download.Page}
+		taskDto := &dto.TaskDto{WorkType: variable.FecthInfo, DownloadId: downloadId,
+			InfoUrl:     download.InfoUrl,
+			DownloadUrl: download.InfoUrl, Name: download.Name, Lan: download.Lan, Refers: referArr, Wg: wg, StoreFunc: storeFunc, PageNum: download.Page}
 		obj.insertQueue(taskDto)
 	}
 	wg.Wait()
@@ -284,24 +286,29 @@ func (obj *A4KRazor) fetchInfo(taskDto *dto.TaskDto) {
 }
 
 func (obj *A4KRazor) parse(taskDto *dto.TaskDto) {
-	// downloadRepository := repository.DownloadsFactory()
-	// //清洗数据1
-	// if downloadRepository.Exists(taskDto) {
-	// 	variable.ZapLog.Sugar().Infof("跳过已存在数据：%v", taskDto.Name)
-	// 	return
-	// }
 
 	//清洗数据2
-	newDto, err := helper.Download(taskDto)
-	if err != nil {
-		if err.Error() == "被拦截" {
-			obj.Enable = false
-		}
-		return
+	newDto := helper.Download(taskDto)
+	if newDto.Error != nil && newDto.Error.Error() == "被拦截" {
+		obj.Enable = false
 	}
 
 	newDto.Wg.Add(1)
 
 	//清洗数据3
-	go helper.ParseFile(newDto)
+	go func(nd *dto.TaskDto) {
+		defer func(dto *dto.TaskDto) {
+			dto.Wg.Done()
+
+			if err := recover(); err != nil {
+				helper.PrintError("ParseFile", err.(error).Error(), true)
+			}
+		}(nd)
+
+		if nd.Error == nil {
+			helper.ParseFile(nd)
+		}
+
+		taskDto.StoreFunc(nd)
+	}(newDto)
 }

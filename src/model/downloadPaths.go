@@ -8,6 +8,7 @@ type DownloadPaths struct {
 	FileName   string `gorm:"file_name"`
 	FilePath   string `gorm:"file_path"`
 	FileSum    string `gorm:"file_sum"`
+	Remark     string `gorm:"remark"`
 }
 
 // 表名

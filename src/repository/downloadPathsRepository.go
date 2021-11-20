@@ -49,6 +49,10 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	if !repository.IsEnable {
 		return nil
 	}
+	remark := ""
+	if dto.Error != nil {
+		remark = dto.Error.Error()
+	}
 
 	now := time.Now()
 	dl := &model.Downloads{
@@ -60,7 +64,7 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	// result := trans.Debug().FirstOrCreate(df, model.Downloads{DownloadUrl: dto.DownloadUrl})
 	// result := trans.Where(model.Downloads{DownloadUrl: dto.DownloadUrl}).FirstOrCreate(df)
 
-	result := trans.Model(dl).Select("download_url", "page", "update_time").Updates(model.Downloads{DownloadUrl: dto.DownloadUrl, Page: dto.PageNum, UpdateTime: now})
+	result := trans.Debug().Model(dl).Select("download_url", "page", "remark", "update_time").Updates(model.Downloads{DownloadUrl: dto.DownloadUrl, Page: dto.PageNum, Remark: remark, UpdateTime: now})
 
 	if result.Error != nil {
 		trans.Rollback()
@@ -75,64 +79,59 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	// } else {
 	// 	dto.DbNew = true
 	// }
+	dpRemark := []string{}
+	for _, subtitlesFile := range dto.SubtitlesFiles {
 
-	if len(dto.SubtitlesFiles) > 0 {
-		for _, subtitlesFile := range dto.SubtitlesFiles {
-
-			if len(subtitlesFile.SubtitleItems) <= 0 {
-				variable.ZapLog.Sugar().Infof("跳过解析不到字幕的文件：%v %v", dto.Name, subtitlesFile.FileName)
-				continue
-			}
-
-			if repository.Exists(trans, subtitlesFile.FileName, subtitlesFile.FileSum, variable.IndexName) {
-				subtitlesFile.DbNew = false
-				variable.ZapLog.Sugar().Infof("跳过已存在文件：%v %v", dto.Name, subtitlesFile.FileName)
-				continue
-			}
-
-			downloadPath := &model.DownloadPaths{
-				BaseModel:  model.BaseModel{CreateTime: now},
-				DownloadId: dto.DownloadId,
-				Name:       subtitlesFile.Name,
-				FileName:   subtitlesFile.FileName,
-				FilePath:   subtitlesFile.FilePath,
-				FileSum:    subtitlesFile.FileSum,
-			}
-
-			result = trans.Create(downloadPath)
-			if result.Error != nil {
-				trans.Rollback()
-				return result.Error
-			}
-
-			subtitlesFile.DownloadPathId = downloadPath.Id
-			subtitlesFile.DbNew = true
-			// downloadPathSubtitlesSlice := []*model.DownloadPathSubtitles{}
-			// for _, subtitleItems := range subtitlesFile.SubtitleItems {
-
-			// 	var buffer bytes.Buffer
-			// 	for _, text := range subtitleItems.Text {
-			// 		buffer.WriteString(text + " ")
-			// 	}
-
-			// 	downloadPathSubtitles := &model.DownloadPathSubtitles{
-			// 		BaseModel:      model.BaseModel{CreateTime: df.CreateTime},
-			// 		DownloadPathId: downloadPath.Id,
-			// 		StartAt:        int32(subtitleItems.StartAt.Seconds()),
-			// 		Text:           buffer.String(),
-			// 	}
-
-			// 	downloadPathSubtitlesSlice = append(downloadPathSubtitlesSlice, downloadPathSubtitles)
-			// }
-
-			// result = trans.CreateInBatches(downloadPathSubtitlesSlice, len(downloadPathSubtitlesSlice))
-			// if result.Error != nil {
-			// 	trans.Rollback()
-			// 	return result.Error
-			// }
+		if repository.Exists(trans, subtitlesFile.FileName, subtitlesFile.FileSum, variable.IndexName) {
+			dpRemark = append(dpRemark, "存在相同文件")
 		}
-	} else {
-		variable.ZapLog.Sugar().Warn("跳过下载不到的文件：%v---%v", dto.Name)
+
+		if len(subtitlesFile.SubtitleItems) <= 0 {
+			dpRemark = append(dpRemark, "不支持解析的文件格式")
+		}
+
+		downloadPath := &model.DownloadPaths{
+			BaseModel:  model.BaseModel{CreateTime: now},
+			DownloadId: dto.DownloadId,
+			Name:       subtitlesFile.Name,
+			FileName:   subtitlesFile.FileName,
+			FilePath:   subtitlesFile.FilePath,
+			FileSum:    subtitlesFile.FileSum,
+			Remark:     strings.Join(dpRemark, ";"),
+		}
+
+		result = trans.Create(downloadPath)
+		if result.Error != nil {
+			trans.Rollback()
+			return result.Error
+		}
+
+		subtitlesFile.DownloadPathId = downloadPath.Id
+		subtitlesFile.DbNew = len(dpRemark) <= 0
+		dpRemark = (dpRemark)[0:0]
+		// downloadPathSubtitlesSlice := []*model.DownloadPathSubtitles{}
+		// for _, subtitleItems := range subtitlesFile.SubtitleItems {
+
+		// 	var buffer bytes.Buffer
+		// 	for _, text := range subtitleItems.Text {
+		// 		buffer.WriteString(text + " ")
+		// 	}
+
+		// 	downloadPathSubtitles := &model.DownloadPathSubtitles{
+		// 		BaseModel:      model.BaseModel{CreateTime: df.CreateTime},
+		// 		DownloadPathId: downloadPath.Id,
+		// 		StartAt:        int32(subtitleItems.StartAt.Seconds()),
+		// 		Text:           buffer.String(),
+		// 	}
+
+		// 	downloadPathSubtitlesSlice = append(downloadPathSubtitlesSlice, downloadPathSubtitles)
+		// }
+
+		// result = trans.CreateInBatches(downloadPathSubtitlesSlice, len(downloadPathSubtitlesSlice))
+		// if result.Error != nil {
+		// 	trans.Rollback()
+		// 	return result.Error
+		// }
 	}
 
 	if len(dto.Refers) > 0 {

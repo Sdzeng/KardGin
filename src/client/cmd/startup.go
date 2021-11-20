@@ -32,12 +32,13 @@ func main() {
 	variable.ZapLog.Sugar().Infof("seedUrl=%s comp=%v\n", *seedUrl, *comp)
 	seedUrlStr := *seedUrl
 
-	a4kRazor := razor.NewA4KRazor(seedUrlStr)
+	// a4kRazor := razor.NewA4KRazor(seedUrlStr)
 	zmkRazor := razor.NewZmkRazor(seedUrlStr)
-	razorWork(a4kRazor, zmkRazor)
+	// razorWork(a4kRazor, zmkRazor)
 	// if *comp {
 	// 	zmkRazor.CompletionData(store, 430)
 	// }
+	zmkRazor.CompletionData(store, 538)
 
 	var quit string
 	fmt.Scan(&quit)
@@ -61,12 +62,15 @@ func store(taskDto *dto.TaskDto) {
 
 	variable.ZapLog.Sugar().Infof("新加数据：%v", taskDto.Name)
 
+	if taskDto.Error != nil {
+		return
+	}
+
 	if variable.ES == nil {
 		toConsole(taskDto)
 	} else {
 		toEs(taskDto)
 	}
-
 }
 
 func toEs(taskDto *dto.TaskDto) {
