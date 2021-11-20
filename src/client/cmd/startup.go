@@ -97,10 +97,11 @@ func toEsByBulk(indexName, indexType string, nowStr string, taskDto *dto.TaskDto
 			CreateTime:     nowStr,
 			// PicPath:        "",
 		}
-		partId++
+
 		indexReq := elastic.NewBulkIndexRequest().Index(indexName).Type(indexType).Id(indexId + "_" + strconv.Itoa(partId)).Doc(indexDto)
 		bulkRequest = bulkRequest.Add(indexReq)
 
+		partId++
 	}
 
 	if bulkRequest.NumberOfActions() <= 0 {

@@ -183,7 +183,7 @@ func (obj *ZmkRazor) Test(storeFunc func(taskDto *dto.TaskDto), downloadIds ...i
 			referArr = append(referArr, refer.Refer)
 		}
 
-		taskDto := &dto.TaskDto{WorkType: variable.Parse, DownloadId: downloadId, DownloadUrl: download.DownloadUrl, Refers: referArr, Wg: wg, StoreFunc: storeFunc, PageNum: download.Page}
+		taskDto := &dto.TaskDto{WorkType: variable.Parse, DownloadId: downloadId, DownloadUrl: download.DownloadUrl, Name: download.Name, Lan: download.Lan, Refers: referArr, Wg: wg, StoreFunc: storeFunc, PageNum: download.Page}
 		obj.insertQueue(taskDto)
 	}
 	wg.Wait()

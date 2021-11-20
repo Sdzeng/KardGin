@@ -80,13 +80,13 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 		for _, subtitlesFile := range dto.SubtitlesFiles {
 
 			if len(subtitlesFile.SubtitleItems) <= 0 {
-				variable.ZapLog.Sugar().Infof("跳过解析不到字幕的文件：%v---%v", dto.Name, subtitlesFile.FileName)
+				variable.ZapLog.Sugar().Infof("跳过解析不到字幕的文件：%v %v", dto.Name, subtitlesFile.FileName)
 				continue
 			}
 
 			if repository.Exists(trans, subtitlesFile.FileName, subtitlesFile.FileSum, variable.IndexName) {
 				subtitlesFile.DbNew = false
-				variable.ZapLog.Sugar().Infof("跳过已存在文件：%v---%v", dto.Name, subtitlesFile.FileName)
+				variable.ZapLog.Sugar().Infof("跳过已存在文件：%v %v", dto.Name, subtitlesFile.FileName)
 				continue
 			}
 
