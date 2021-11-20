@@ -49,17 +49,17 @@ var (
 	a4kFetchInfoRegexp = regexp.MustCompile(a4kDownloadReg)
 )
 
-func (obj *A4KRazor) Work(store func(taskDto *dto.TaskDto)) {
+func (obj *A4KRazor) Work(storeFunc func(taskDto *dto.TaskDto)) {
 	defer func() {
 		if err := recover(); err != nil {
 			helper.PrintError("Work", err.(error).Error(), true)
 		}
 	}()
 
-	obj.search(store)
+	obj.search(storeFunc)
 }
 
-func (obj *A4KRazor) search(store func(taskDto *dto.TaskDto)) {
+func (obj *A4KRazor) search(storeFunc func(taskDto *dto.TaskDto)) {
 
 	// seedUrl := flag.String("seed-url", "", "useage to search")
 	// q := flag.String("q", "", "useage to search")
@@ -106,13 +106,13 @@ func (obj *A4KRazor) search(store func(taskDto *dto.TaskDto)) {
 	}
 
 	wg := &sync.WaitGroup{}
-	obj.fetchPage(wg, store)
+	obj.fetchPage(wg, storeFunc)
 	wg.Wait()
 }
 
-func (obj *A4KRazor) fetchPage(wg *sync.WaitGroup, store func(taskDto *dto.TaskDto)) {
+func (obj *A4KRazor) fetchPage(wg *sync.WaitGroup, storeFunc func(taskDto *dto.TaskDto)) {
 	razorsRepository := repository.RazorsFactory()
-	taskDto := &dto.TaskDto{Wg: wg, DownloadUrl: obj.SeedUrl, StoreFunc: store}
+	taskDto := &dto.TaskDto{Wg: wg, DownloadUrl: obj.SeedUrl, StoreFunc: storeFunc}
 
 	html, cookies, err := helper.LoadHtml(taskDto)
 	if err != nil {
@@ -170,6 +170,24 @@ func (obj *A4KRazor) insertQueue(newDto *dto.TaskDto) {
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)
 		obj.parse(newDto)
 	}
+}
+
+func (obj *A4KRazor) CompletionData(storeFunc func(taskDto *dto.TaskDto), downloadIds ...int32) {
+	downloadRepository := repository.DownloadsFactory()
+	downloadRefersRepository := repository.DownloadRefersFactory()
+	wg := &sync.WaitGroup{}
+	for _, downloadId := range downloadIds {
+		download := downloadRepository.KFirst(downloadId)
+		refers := downloadRefersRepository.KFind(downloadId)
+		referArr := []string{}
+		for _, refer := range refers {
+			referArr = append(referArr, refer.Refer)
+		}
+
+		taskDto := &dto.TaskDto{WorkType: variable.Parse, DownloadId: downloadId, DownloadUrl: download.DownloadUrl, Name: download.Name, Lan: download.Lan, Refers: referArr, Wg: wg, StoreFunc: storeFunc, PageNum: download.Page}
+		obj.insertQueue(taskDto)
+	}
+	wg.Wait()
 }
 
 func (obj *A4KRazor) fetchList(taskDto *dto.TaskDto) {

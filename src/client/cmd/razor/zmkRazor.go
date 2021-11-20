@@ -57,17 +57,17 @@ var (
 	zmkJsPageDownloadRegexp = regexp.MustCompile(zmkJsPageDownloadReg)
 )
 
-func (obj *ZmkRazor) Work(store func(taskDto *dto.TaskDto)) {
+func (obj *ZmkRazor) Work(storeFunc func(taskDto *dto.TaskDto)) {
 	defer func() {
 		if err := recover(); err != nil {
 			helper.PrintError("Work", err.(error).Error(), true)
 		}
 	}()
 
-	obj.search(store)
+	obj.search(storeFunc)
 }
 
-func (obj *ZmkRazor) search(store func(taskDto *dto.TaskDto)) {
+func (obj *ZmkRazor) search(storeFunc func(taskDto *dto.TaskDto)) {
 
 	// var reqUrl string
 	// var pageNum int = 1
@@ -101,14 +101,14 @@ func (obj *ZmkRazor) search(store func(taskDto *dto.TaskDto)) {
 	}
 
 	wg := &sync.WaitGroup{}
-	obj.fetchPage(wg, store)
+	obj.fetchPage(wg, storeFunc)
 	wg.Wait()
 }
 
-func (obj *ZmkRazor) fetchPage(wg *sync.WaitGroup, store func(taskDto *dto.TaskDto)) {
+func (obj *ZmkRazor) fetchPage(wg *sync.WaitGroup, storeFunc func(taskDto *dto.TaskDto)) {
 
 	razorsRepository := repository.RazorsFactory()
-	taskDto := &dto.TaskDto{Wg: wg, DownloadUrl: obj.SeedUrl, StoreFunc: store}
+	taskDto := &dto.TaskDto{Wg: wg, DownloadUrl: obj.SeedUrl, StoreFunc: storeFunc}
 	html, cookies, err := helper.LoadHtml(taskDto)
 	if err != nil {
 		return
@@ -171,7 +171,7 @@ func (obj *ZmkRazor) insertQueue(newDto *dto.TaskDto) {
 	}
 }
 
-func (obj *ZmkRazor) Test(storeFunc func(taskDto *dto.TaskDto), downloadIds ...int32) {
+func (obj *ZmkRazor) CompletionData(storeFunc func(taskDto *dto.TaskDto), downloadIds ...int32) {
 	downloadRepository := repository.DownloadsFactory()
 	downloadRefersRepository := repository.DownloadRefersFactory()
 	wg := &sync.WaitGroup{}
