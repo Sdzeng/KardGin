@@ -528,6 +528,12 @@ func Convert(src string, srcCode string, tagCode string) string {
 	return result
 }
 
+// func Convert(src []byte, srcCode string) string {
+// 	tagCoder := mahonia.NewDecoder(srcCode)
+// 	result := tagCoder.ConvertString(string(src))
+// 	return result
+// }
+
 // func isGBK(data []byte) bool {
 // 	length := len(data)
 // 	var i int = 0

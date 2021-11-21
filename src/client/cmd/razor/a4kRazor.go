@@ -164,7 +164,7 @@ func (obj *A4KRazor) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(obj.Name)
-		helper.Sleep(obj.Name, newDto.WorkType, "m", 5, 15)
+		helper.Sleep(obj.Name, newDto.WorkType, "m", 5, 12)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)
@@ -175,18 +175,29 @@ func (obj *A4KRazor) insertQueue(newDto *dto.TaskDto) {
 func (obj *A4KRazor) CompletionData(storeFunc func(taskDto *dto.TaskDto), downloadIds ...int32) {
 	downloadRepository := repository.DownloadsFactory()
 	downloadRefersRepository := repository.DownloadRefersFactory()
+	downloadPathsRepository := repository.DownloadPathsFactory()
+
 	wg := &sync.WaitGroup{}
 	for _, downloadId := range downloadIds {
 		download := downloadRepository.KFirst(downloadId)
 		refers := downloadRefersRepository.KFind(downloadId)
 		referArr := []string{}
 		for _, refer := range refers {
+			if refer.Refer == download.InfoUrl {
+				break
+			}
 			referArr = append(referArr, refer.Refer)
 		}
 
+		delDownloadPathIds := downloadPathsRepository.KFindIdByDownloadId(downloadId)
+
 		taskDto := &dto.TaskDto{WorkType: variable.FecthInfo, DownloadId: downloadId,
 			InfoUrl:     download.InfoUrl,
-			DownloadUrl: download.InfoUrl, Name: download.Name, Lan: download.Lan, Refers: referArr, Wg: wg, StoreFunc: storeFunc, PageNum: download.Page}
+			DownloadUrl: download.InfoUrl, Name: download.Name, Lan: download.Lan, Refers: referArr, Wg: wg, StoreFunc: storeFunc, PageNum: download.Page, DelDownloadPathIds: delDownloadPathIds}
+
+		downloadPathsRepository.KDelete(downloadId)
+		downloadRefersRepository.KDelete(downloadId)
+
 		obj.insertQueue(taskDto)
 	}
 	wg.Wait()

@@ -22,10 +22,14 @@ type TaskDto struct {
 
 	DownloadUrl string //下载链接
 	// DownloadUrlFileName string              //下载链接带的文件名称（比如1.rar）
+
 	SubtitlesFiles []*SubtitlesFileDto //解压后存储的文件列表
 	StoreFunc      func(taskDto *TaskDto)
 
 	Error error
+
+	//补数据
+	DelDownloadPathIds []int32 //删除的download_paths表id
 	// DbNew   bool //是否为新数据
 	// EsIndex string
 }

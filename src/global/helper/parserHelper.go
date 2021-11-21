@@ -85,8 +85,10 @@ var (
 func init() {
 
 	replaceKeywords := []string{
-		"\\N", "",
-		"\\n", "",
+		// "\N", "",
+		"\n", "",
+		// "\R", "",
+		"\r", "",
 	}
 
 	lineTextReplacer = strings.NewReplacer(replaceKeywords...)

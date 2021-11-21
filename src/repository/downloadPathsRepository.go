@@ -45,7 +45,7 @@ func (repository *DownloadPathsRepository) Exists(db *gorm.DB, fileName, fileSum
 	return dp.Id > 0
 }
 
-func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
+func (repository *DownloadPathsRepository) KSave(dto *dto.TaskDto) error {
 	if !repository.IsEnable {
 		return nil
 	}
@@ -64,7 +64,7 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	// result := trans.Debug().FirstOrCreate(df, model.Downloads{DownloadUrl: dto.DownloadUrl})
 	// result := trans.Where(model.Downloads{DownloadUrl: dto.DownloadUrl}).FirstOrCreate(df)
 
-	result := trans.Debug().Model(dl).Select("download_url", "page", "remark", "update_time").Updates(model.Downloads{DownloadUrl: dto.DownloadUrl, Page: dto.PageNum, Remark: remark, UpdateTime: now})
+	result := trans.Model(dl).Select("download_url", "page", "remark", "update_time").Updates(model.Downloads{DownloadUrl: dto.DownloadUrl, Page: dto.PageNum, Remark: remark, UpdateTime: now})
 
 	if result.Error != nil {
 		trans.Rollback()
@@ -79,11 +79,14 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 	// } else {
 	// 	dto.DbNew = true
 	// }
+
 	dpRemark := []string{}
 	for _, subtitlesFile := range dto.SubtitlesFiles {
 
-		if repository.Exists(trans, subtitlesFile.FileName, subtitlesFile.FileSum, variable.IndexName) {
-			dpRemark = append(dpRemark, "存在相同文件")
+		if len(subtitlesFile.FileName) > 0 || len(subtitlesFile.FileSum) > 0 {
+			if repository.Exists(trans, subtitlesFile.FileName, subtitlesFile.FileSum, variable.IndexName) {
+				dpRemark = append(dpRemark, "存在相同文件")
+			}
 		}
 
 		if len(subtitlesFile.SubtitleItems) <= 0 {
@@ -156,4 +159,35 @@ func (repository *DownloadPathsRepository) Save(dto *dto.TaskDto) error {
 
 	trans.Commit()
 	return nil
+}
+
+func (repository *DownloadPathsRepository) KFindIdByDownloadId(downloadId int32) []int32 {
+	if !repository.IsEnable {
+		return nil
+	}
+
+	pathIds := []int32{}
+	// repository.DB.Where("download_url=?", taskDto.DownloadUrl).Or("name=? and lan=?", taskDto.Name, taskDto.Lan).First(dl)
+	repository.DB.Model(&model.DownloadPaths{}).Select("id").Where("download_id= ?", downloadId).Find(&pathIds)
+	return pathIds
+}
+
+// func (repository *DownloadPathsRepository) KDelete(pathIds []int32) error {
+// 	if !repository.IsEnable {
+// 		return nil
+// 	}
+
+// 	result := repository.DB.Delete(&model.DownloadPaths{}, pathIds)
+
+// 	return result.Error
+// }
+
+func (repository *DownloadPathsRepository) KDelete(downloadId int32) error {
+	if !repository.IsEnable {
+		return nil
+	}
+
+	result := repository.DB.Where("download_id= ?", downloadId).Delete(&model.DownloadPaths{})
+
+	return result.Error
 }

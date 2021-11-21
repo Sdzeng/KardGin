@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 )
 
 // var (
@@ -38,7 +38,7 @@ func main() {
 	// if *comp {
 	// 	zmkRazor.CompletionData(store, 430)
 	// }
-	// zmkRazor.CompletionData(store, 538)
+	// zmkRazor.CompletionData(store, 568)
 
 	var quit string
 	fmt.Scan(&quit)
@@ -54,7 +54,7 @@ func razorWork(razors ...razor.IRazor) {
 func store(taskDto *dto.TaskDto) {
 	downloadFileRepository := repository.DownloadPathsFactory()
 	//清洗数据4
-	err := downloadFileRepository.Save(taskDto)
+	err := downloadFileRepository.KSave(taskDto)
 	if err != nil {
 		variable.ZapLog.Sugar().Errorf("保存数据报错：%v", err)
 		return
@@ -77,11 +77,33 @@ func toEs(taskDto *dto.TaskDto) {
 	indexName := variable.IndexName //+ time.Now().Format("20060102")
 	indexType := "_doc"             // time.Now().Format("20060102")
 	nowStr := time.Now().Format(variable.TimeFormat)
+
+	deleteEs(indexName, taskDto.DelDownloadPathIds)
+
 	for _, subtitlesFile := range taskDto.SubtitlesFiles {
 		if subtitlesFile.DbNew {
 			toEsByBulk(indexName, indexType, nowStr, taskDto, subtitlesFile)
 		}
 	}
+}
+
+func deleteEs(indexName string, pathIds []int32) {
+
+	if len(pathIds) <= 0 {
+		return
+	}
+	ids := make([]interface{}, 0)
+	for _, pathId := range pathIds {
+		ids = append(ids, pathId)
+	}
+
+	q := elastic.NewTermsQuery("path_id", ids...)
+
+	variable.ES.DeleteByQuery().
+		Index(indexName).
+		Query(q).
+		Pretty(true).
+		Do(context.TODO())
 }
 
 func toEsByBulk(indexName, indexType string, nowStr string, taskDto *dto.TaskDto, subtitlesFile *dto.SubtitlesFileDto) {

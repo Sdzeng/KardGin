@@ -28,3 +28,12 @@ func (repository *DownloadRefersRepository) KFind(downloadId int32) []*model.Dow
 	repository.DB.Where("download_id= ?", downloadId).Order("sort asc").Find(&refers)
 	return refers
 }
+
+func (repository *DownloadRefersRepository) KDelete(downloadId int32) error {
+	if !repository.IsEnable {
+		return nil
+	}
+
+	result := repository.DB.Where("download_id= ?", downloadId).Delete(&model.DownloadRefers{})
+	return result.Error
+}
