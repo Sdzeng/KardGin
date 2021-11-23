@@ -24,7 +24,7 @@ func DownloadPathsFactory() *DownloadPathsRepository {
 	return &DownloadPathsRepository{IsEnable: isEnable, DB: db}
 }
 
-func (repository *DownloadPathsRepository) Exists(db *gorm.DB, fileName, fileSum, esIndex string) bool {
+func (repository *DownloadPathsRepository) Exists(db *gorm.DB, fileSum, esIndex string) bool {
 	if !repository.IsEnable {
 		return false
 	}
@@ -35,7 +35,7 @@ func (repository *DownloadPathsRepository) Exists(db *gorm.DB, fileName, fileSum
 		Table("download_paths").
 		Select("download_paths.id").
 		Joins("left join downloads ON download_paths.download_id = downloads.id").
-		Where("downloads.es_index=? and (download_paths.file_sum=? or download_paths.file_name=?)", esIndex, fileSum, fileName).
+		Where("downloads.es_index=? and download_paths.file_sum=?", esIndex, fileSum).
 		First(dp).
 		Error
 	if err != nil {
@@ -83,8 +83,8 @@ func (repository *DownloadPathsRepository) KSave(dto *dto.TaskDto) error {
 	dpRemark := []string{}
 	for _, subtitlesFile := range dto.SubtitlesFiles {
 
-		if len(subtitlesFile.FileName) > 0 || len(subtitlesFile.FileSum) > 0 {
-			if repository.Exists(trans, subtitlesFile.FileName, subtitlesFile.FileSum, variable.IndexName) {
+		if len(subtitlesFile.FileSum) > 0 {
+			if repository.Exists(trans, subtitlesFile.FileSum, variable.IndexName) {
 				dpRemark = append(dpRemark, "存在相同文件")
 			}
 		}
