@@ -35,7 +35,7 @@ func (repository *DownloadPathsRepository) Exists(db *gorm.DB, fileSum, esIndex 
 		Table("download_paths").
 		Select("download_paths.id").
 		Joins("left join downloads ON download_paths.download_id = downloads.id").
-		Where("downloads.es_index=? and download_paths.file_sum=?", esIndex, fileSum).
+		Where("downloads.es_index=? and download_paths.file_sum=? and download_paths.remark=''", esIndex, fileSum).
 		First(dp).
 		Error
 	if err != nil {

@@ -29,6 +29,8 @@ import (
 var (
 	detector       *chardet.Detector
 	mapKeyReplacer *strings.Replacer
+	// a4kTitleReg        = `(.+)</a>(\s|\n)*</h3>`
+	// a4kFetchListRegexp = regexp.MustCompile(a4kLanListReg + a4kDownloadButtonReg + a4kTitleReg)
 	// nameReplacer   *strings.Replacer
 )
 
@@ -364,9 +366,9 @@ func greate(itemDtos []*dto.FileItemFilterDto) []*dto.SubtitlesFileDto {
 		level := 0
 		if strings.Contains(fn, "繁体") {
 			continue
-		} else if strings.Contains(fn, "简体&英文") {
+		} else if strings.Contains(fn, "简体&英文") || strings.Contains(fn, "en&chs") {
 			level = 300
-		} else if strings.Contains(fn, "简体") || strings.Contains(fn, "英文") {
+		} else if strings.Contains(fn, "简体") || strings.Contains(fn, ".chs") || strings.Contains(fn, "英文") || strings.Contains(fn, ".en") {
 			level = 200
 		} else {
 			level = 100

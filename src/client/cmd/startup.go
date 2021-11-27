@@ -38,7 +38,7 @@ func main() {
 	// if *comp {
 	// 	zmkRazor.CompletionData(store, 430)
 	// }
-	// zmkRazor.CompletionData(store, 568)
+	// zmkRazor.CompletionData(store, 763)
 
 	var quit string
 	fmt.Scan(&quit)
