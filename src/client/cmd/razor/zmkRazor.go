@@ -21,12 +21,12 @@ type ZmkRazor struct {
 func NewZmkRazor(seedUrl string) *ZmkRazor {
 	return &ZmkRazor{
 		BaseRazor{
-			Name:        "zmk",
-			BaseSeedUrl: "https://zimuku.org",
-			BasePage:    1,
-			EsIndex:     variable.IndexName,
-			Enable:      true,
-			SeedUrl:     seedUrl,
+			Name:     "zmk",
+			Domain:   "https://zimuku.org",
+			InitPage: 1,
+			EsIndex:  variable.IndexName,
+			Enable:   true,
+			SeedUrl:  seedUrl,
 		},
 	}
 }
@@ -89,13 +89,13 @@ func (obj *ZmkRazor) search(storeFunc func(taskDto *dto.TaskDto)) {
 	razorsRepository := repository.RazorsFactory()
 	if len(obj.SeedUrl) > 0 {
 		if values, err := url.ParseQuery(strings.Split(obj.SeedUrl, "?")[1]); err != nil {
-			obj.Page = obj.BasePage
+			obj.Page = obj.InitPage
 		} else {
 			obj.Page, _ = strconv.Atoi(values.Get("p"))
 		}
 		razorsRepository.CreateOrUpdate(obj.Name, obj.SeedUrl, obj.EsIndex, obj.Page)
 	} else {
-		raz := razorsRepository.FirstOrCreate(obj.Name, obj.BaseSeedUrl, obj.EsIndex, obj.BasePage)
+		raz := razorsRepository.FirstOrCreate(obj.Name, obj.Domain, obj.EsIndex, obj.InitPage)
 		obj.SeedUrl = raz.SeedUrl
 		obj.Page = raz.Page
 	}
@@ -127,13 +127,13 @@ func (obj *ZmkRazor) fetchPage(wg *sync.WaitGroup, storeFunc func(taskDto *dto.T
 		pathUrl = pageItems[0][1]
 
 		if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
-			pathUrl = helper.UrlJoin(pathUrl, obj.BaseSeedUrl)
+			pathUrl = helper.UrlJoin(pathUrl, obj.Domain)
 		}
 		endPageNum, _ = strconv.Atoi(pageItems[0][2])
 	}
 
 	if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
-		pathUrl = helper.UrlJoin(pathUrl, obj.BaseSeedUrl)
+		pathUrl = helper.UrlJoin(pathUrl, obj.Domain)
 	}
 
 	for pageNum <= endPageNum {
@@ -244,7 +244,7 @@ func (obj *ZmkRazor) fetchList(taskDto *dto.TaskDto) {
 			continue
 		}
 
-		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, obj.BaseSeedUrl)
+		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, obj.Domain)
 		newDto.InfoUrl = newDto.DownloadUrl
 
 		//清洗数据1
@@ -289,7 +289,7 @@ func (obj *ZmkRazor) fetchInfo(taskDto *dto.TaskDto) {
 		return
 	}
 
-	url := helper.UrlJoin(items[0][1], obj.BaseSeedUrl)
+	url := helper.UrlJoin(items[0][1], obj.Domain)
 
 	taskDto.Refers = append(taskDto.Refers, taskDto.DownloadUrl)
 	taskDto.DownloadUrl = url
@@ -314,7 +314,7 @@ func (obj *ZmkRazor) fetchSelectDx1(taskDto *dto.TaskDto) {
 
 		downloadUrl := helper.ToUtf8Str(items[0][1])
 		if !strings.HasPrefix(downloadUrl, "http:") && !strings.HasPrefix(downloadUrl, "https:") {
-			downloadUrl = helper.UrlJoin(downloadUrl, obj.BaseSeedUrl)
+			downloadUrl = helper.UrlJoin(downloadUrl, obj.Domain)
 		}
 
 		taskDto.Refers = append(taskDto.Refers, taskDto.DownloadUrl)
