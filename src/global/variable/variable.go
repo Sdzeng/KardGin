@@ -18,7 +18,7 @@ const (
 	Parse string = "parse"
 	// ParseFile string = "parseFile"
 
-	IndexName string = "subtitles_20211120"
+	IndexName string = "subtitles_20201120"
 
 	TimeFormat string = "2006-01-02 15:04:05"
 

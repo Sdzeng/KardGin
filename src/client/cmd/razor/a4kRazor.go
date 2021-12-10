@@ -21,12 +21,12 @@ type A4KRazor struct {
 func NewA4KRazor(seedUrl string) *A4KRazor {
 	return &A4KRazor{
 		BaseRazor{
-			Name:        "a4k",
-			BaseSeedUrl: "https://www.a4k.net",
-			BasePage:    1,
-			EsIndex:     variable.IndexName,
-			Enable:      true,
-			SeedUrl:     seedUrl,
+			Name:     "a4k",
+			Domain:   "https://www.a4k.net",
+			InitPage: 1,
+			EsIndex:  variable.IndexName,
+			Enable:   true,
+			SeedUrl:  seedUrl,
 		},
 	}
 }
@@ -93,14 +93,14 @@ func (obj *A4KRazor) search(storeFunc func(taskDto *dto.TaskDto)) {
 	razorsRepository := repository.RazorsFactory()
 	if len(obj.SeedUrl) > 0 {
 		if values, err := url.ParseQuery(strings.Split(obj.SeedUrl, "?")[1]); err != nil {
-			obj.Page = obj.BasePage
+			obj.Page = obj.InitPage
 		} else {
 			obj.Page, _ = strconv.Atoi(values.Get("page"))
 			obj.Page += 1
 		}
 		razorsRepository.CreateOrUpdate(obj.Name, obj.SeedUrl, obj.EsIndex, obj.Page)
 	} else {
-		raz := razorsRepository.FirstOrCreate(obj.Name, obj.BaseSeedUrl, obj.EsIndex, obj.BasePage)
+		raz := razorsRepository.FirstOrCreate(obj.Name, obj.Domain, obj.EsIndex, obj.InitPage)
 		obj.SeedUrl = raz.SeedUrl
 		obj.Page = raz.Page
 	}
@@ -134,7 +134,7 @@ func (obj *A4KRazor) fetchPage(wg *sync.WaitGroup, storeFunc func(taskDto *dto.T
 	}
 
 	if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
-		pathUrl = helper.UrlJoin(pathUrl, obj.BaseSeedUrl)
+		pathUrl = helper.UrlJoin(pathUrl, obj.Domain)
 	}
 	endPageNum += 1
 
@@ -164,7 +164,7 @@ func (obj *A4KRazor) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(obj.Name)
-		helper.Sleep(obj.Name, newDto.WorkType, "m", 5, 12)
+		helper.Sleep(obj.Name, newDto.WorkType, "m", 2, 6)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)
@@ -241,7 +241,7 @@ func (obj *A4KRazor) fetchList(taskDto *dto.TaskDto) {
 			continue
 		}
 
-		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, obj.BaseSeedUrl)
+		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, obj.Domain)
 		newDto.InfoUrl = newDto.DownloadUrl
 
 		//清洗数据1
@@ -286,7 +286,7 @@ func (obj *A4KRazor) fetchInfo(taskDto *dto.TaskDto) {
 		return
 	}
 
-	url := helper.UrlJoin(helper.ToUtf8Str(items[0][2]), obj.BaseSeedUrl)
+	url := helper.UrlJoin(helper.ToUtf8Str(items[0][2]), obj.Domain)
 
 	taskDto.Refers = append(taskDto.Refers, taskDto.DownloadUrl)
 	taskDto.DownloadUrl = url
