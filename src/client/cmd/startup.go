@@ -33,8 +33,9 @@ func main() {
 	seedUrlStr := *seedUrl
 
 	a4kRazor := razor.NewA4KRazor(seedUrlStr)
-	// zmkRazor := razor.NewZmkRazor(seedUrlStr)
-	razorWork(a4kRazor)
+	zmksRazor := razor.NewZmksRazor(seedUrlStr)
+	zmkRazor := razor.NewZmkRazor(seedUrlStr)
+	razorWork(a4kRazor, zmksRazor, zmkRazor)
 	// if *comp {
 	// 	zmkRazor.CompletionData(store, 430)
 	// }
