@@ -24,35 +24,35 @@ func NewZmksRazor(seedUrl string) *ZmksRazor {
 	// }
 	return &ZmksRazor{
 		BaseRazor{
-			Name:     "zmks",
-			Domain:   "https://zimuku.org",
-			InitPage: 1,
-			EsIndex:  variable.IndexName,
-			Enable:   true,
-			SeedUrl:  seedUrl,
+			Name: "zmks",
+			// Domain:   "https://zimuku.org",
+			// InitPage: 1,
+			EsIndex: variable.IndexName,
+			Enable:  true,
+			SeedUrl: seedUrl,
 		},
 	}
 }
 
 var (
-	zmksPageNum             = `<a class="end" href="(.+)=(\d+)">\d+</a>`
+	zmksPageNum             = `<a class="end" href="(.+=)(\d+)">\d+</a>`
 	zmksFetchPageRegexp     = regexp.MustCompile(zmksPageNum)
-	zmksPathUrlNum          = `(.+\?.+)=(\d+)`
+	zmksPathUrlNum          = `(.+\?.+=)(\d+)`
 	zmksPathUrlRegexp       = regexp.MustCompile(zmksPathUrlNum)
 	zmksLastPageNum         = `</a><span class="current">(\d+)</span>(\s|\n)*<span class="rows">共\s*(\d+)\s*条记录`
 	zmksLastFetchPageRegexp = regexp.MustCompile(zmksLastPageNum)
 
 	// zmksDownloadButtonReg = `<a href="(/detail/\d+\.html)" target="_blank" `
-	// zmksTitleReg          = `title="([^"]+?)">.+</a>`
+	zmksTitleReg = `<a href="/subs/\d+\.html" target="_blank"><b>(.+)</b></a>(\s|\S)+?`
 	// zmksSubtitleReg       = `(\s|\n)*<span class="label label-info">([ASTRUPIDX\+/]*)</span>`
 	// zmksLanImgReg         = `(\s|\S)+?((<img .+ alt="[^"]+?"[^>]+?>)+)`
-	zmksSubtitleReg = `<tr class="(odd|even)">(\s|\S)+?<img .+ alt="([^"]+?)"[^>]+?>(\s|\S)+?<a href="(/detail/\d+\.html)" target="_blank" title="[^"]+?">.+</a>(\s|\n)*<span class="label label-info">([ASTRUPIDX\+/]*)</span>(\s|\S)+?</tr>(\s|\n)*`
+	zmksSubtitleReg = `(<tr class="(odd|even)">(\s|\S)+?<img .+ alt="[^"]+?"[^>]+?>(\s|\S)+?<a href="/detail/\d+\.html" target="_blank" title="[^"]+?">.+</a>(\s|\n)*<span class="label label-info">[ASTRUPIDX\+/]*</span>(\s|\S)+?</tr>(\s|\n)*)+`
 
 	// zmksFetchListRegexp = regexp.MustCompile(zmksDownloadButtonReg + zmksTitleReg + zmksSubtitleReg + zmksLanImgReg)
-	zmksFetchListRegexp = regexp.MustCompile(zmksSubtitleReg)
+	zmksFetchListRegexp = regexp.MustCompile(zmksTitleReg + zmksSubtitleReg)
 
-	// zmksLanReg    = `<img .+? alt="([^"]+?)"[^>]+?>`
-	// zmksLanRegexp = regexp.MustCompile(zmksLanReg)
+	zmksFetchListInfoReg    = `<tr class="(odd|even)">(\s|\S)+?<img .+ alt="([^"]+?)"[^>]+?>(\s|\S)+?<a href="(/detail/\d+\.html)" target="_blank" title="[^"]+?"><b>(.+)</b></a>(\s|\n)*<span class="label label-info">([ASTRUPIDX\+/]*)</span>(\s|\S)+?</tr>(\s|\n)*`
+	zmksFetchListInfoRegexp = regexp.MustCompile(zmksFetchListInfoReg)
 
 	zmksDownloadReg     = `<a id="\w+" href="([^"]+)" target="_blank" rel="nofollow">(\s|\S)*?下载字幕(\s|\S)*?</a>`
 	zmksFetchInfoRegexp = regexp.MustCompile(zmksDownloadReg)
@@ -95,20 +95,19 @@ func (obj *ZmksRazor) search(storeFunc func(taskDto *dto.TaskDto)) {
 
 	razorsRepository := repository.RazorsFactory()
 	if len(obj.SeedUrl) > 0 {
-		if values, err := url.ParseQuery(strings.Split(obj.SeedUrl, "?")[1]); err != nil {
-			obj.Page = obj.InitPage
-		} else {
-			obj.Page, _ = strconv.Atoi(values.Get("p"))
+		if u, err := url.Parse(obj.SeedUrl); err == nil {
+			obj.Domain = u.Scheme + "://" + u.Host
+			item := zmksPathUrlRegexp.FindStringSubmatch(u.Path + "?" + u.RawQuery)
+			obj.PathUrl = item[1]
+			obj.Page, _ = strconv.Atoi(item[2])
+			razorsRepository.CreateOrUpdate(obj.EsIndex, obj.Name, obj.Domain, obj.PathUrl, obj.Page)
 		}
-		razorsRepository.CreateOrUpdate(obj.Name, obj.SeedUrl, obj.EsIndex, obj.Page)
 	} else {
-		raz := razorsRepository.FirstOrCreate(obj.Name, obj.Domain, obj.EsIndex, obj.InitPage)
-		obj.SeedUrl = raz.SeedUrl
+		raz := razorsRepository.KFirst(obj.Name, obj.EsIndex)
+		obj.Domain = raz.Domain
+		obj.PathUrl = raz.PathUrl
 		obj.Page = raz.Page
 	}
-
-	item := zmksPathUrlRegexp.FindStringSubmatch(strings.ReplaceAll(obj.SeedUrl, obj.Domain, ""))
-	obj.SeedPathUrl = item[1]
 
 	wg := &sync.WaitGroup{}
 	obj.fetchPage(wg, storeFunc)
@@ -118,7 +117,8 @@ func (obj *ZmksRazor) search(storeFunc func(taskDto *dto.TaskDto)) {
 func (obj *ZmksRazor) fetchPage(wg *sync.WaitGroup, storeFunc func(taskDto *dto.TaskDto)) {
 
 	razorsRepository := repository.RazorsFactory()
-	taskDto := &dto.TaskDto{Wg: wg, DownloadUrl: obj.SeedUrl, StoreFunc: storeFunc}
+	url := helper.UrlJoin(obj.PathUrl, obj.Domain) + strconv.Itoa(obj.Page)
+	taskDto := &dto.TaskDto{Wg: wg, DownloadUrl: url, StoreFunc: storeFunc}
 	html, cookies, err := helper.LoadHtml(taskDto)
 	if err != nil {
 		return
@@ -131,22 +131,23 @@ func (obj *ZmksRazor) fetchPage(wg *sync.WaitGroup, storeFunc func(taskDto *dto.
 
 	if len(pageItems) <= 0 {
 		pageItems = zmksLastFetchPageRegexp.FindAllStringSubmatch(*html, -1)
-		pathUrl = obj.SeedPathUrl
+		pathUrl = obj.PathUrl
 		endPageNum, _ = strconv.Atoi(pageItems[0][1])
 	} else {
 		pathUrl = pageItems[0][1]
 		endPageNum, _ = strconv.Atoi(pageItems[0][2])
 	}
 
-	if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
-		pathUrl = helper.UrlJoin(pathUrl, obj.Domain)
+	if strings.HasPrefix(pathUrl, "http:") || strings.HasPrefix(pathUrl, "https:") {
+		pathUrl = strings.ReplaceAll(pathUrl, obj.Domain, "")
 	}
 
 	for pageNum <= endPageNum {
 		variable.ZapLog.Sugar().Infof("处理第%v页 共%v页", pageNum, endPageNum)
-		url := pathUrl + "=" + strconv.Itoa(pageNum)
 
-		razorsRepository.Update(obj.Name, url, obj.EsIndex, pageNum)
+		razorsRepository.Update(obj.Name, obj.EsIndex, obj.Domain, pathUrl, pageNum)
+
+		url = helper.UrlJoin(pathUrl, obj.Domain) + strconv.Itoa(pageNum)
 
 		newDto := &dto.TaskDto{WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, PageNum: pageNum}
 		obj.insertQueue(newDto)
@@ -169,7 +170,7 @@ func (obj *ZmksRazor) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(obj.Name)
-		helper.Sleep(obj.Name, newDto.WorkType, "s", 5, 10)
+		helper.Sleep(obj.Name, newDto.WorkType, "m", 8, 18)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)
@@ -218,54 +219,57 @@ func (obj *ZmksRazor) fetchList(taskDto *dto.TaskDto) {
 	items := zmksFetchListRegexp.FindAllStringSubmatch(*html, -1)
 
 	for _, item := range items {
-		title := item[2]
+		toptitle := item[1]
+		toptitle = helper.ReplaceTitle(toptitle)
 
-		// if len(taskDto.SearchKeyword) > 0 && !taskDto.ContainsKeyword(title) {
-		// 	variable.ZapLog.Sugar().Infof("忽略下载 %v", title)
-		// 	// obj.Open = false
-		// 	continue
-		// }
+		infoItems := zmksFetchListInfoRegexp.FindAllStringSubmatch(item[3], -1)
+		for _, infoItem := range infoItems {
 
-		lanSlice := []string{}
-		if strings.Contains(item[6], "双语") || strings.Contains(item[6], "简体") {
-			childItems := strings.Split(item[6], "&nbsp;")
-			for _, childItem := range childItems {
-				switch childItem {
-				case "简体中文字幕":
-					lanSlice = append(lanSlice, "简体")
-				// case "English字幕":
-				// 	lanSlice = append(lanSlice, "英文")
-				case "双语字幕":
-					lanSlice = append(lanSlice, "双语")
+			lanSlice := []string{}
+			if strings.Contains(infoItem[3], "双语") || strings.Contains(infoItem[3], "简体") {
+				childItems := strings.Split(infoItem[3], "&nbsp;")
+				for _, childItem := range childItems {
+					switch childItem {
+					case "简体中文字幕":
+						lanSlice = append(lanSlice, "简体")
+					// case "English字幕":
+					// 	lanSlice = append(lanSlice, "英文")
+					case "双语字幕":
+						lanSlice = append(lanSlice, "双语")
+					}
 				}
+			} else {
+				continue
 			}
-		} else {
-			continue
+
+			title := infoItem[6]
+			title = helper.ReplaceTitle(title)
+			if !strings.Contains(title, toptitle) {
+				title = toptitle + title
+			}
+			newDto := &dto.TaskDto{Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: infoItem[5], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: infoItem[8], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, PageNum: taskDto.PageNum}
+
+			if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
+				continue
+			}
+
+			newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, obj.Domain)
+			newDto.InfoUrl = newDto.DownloadUrl
+
+			//清洗数据1
+			isCreate, id, err := downloadRepository.TryCreate(obj.EsIndex, obj.Name, newDto)
+			if err != nil {
+				variable.ZapLog.Sugar().Errorf("跳过插入失败的数据：%v %v", newDto.Name, err)
+				continue
+			} else if !isCreate {
+				variable.ZapLog.Sugar().Infof("跳过已存在数据：%v", newDto.Name)
+				continue
+			} else {
+				newDto.DownloadId = id
+			}
+
+			obj.insertQueue(newDto)
 		}
-
-		title = helper.ReplaceTitle(title)
-		newDto := &dto.TaskDto{Name: title, WorkType: variable.FecthInfo, Refers: []string{taskDto.DownloadUrl}, DownloadUrl: item[1], Cookies: cookies, Lan: strings.Join(lanSlice, "/"), SubtitlesType: item[4], Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, PageNum: taskDto.PageNum}
-
-		if len(strings.Trim(newDto.DownloadUrl, " ")) == 0 {
-			continue
-		}
-
-		newDto.DownloadUrl = helper.UrlJoin(newDto.DownloadUrl, obj.Domain)
-		newDto.InfoUrl = newDto.DownloadUrl
-
-		//清洗数据1
-		isCreate, id, err := downloadRepository.TryCreate(obj.EsIndex, obj.Name, newDto)
-		if err != nil {
-			variable.ZapLog.Sugar().Errorf("跳过插入失败的数据：%v %v", newDto.Name, err)
-			continue
-		} else if !isCreate {
-			variable.ZapLog.Sugar().Infof("跳过已存在数据：%v", newDto.Name)
-			continue
-		} else {
-			newDto.DownloadId = id
-		}
-
-		obj.insertQueue(newDto)
 	}
 
 }

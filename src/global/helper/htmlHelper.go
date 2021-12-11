@@ -54,6 +54,8 @@ func init() {
 		"下载", "",
 		"H264-", "",
 		"h264-", "",
+		"X264", "",
+		"x264", "",
 		".zip", "",
 		".rar", "",
 		".7z", "",
@@ -73,6 +75,7 @@ func init() {
 		"chs", "",
 		".eng", "",
 		"eng", "",
+		"en", "",
 
 		"[", " ",
 		"]", " ",
@@ -83,6 +86,7 @@ func init() {
 		"/", " ",
 		";", " ",
 		".", " ",
+		"&", " ",
 	}
 
 	titleReplacer = strings.NewReplacer(replaceKeywords...)

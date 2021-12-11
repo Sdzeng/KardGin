@@ -38,10 +38,17 @@ func init() {
 	detector = chardet.NewTextDetector()
 	replaceKeywords := []string{
 		"简体&英文", "",
-		"繁体&英文", "",
+		"chs&eng", "",
+		"chs&en", "",
+		"eng&chs", "",
+		"en&chs", "",
 		"简体", "",
+		"chs", "",
 		"英文", "",
+		"eng", "",
+		"en", "",
 		"繁体", "",
+		"cht", "",
 		".srt", "",
 		".ssa", "",
 		".ass", "",
@@ -366,9 +373,9 @@ func greate(itemDtos []*dto.FileItemFilterDto) []*dto.SubtitlesFileDto {
 		level := 0
 		if strings.Contains(fn, "繁体") {
 			continue
-		} else if strings.Contains(fn, "简体&英文") || strings.Contains(fn, "en&chs") {
+		} else if strings.Contains(fn, "简体&英文") || strings.Contains(fn, "en&chs") || strings.Contains(fn, "eng&chs") || strings.Contains(fn, "chs&en") || strings.Contains(fn, "chs&eng") {
 			level = 300
-		} else if strings.Contains(fn, "简体") || strings.Contains(fn, ".chs") || strings.Contains(fn, "英文") || strings.Contains(fn, ".en") {
+		} else if strings.Contains(fn, "简体") || strings.Contains(fn, ".chs") || strings.Contains(fn, "英文") || strings.Contains(fn, ".en") || strings.Contains(fn, ".eng") {
 			level = 200
 		} else {
 			level = 100

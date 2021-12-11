@@ -21,31 +21,31 @@ func RazorsFactory() *RazorsRepository {
 	return &RazorsRepository{IsEnable: isEnable, DB: db}
 }
 
-func (repository *RazorsRepository) FirstOrCreate(razor, seedUrl, esIndex string, page int) *model.Razors {
-	if !repository.IsEnable {
-		return nil
-	}
-	now := time.Now()
-	raz := &model.Razors{
-		BaseModel:  model.BaseModel{CreateTime: now},
-		Razor:      razor,
-		EsIndex:    esIndex,
-		SeedUrl:    seedUrl,
-		Page:       page,
-		UpdateTime: now,
-	}
+// func (repository *RazorsRepository) FirstOrCreate(razor, seedUrl, esIndex string, page int) *model.Razors {
+// 	if !repository.IsEnable {
+// 		return nil
+// 	}
+// 	now := time.Now()
+// 	raz := &model.Razors{
+// 		BaseModel:  model.BaseModel{CreateTime: now},
+// 		Razor:      razor,
+// 		EsIndex:    esIndex,
+// 		Domain:     seedUrl,
+// 		Page:       page,
+// 		UpdateTime: now,
+// 	}
 
-	result := repository.DB.Where("razor=? and es_index=?", razor, esIndex).FirstOrCreate(raz)
+// 	result := repository.DB.Where("razor=? and es_index=?", razor, esIndex).FirstOrCreate(raz)
 
-	if result.Error != nil {
-		variable.ZapLog.Sugar().Errorf("记录进度失败：%v", result)
-		return nil
-	}
+// 	if result.Error != nil {
+// 		variable.ZapLog.Sugar().Errorf("记录进度失败：%v", result)
+// 		return nil
+// 	}
 
-	return raz
-}
+// 	return raz
+// }
 
-func (repository *RazorsRepository) CreateOrUpdate(razor, seedUrl, esIndex string, page int) bool {
+func (repository *RazorsRepository) CreateOrUpdate(esIndex, razor, domain, pathUrl string, page int) bool {
 	if !repository.IsEnable {
 		return false
 	}
@@ -55,12 +55,13 @@ func (repository *RazorsRepository) CreateOrUpdate(razor, seedUrl, esIndex strin
 
 	var result *gorm.DB
 	if raz.Id > 0 {
-		result = repository.DB.Model(&model.Razors{BaseModel: model.BaseModel{Id: raz.Id}}).Select("seed_url", "page", "update_time").Updates(model.Razors{SeedUrl: seedUrl, Page: page, UpdateTime: now})
+		result = repository.DB.Model(&model.Razors{BaseModel: model.BaseModel{Id: raz.Id}}).Select("domain", "path_url", "page", "update_time").Updates(model.Razors{Domain: domain, PathUrl: pathUrl, Page: page, UpdateTime: now})
 	} else {
 		raz.BaseModel = model.BaseModel{CreateTime: now}
 		raz.Razor = razor
 		raz.EsIndex = esIndex
-		raz.SeedUrl = seedUrl
+		raz.Domain = domain
+		raz.PathUrl = pathUrl
 		raz.Page = page
 		raz.UpdateTime = now
 		result = repository.DB.Create(raz)
@@ -73,14 +74,14 @@ func (repository *RazorsRepository) CreateOrUpdate(razor, seedUrl, esIndex strin
 	return true
 }
 
-func (repository *RazorsRepository) Update(razor, seedUrl, esIndex string, page int) bool {
+func (repository *RazorsRepository) Update(razor, esIndex, domain, pathUrl string, page int) bool {
 	if !repository.IsEnable {
 		return false
 	}
 
 	createTime := time.Now()
-	raz := model.Razors{SeedUrl: seedUrl, Page: page, UpdateTime: createTime}
-	result := repository.DB.Model(&model.Razors{}).Where("razor=? and es_index=?", razor, esIndex).Select("seed_url", "page", "update_time").Updates(raz)
+	raz := model.Razors{Domain: domain, PathUrl: pathUrl, Page: page, UpdateTime: createTime}
+	result := repository.DB.Model(&model.Razors{}).Where("razor=? and es_index=?", razor, esIndex).Select("domain", "path_url", "page", "update_time").Updates(raz)
 
 	if result.Error != nil {
 		json, _ := json.Marshal(raz)
@@ -88,4 +89,15 @@ func (repository *RazorsRepository) Update(razor, seedUrl, esIndex string, page 
 		return false
 	}
 	return true
+}
+
+func (repository *RazorsRepository) KFirst(razor, esIndex string) *model.Razors {
+	if !repository.IsEnable {
+		return nil
+	}
+
+	rz := new(model.Razors)
+	// repository.DB.Where("download_url=?", taskDto.DownloadUrl).Or("name=? and lan=?", taskDto.Name, taskDto.Lan).First(dl)
+	repository.DB.Where("razor=? and es_index=?", razor, esIndex).First(rz)
+	return rz
 }

@@ -7,7 +7,8 @@ type Razors struct {
 	BaseModel
 	Razor      string    `gorm:"razor"`
 	EsIndex    string    `gorm:"es_index"` //es索引名称
-	SeedUrl    string    `gorm:"seed_url"`
+	Domain     string    `gorm:"domain"`
+	PathUrl    string    `gorm:"path_url"`
 	Page       int       `gorm:"page"`
 	UpdateTime time.Time `json:"update_time" gorm:"column:update_time"`
 }

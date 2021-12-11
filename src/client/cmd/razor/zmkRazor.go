@@ -21,19 +21,20 @@ type ZmkRazor struct {
 func NewZmkRazor(seedUrl string) *ZmkRazor {
 	return &ZmkRazor{
 		BaseRazor{
-			Name:     "zmk",
-			Domain:   "https://zimuku.org",
-			InitPage: 1,
-			EsIndex:  variable.IndexName,
-			Enable:   true,
-			SeedUrl:  seedUrl,
+			Name: "zmk",
+
+			EsIndex: variable.IndexName,
+			Enable:  true,
+			SeedUrl: seedUrl,
 		},
 	}
 }
 
 var (
-	zmkPageNum             = `<a class="end" href="(.+)=(\d+)">\d+</a>`
+	zmkPageNum             = `<a class="end" href="(.+=)(\d+)">\d+</a>`
 	zmkFetchPageRegexp     = regexp.MustCompile(zmkPageNum)
+	zmkPathUrlNum          = `(.+\?.+=)(\d+)`
+	zmkPathUrlRegexp       = regexp.MustCompile(zmkPathUrlNum)
 	zmkLastPageNum         = `</a><span class="current">(\d+)</span>(\s|\n)*<span class="rows">共\s*(\d+)\s*条记录`
 	zmkLastFetchPageRegexp = regexp.MustCompile(zmkLastPageNum)
 
@@ -88,15 +89,17 @@ func (obj *ZmkRazor) search(storeFunc func(taskDto *dto.TaskDto)) {
 
 	razorsRepository := repository.RazorsFactory()
 	if len(obj.SeedUrl) > 0 {
-		if values, err := url.ParseQuery(strings.Split(obj.SeedUrl, "?")[1]); err != nil {
-			obj.Page = obj.InitPage
-		} else {
-			obj.Page, _ = strconv.Atoi(values.Get("p"))
+		if u, err := url.Parse(obj.SeedUrl); err == nil {
+			obj.Domain = u.Scheme + "://" + u.Host
+			item := zmkPathUrlRegexp.FindStringSubmatch(u.Path + "?" + u.RawQuery)
+			obj.PathUrl = item[1]
+			obj.Page, _ = strconv.Atoi(item[2])
+			razorsRepository.CreateOrUpdate(obj.EsIndex, obj.Name, obj.Domain, obj.PathUrl, obj.Page)
 		}
-		razorsRepository.CreateOrUpdate(obj.Name, obj.SeedUrl, obj.EsIndex, obj.Page)
 	} else {
-		raz := razorsRepository.FirstOrCreate(obj.Name, obj.Domain, obj.EsIndex, obj.InitPage)
-		obj.SeedUrl = raz.SeedUrl
+		raz := razorsRepository.KFirst(obj.Name, obj.EsIndex)
+		obj.Domain = raz.Domain
+		obj.PathUrl = raz.PathUrl
 		obj.Page = raz.Page
 	}
 
@@ -108,7 +111,8 @@ func (obj *ZmkRazor) search(storeFunc func(taskDto *dto.TaskDto)) {
 func (obj *ZmkRazor) fetchPage(wg *sync.WaitGroup, storeFunc func(taskDto *dto.TaskDto)) {
 
 	razorsRepository := repository.RazorsFactory()
-	taskDto := &dto.TaskDto{Wg: wg, DownloadUrl: obj.SeedUrl, StoreFunc: storeFunc}
+	url := helper.UrlJoin(obj.PathUrl, obj.Domain) + strconv.Itoa(obj.Page)
+	taskDto := &dto.TaskDto{Wg: wg, DownloadUrl: url, StoreFunc: storeFunc}
 	html, cookies, err := helper.LoadHtml(taskDto)
 	if err != nil {
 		return
@@ -121,26 +125,23 @@ func (obj *ZmkRazor) fetchPage(wg *sync.WaitGroup, storeFunc func(taskDto *dto.T
 
 	if len(pageItems) <= 0 {
 		pageItems = zmkLastFetchPageRegexp.FindAllStringSubmatch(*html, -1)
-		pathUrl = "/newsubs?p"
+		pathUrl = obj.PathUrl
 		endPageNum, _ = strconv.Atoi(pageItems[0][1])
 	} else {
 		pathUrl = pageItems[0][1]
-
-		if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
-			pathUrl = helper.UrlJoin(pathUrl, obj.Domain)
-		}
 		endPageNum, _ = strconv.Atoi(pageItems[0][2])
 	}
 
-	if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
-		pathUrl = helper.UrlJoin(pathUrl, obj.Domain)
+	if strings.HasPrefix(pathUrl, "http:") || strings.HasPrefix(pathUrl, "https:") {
+		pathUrl = strings.ReplaceAll(pathUrl, obj.Domain, "")
 	}
 
 	for pageNum <= endPageNum {
 		variable.ZapLog.Sugar().Infof("处理第%v页 共%v页", pageNum, endPageNum)
-		url := pathUrl + "=" + strconv.Itoa(pageNum)
 
-		razorsRepository.Update(obj.Name, url, obj.EsIndex, pageNum)
+		razorsRepository.Update(obj.Name, obj.EsIndex, obj.Domain, pathUrl, pageNum)
+
+		url = helper.UrlJoin(pathUrl, obj.Domain) + strconv.Itoa(pageNum)
 
 		newDto := &dto.TaskDto{WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, PageNum: pageNum}
 		obj.insertQueue(newDto)
@@ -163,7 +164,7 @@ func (obj *ZmkRazor) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(obj.Name)
-		helper.Sleep(obj.Name, newDto.WorkType, "m", 12, 21)
+		helper.Sleep(obj.Name, newDto.WorkType, "m", 10, 15)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)

@@ -21,19 +21,19 @@ type A4KRazor struct {
 func NewA4KRazor(seedUrl string) *A4KRazor {
 	return &A4KRazor{
 		BaseRazor{
-			Name:     "a4k",
-			Domain:   "https://www.a4k.net",
-			InitPage: 1,
-			EsIndex:  variable.IndexName,
-			Enable:   true,
-			SeedUrl:  seedUrl,
+			Name:    "a4k",
+			EsIndex: variable.IndexName,
+			Enable:  true,
+			SeedUrl: seedUrl,
 		},
 	}
 }
 
 var (
-	a4kPageNum             = `<a class="item pager__item--last" href="(\?page)=(\d+)"[^>]+?>(\s|\S)+?</a>`
+	a4kPageNum             = `<a class="item pager__item--last" href="(\?page=)(\d+)"[^>]+?>(\s|\S)+?</a>`
 	a4kFetchPageRegexp     = regexp.MustCompile(a4kPageNum)
+	a4kPathUrlNum          = `(\?page=)(\d+)`
+	a4kPathUrlRegexp       = regexp.MustCompile(a4kPathUrlNum)
 	a4kLastPageNum         = `<a class="item active" href="(\?page)=(\d+)"[^>]+?>(\s|\n)*<span(\s|\S)+?</span>(\s|\n)*(\d+)</a>`
 	a4kLastFetchPageRegexp = regexp.MustCompile(a4kLastPageNum)
 	// a4kTitleReg          = `<td class="w75pc">\s*<a href="(/sub(s)?/\d+.html)" target="_blank">(.+)</a>\s*</td>`
@@ -92,16 +92,17 @@ func (obj *A4KRazor) search(storeFunc func(taskDto *dto.TaskDto)) {
 
 	razorsRepository := repository.RazorsFactory()
 	if len(obj.SeedUrl) > 0 {
-		if values, err := url.ParseQuery(strings.Split(obj.SeedUrl, "?")[1]); err != nil {
-			obj.Page = obj.InitPage
-		} else {
-			obj.Page, _ = strconv.Atoi(values.Get("page"))
-			obj.Page += 1
+		if u, err := url.Parse(obj.SeedUrl); err == nil {
+			obj.Domain = u.Scheme + "://" + u.Host
+			item := a4kPathUrlRegexp.FindStringSubmatch(u.Path + "?" + u.RawQuery)
+			obj.PathUrl = item[1]
+			obj.Page, _ = strconv.Atoi(item[2])
+			razorsRepository.CreateOrUpdate(obj.EsIndex, obj.Name, obj.Domain, obj.PathUrl, obj.Page)
 		}
-		razorsRepository.CreateOrUpdate(obj.Name, obj.SeedUrl, obj.EsIndex, obj.Page)
 	} else {
-		raz := razorsRepository.FirstOrCreate(obj.Name, obj.Domain, obj.EsIndex, obj.InitPage)
-		obj.SeedUrl = raz.SeedUrl
+		raz := razorsRepository.KFirst(obj.Name, obj.EsIndex)
+		obj.Domain = raz.Domain
+		obj.PathUrl = raz.PathUrl
 		obj.Page = raz.Page
 	}
 
@@ -112,7 +113,8 @@ func (obj *A4KRazor) search(storeFunc func(taskDto *dto.TaskDto)) {
 
 func (obj *A4KRazor) fetchPage(wg *sync.WaitGroup, storeFunc func(taskDto *dto.TaskDto)) {
 	razorsRepository := repository.RazorsFactory()
-	taskDto := &dto.TaskDto{Wg: wg, DownloadUrl: obj.SeedUrl, StoreFunc: storeFunc}
+	url := helper.UrlJoin(obj.PathUrl, obj.Domain) + strconv.Itoa(obj.Page)
+	taskDto := &dto.TaskDto{Wg: wg, DownloadUrl: url, StoreFunc: storeFunc}
 
 	html, cookies, err := helper.LoadHtml(taskDto)
 	if err != nil {
@@ -126,23 +128,24 @@ func (obj *A4KRazor) fetchPage(wg *sync.WaitGroup, storeFunc func(taskDto *dto.T
 
 	if len(pageItems) <= 0 {
 		pageItems = a4kLastFetchPageRegexp.FindAllStringSubmatch(*html, -1)
-		pathUrl = pageItems[0][1]
+		pathUrl = obj.PathUrl
 		endPageNum, _ = strconv.Atoi(pageItems[0][2])
 	} else {
 		pathUrl = pageItems[0][1]
 		endPageNum, _ = strconv.Atoi(pageItems[0][2])
 	}
 
-	if !strings.HasPrefix(pathUrl, "http:") && !strings.HasPrefix(pathUrl, "https:") {
-		pathUrl = helper.UrlJoin(pathUrl, obj.Domain)
+	if strings.HasPrefix(pathUrl, "http:") || strings.HasPrefix(pathUrl, "https:") {
+		pathUrl = strings.ReplaceAll(pathUrl, obj.Domain, "")
 	}
-	endPageNum += 1
+	// endPageNum += 1
 
 	for pageNum <= endPageNum {
 		variable.ZapLog.Sugar().Infof("处理第%v页 共%v页", pageNum, endPageNum)
-		url := pathUrl + "=" + strconv.Itoa(pageNum-1)
 
-		razorsRepository.Update(obj.Name, url, obj.EsIndex, pageNum)
+		razorsRepository.Update(obj.Name, obj.EsIndex, obj.Domain, pathUrl, pageNum)
+
+		url = helper.UrlJoin(pathUrl, obj.Domain) + strconv.Itoa(pageNum)
 
 		newDto := &dto.TaskDto{WorkType: variable.FecthList, DownloadUrl: url, Cookies: cookies, Wg: taskDto.Wg, StoreFunc: taskDto.StoreFunc, PageNum: pageNum}
 		obj.insertQueue(newDto)
@@ -164,7 +167,7 @@ func (obj *A4KRazor) insertQueue(newDto *dto.TaskDto) {
 		obj.fetchList(newDto)
 	case variable.FecthInfo:
 		helper.WorkClock(obj.Name)
-		helper.Sleep(obj.Name, newDto.WorkType, "m", 2, 6)
+		helper.Sleep(obj.Name, newDto.WorkType, "m", 1, 3)
 		obj.fetchInfo(newDto)
 	case variable.Parse:
 		helper.Sleep(obj.Name, newDto.WorkType, "s", 1, 5)
