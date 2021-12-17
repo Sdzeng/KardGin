@@ -21,8 +21,8 @@
             "<div class='introduce-info'><div class='introduce-info-pic'></div></div>" +
             "<div class='result-entity'>" +
             "<div class='result-info'>" +
-            "<div class='result-title'><a href='#{detailPage}'>#{title} [#{subtitle}]</a></div>" +
-            // "<div class='result-subtitle'><a href='#{detailPage}'>#{subtitle}</a></div>" +
+            "<div class='result-title'><a href='#{detailPage}'>#{title}</a></div>" +
+            "<div class='result-subtitle'><a href='#{detailPage}'>#{subtitle}</a></div>" +
             "<div class='result-content'><a href='#{detailPage}' class='essay-content'>#{texts}</a></div>" +
             "<div class='result-footer'><span class='subtitls-startat'>片段摘自 #{startAt}</span><span class='subtitls-lan'>#{lan}</span> <span>#{creationTime}更新</span></div>" +
             "</div>" +
