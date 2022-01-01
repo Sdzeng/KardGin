@@ -18,7 +18,7 @@ ElasticSearch:
   Enable: true
   Url: "http://211.149.133.167:9200"
   UserName: "elastic"
-  Password: "***"
+  Password: "sucjsd"
 
 Redis:
   Host: "127.0.0.1"

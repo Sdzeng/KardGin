@@ -188,7 +188,7 @@ func (c *HomeController) ScrollSearch(context *gin.Context) {
 	}
 }
 
-func getSearchData(pageCount int, search_word string) *elastic.SearchResult {
+func getSearchData(pageCount int, searchWord string) *elastic.SearchResult {
 
 	// p := (page - 1) * li
 	// collapsedata := elastic.NewCollapseBuilder("texts")
@@ -200,13 +200,30 @@ func getSearchData(pageCount int, search_word string) *elastic.SearchResult {
 	// // 	elastic.NewWildcardQuery("subtitle", search_word),
 	// // 	elastic.NewWildcardQuery("texts", search_word),
 	// // )
-	words := strings.Fields(search_word)
-	for _, word := range words {
-		esq = esq.Should(
-			elastic.NewMatchPhraseQuery("title", word),
-			elastic.NewMatchPhraseQuery("subtitle", word),
-			elastic.NewMatchPhraseQuery("texts", word),
-		)
+	if len(searchWord) > 0 {
+		words := strings.Fields(searchWord)
+		if len(words) == 1 {
+
+			esq = esq.Should(
+				elastic.NewMatchPhraseQuery("title", words[0]),
+				elastic.NewMatchPhraseQuery("subtitle", words[0]),
+				elastic.NewMatchPhraseQuery("texts", words[0]),
+			)
+		} else if len(words) > 1 {
+			esq = esq.Should(
+				elastic.NewMatchPhraseQuery("title", words[0]),
+				elastic.NewMatchPhraseQuery("subtitle", words[0]),
+			)
+
+			for wordIndex, word := range words {
+				if wordIndex == 0 {
+					continue
+				}
+				esq = esq.Should(
+					elastic.NewMatchPhraseQuery("texts", word),
+				)
+			}
+		}
 	}
 
 	// esq.QueryName()

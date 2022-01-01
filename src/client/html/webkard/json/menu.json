@@ -6,13 +6,7 @@
           "name": "BS",
           "namech": "首页",
           "url": "/home.html"
-        },
-        {
-          "id": "2",
-          "name": "BS",
-          "namech": "名场面台词",
-          "url": "/home.html"
-        } 
+        }
       ]
             
           

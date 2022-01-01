@@ -22,9 +22,10 @@
             "<div class='result-entity'>" +
             "<div class='result-info'>" +
             "<div class='result-title'><a href='#{detailPage}'>#{title}</a></div>" +
-            "<div class='result-subtitle'><a href='#{detailPage}'>#{subtitle}</a></div>" +
+            "<div class='result-subtitle'><a href='#{detailPage}'>又名：#{subtitle}</a></div>" +
+            "<div class='result-tab'><span class='subtitls-startat'>下面片段摘自 #{startAt}</span><span class='subtitls-lan'>#{lan}</span></div>" +
             "<div class='result-content'><a href='#{detailPage}' class='essay-content'>#{texts}</a></div>" +
-            "<div class='result-footer'><span class='subtitls-startat'>片段摘自 #{startAt}</span><span class='subtitls-lan'>#{lan}</span> <span>#{creationTime}更新</span></div>" +
+            "<div class='result-footer'>#{creationTime}更新</div>" +
             "</div>" +
             "</div >" +
             "</div >")
@@ -132,7 +133,7 @@
         var scrollIndexHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/scroll_index",{},"index",false,$loadMore);
         var scrollSearchHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/scroll_search",{},"search",false,$loadMore);
 
-        $loadMore.loadMore(10, function () {
+        $loadMore.loadMore(2, function () {
             //这里用 [ off_on ] 来控制是否加载 （这样就解决了 当上页的条件满足时，一下子加载多次的问题啦）
             if (_this.data.loadMorePars.offOn) {
                 _this.data.loadMorePars.offOn = false;
@@ -163,8 +164,24 @@
          
                 var texts="";
                if(searchHitDto.texts&&searchHitDto.texts.length>0) {
-                    texts=searchHitDto.texts.join("<br/>")
+                    texts="【"+searchHitDto.texts.join("】【")+"】"
                 }
+
+                var pick="";
+                switch(index%1024){
+                    case 0:pick="🍑🍓🥝";break;
+                    case 1:pick="🎄🎃";break;
+                    case 2:pick="🍕";break;
+                    // case 0:pick="🍑🍓🥝";break;
+                    // case 1:pick="🎅🎄🎃";break;
+                    // case 2:pick="🍕🧁🍵";break;
+                    // case 3:pick="🍉";break;
+                    // case 4:pick="🎅";break;
+                    // case 5:pick="🥝";break;
+                    // case 6:pick="🎄";break;
+                    // case 7:pick="🎃";break;
+                }
+                var creationTime=pick+" "+basejs.getDateDiff(basejs.getDateTimeStamp(searchHitDto.create_time));
 
                 resultRowHtml += _this.template.searchResultRow.format({
                     startAt: basejs.formatSeconds(searchHitDto.start_at),
@@ -173,7 +190,7 @@
                     title: searchHitDto.title,
                     subtitle: searchHitDto.subtitle,
                     texts: texts,
-                    creationTime: basejs.getDateDiff(basejs.getDateTimeStamp(searchHitDto.create_time))
+                    creationTime: creationTime
                 });
 
                 resultHtml += resultRowHtml;
