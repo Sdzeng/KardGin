@@ -85,9 +85,9 @@ var (
 func init() {
 
 	replaceKeywords := []string{
-		// "\N", "",
+		"\\N", "",
 		"\n", "",
-		// "\R", "",
+		"\\R", "",
 		"\r", "",
 	}
 
