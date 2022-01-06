@@ -64,10 +64,11 @@ func cors() gin.HandlerFunc {
 func runKard(router *gin.Engine) {
 
 	//处理静态资源
-	router.Static("/assert", variable.BasePath+"/web/wwwroot") //  定义静态资源路由与实际目录映射关系
+	// router.Static("/assert", variable.BasePath+"/web/wwwroot") //  定义静态资源路由与实际目录映射关系
 
 	homeController := &controller.HomeController{}
-	homeGroup := router.Group("/home")
+	api := router.Group("/api")
+	homeGroup := api.Group("/home")
 	{
 		// homeGroup.GET("/", homeController.GetCover)
 		// homeGroup.GET("/subtitles", homeController.ExtractSubtitles)

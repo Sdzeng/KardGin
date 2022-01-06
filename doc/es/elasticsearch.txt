@@ -207,10 +207,62 @@ mysql> use mysql;
 mysql> show variables like 'innodb_buffer_pool%';
 
 
+部署文件
+
+防火墙开启22端口（公共域）
+sudo firewall-cmd --zone=public --add-port=22/tcp --permanent
+sudo firewall-cmd --reload
+
+firewall-cmd --query-port=22/tcp
+
+sftp root@211.149.133.167 sucjsd8685
+cd  /usr/www/client
+从本地上传文件夹：put -r D:/GitRepository/KardGin/src/client/html/webkard/builds/*
+
+
+cd /etc/nginx/
+vi nginx.conf
+
+  server_name  www.upzsq.com;
+  root         /usr/www/client;
+  index home.html home.htm;
+
+
+  location ~* /api/(.*){
+    proxy_pass http://localhost:20191;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection keep-alive;
+    proxy_set_header Host $host;
+    proxy_cache_bypass $http_upgrade;
+  }
 
 
 
 
+1、打包；
+在VS /src/client文件夹下，执行下列命令
+SET CGO_ENABLED=0
+SET GOOS=linux
+SET GOARCH=amd64
+go build  -o "webkard" .\web\startup.go
+
+还原环境
+SET CGO_ENABL
+SET GOOS=windows
+SET GOARCH=amd64
+go build  -o "webkard.exe"  .\web\startup.go
+
+webkard 上传到CentOS
+
+chmod 777 webkard
+窗口运行：./webkard
+后台运行：nohup ./webkard &
+
+webkard 进程号2123
+
+查看后台运行的进程：jobs -l
+终止进程： kill -9  进程号
 
 
 

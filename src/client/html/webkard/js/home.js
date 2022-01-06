@@ -83,7 +83,7 @@
         var $loadMore = $(".load-more>div", _this.data.scope);
         $loadMore.text("加载中...");
  
-        var url=basejs.requestDomain + "/home/index";
+        var url=basejs.requestDomain + "/api/home/index";
         var data={page_count:5};
         var indexHttpPars=_this.getHttpPars(url,data,"index",true,$loadMore);
 
@@ -96,8 +96,8 @@
 
         var $loadMore = $(".load-more>div", _this.data.scope);
 
-        var searchHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/search",{},"search",true,$loadMore);
-        var indexHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/index",{page_count:5},"index",true,$loadMore);
+        var searchHttpPars=_this.getHttpPars(basejs.requestDomain + "/api/home/search",{},"search",true,$loadMore);
+        var indexHttpPars=_this.getHttpPars(basejs.requestDomain + "/api/home/index",{page_count:5},"index",true,$loadMore);
 
         $(".btn-search", _this.data.scope).click(function () {
             _this.data.loadMorePars.offOn = false;
@@ -130,8 +130,8 @@
         var _this = this;
         var $loadMore = $(".load-more>div", _this.data.scope);
 
-        var scrollIndexHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/scroll_index",{},"index",false,$loadMore);
-        var scrollSearchHttpPars=_this.getHttpPars(basejs.requestDomain + "/home/scroll_search",{},"search",false,$loadMore);
+        var scrollIndexHttpPars=_this.getHttpPars(basejs.requestDomain + "/api/home/scroll_index",{},"index",false,$loadMore);
+        var scrollSearchHttpPars=_this.getHttpPars(basejs.requestDomain + "/api/home/scroll_search",{},"search",false,$loadMore);
 
         $loadMore.loadMore(2, function () {
             //这里用 [ off_on ] 来控制是否加载 （这样就解决了 当上页的条件满足时，一下子加载多次的问题啦）

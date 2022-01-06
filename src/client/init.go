@@ -14,8 +14,8 @@ import (
 )
 
 func init() {
-	// 1.初始化程序根目录
-	os.Chdir("../../")
+	// // 1.初始化程序根目录
+	// os.Chdir("../../")
 	if path, err := os.Getwd(); err == nil {
 		// 路径进行处理，兼容单元测试程序程序启动时的奇怪路径
 		if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "-test") {
@@ -26,6 +26,8 @@ func init() {
 	} else {
 		log.Fatal(kardError.ErrorsBasePath)
 	}
+
+	variable.ConfigPath = variable.BasePath + "/ymls"
 
 	//2.检查配置文件以及日志目录等非编译性的必要条件
 	checkRequiredFolders()
@@ -91,16 +93,16 @@ func init() {
 // 检查项目必须的非编译目录是否存在，避免编译后调用的时候缺失相关目录
 func checkRequiredFolders() {
 	//1.检查配置文件是否存在
-	if _, err := os.Stat(variable.BasePath + "/global/config/ymls/web.yml"); err != nil {
+	if _, err := os.Stat(variable.ConfigPath + "/web.yml"); err != nil {
 		log.Fatal(kardError.ErrorsConfigYamlNotExists + err.Error())
 	}
-	if _, err := os.Stat(variable.BasePath + "/global/config/ymls/gorm.yml"); err != nil {
+	if _, err := os.Stat(variable.ConfigPath + "/gorm.yml"); err != nil {
 		log.Fatal(kardError.ErrorsConfigGormNotExists + err.Error())
 	}
 	//2.检查public目录是否存在
-	if _, err := os.Stat(variable.BasePath + "/client/web/wwwroot"); err != nil {
-		log.Fatal(kardError.ErrorsPublicNotExists + err.Error())
-	}
+	// if _, err := os.Stat(variable.BasePath + "/client/web/wwwroot"); err != nil {
+	// 	log.Fatal(kardError.ErrorsPublicNotExists + err.Error())
+	// }
 	//3.检查storage/logs 目录是否存在
 	// if _, err := os.Stat(variable.BasePath + "/storage/logs/"); err != nil {
 	// 	log.Fatal(kardError.ErrorsStorageLogsNotExists + err.Error())

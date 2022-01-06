@@ -1,7 +1,6 @@
 var basejs = {
-    // requestDomain: "http://192.168.2.211:5000",
-    // cdnDomain: "http://192.168.2.211:5000",
     requestDomain: "http://localhost:20191",
+    // requestDomain: "http://www.upzsq.com",
     defaults: {
         type: "POST",
         async: true,

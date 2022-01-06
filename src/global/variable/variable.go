@@ -94,6 +94,7 @@ const (
 
 var (
 	BasePath           string       // 定义项目的根目录
+	ConfigPath         string       // 定义项目的配置文件夹路径
 	EventDestroyPrefix = "Destroy_" //  程序退出时需要销毁的事件前缀
 	ConfigKeyPrefix    = "Config_"  //  配置文件键值缓存时，键的前缀
 
