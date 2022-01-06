@@ -44,13 +44,15 @@ func main() {
 func cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method
-		c.Header("Access-Control-Allow-Origin", "http://localhost:81")
-		c.Header("Access-Control-Allow-Headers", "Access-Control-Allow-Headers,Authorization,User-Agent, Keep-Alive, Content-Type, X-Requested-With,X-CSRF-Token,AccessToken,Token")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH, OPTIONS")
-		c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
-		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Header("Set-Cookie", "SameSite=Lax;Secure")
-
+		origin := c.Request.Header.Get("Origin") //请求头部
+		if len(origin) > 0 {
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Access-Control-Allow-Headers", "Access-Control-Allow-Headers,Authorization,User-Agent, Keep-Alive, Content-Type, X-Requested-With,X-CSRF-Token,AccessToken,Token")
+			c.Header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH, OPTIONS")
+			c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
+			c.Header("Access-Control-Allow-Credentials", "true")
+			c.Header("Set-Cookie", "SameSite=Lax;Secure")
+		}
 		// 放行所有OPTIONS方法
 		if method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusAccepted)
