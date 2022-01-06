@@ -17,3 +17,5 @@ assert
 wwwroot
 __debug_bin
 /src/logs
+/src/client/html/webkard/builds
+node_modules

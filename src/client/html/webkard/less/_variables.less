@@ -7,48 +7,48 @@
 @font-size-h6:            ceil((@font-size-base * 0.85)); // ~11px
 
 @line-height-base:        1.428571429; // 20/14
-@line-height-computed:    floor((@font-size-base * @line-height-base)); // ~18.5px
+// @line-height-computed:    floor((@font-size-base * @line-height-base)); // ~18.5px
 
 @page-min-width:          1240px;
-//navbar
-@navbar-height:                    75px;
+// //navbar
+// @navbar-height:                    75px;
 @navbar-font-size:                 15px;
 @navbar-logo-font-size:            22px;
 @navbar-line-height:               ((@navbar-font-size * @line-height-base));
-@navbar-logo-line-height:        46px;
+// @navbar-logo-line-height:        46px;
 @navbar-logo-min-line-height: 40px;
-@navbar-padding-vertical-avg:      ceil((@navbar-height - @navbar-line-height ) / 2);
-@navbar-logo-padding-vertical-avg: ceil((@navbar-height - @navbar-logo-line-height) / 2);
+// @navbar-padding-vertical-avg:      ceil((@navbar-height - @navbar-line-height ) / 2);
+// @navbar-logo-padding-vertical-avg: ceil((@navbar-height - @navbar-logo-line-height) / 2);
  
 
 
 @navbar-transition-time:           400ms;
 
 @navbar-min-height:                45px;
-@navbar-min-padding-vertical-avg:      ceil((@navbar-min-height - @navbar-line-height ) / 2);
-@navbar-min-logo-padding-vertical-avg: ceil((@navbar-min-height - @navbar-logo-min-line-height) / 2);
+@navbar-min-padding-vertical-avg:      ceil((@navbar-min-height - @navbar-line-height ) * 0.5 );
+@navbar-min-logo-padding-vertical-avg: ceil((@navbar-min-height - @navbar-logo-min-line-height) * 0.5);
 
 
  
-@splash-img-background-position-y:100px;
+// @splash-img-background-position-y:100px;
 
 
-@screen-xs: 480px;
-@screen-xs-min: @screen-xs;
+// @screen-xs: 480px;
+// @screen-xs-min: @screen-xs;
 
-@screen-sm: 768px;
-@screen-sm-min: @screen-sm;
+// @screen-sm: 768px;
+// @screen-sm-min: @screen-sm;
 
-@screen-md: 992px;
-@screen-md-min: @screen-md;
+// @screen-md: 992px;
+// @screen-md-min: @screen-md;
 
 
 @screen-lg: 1400px;
 @screen-lg-min: @screen-lg;
 
 
-@screen-xs-max: (@screen-sm-min - 1);
-@screen-sm-max: (@screen-md-min - 1);
+// @screen-xs-max: (@screen-sm-min - 1);
+// @screen-sm-max: (@screen-md-min - 1);
 @screen-md-max: (@screen-lg-min - 1);
  
  
