@@ -331,7 +331,7 @@ chmod 777 webkard
 窗口运行：./webkard
 后台运行：nohup ./webkard &
 
-webkard 进程号2123
+webkard 进程号5885
 
 查看后台运行的进程：jobs -l
 终止进程： kill -9  进程号
