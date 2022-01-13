@@ -249,8 +249,8 @@ server {
 }
 
 server {
-        listen 443 ssl default_server;
-        listen [::]:443 ssl default_server;
+        listen 443 ssl http2 default_server;
+        listen [::]:443 ssl http2  default_server;
         server_name upzsq.com;
         ssl on;
         root         /usr/www/client;
@@ -273,7 +273,7 @@ server {
         }
 
         #缓存htm页面，可以缓存伪静态【这是亮点！】
-        location ~ .*\.htm$ {
+        location ~* .*\.htm$ {
               root /;
               #浏览器过期时间设置4小时
               expires 4h;
@@ -282,7 +282,7 @@ server {
         }
 
         #图片缓存设置，如果不是使用了Nginx缩略图功能，这个可以不用，效果不明显
-        location ~ .*\.(gif|jpg|png|css|js|ico)(.*){
+        location ~* .*\.(gif|jpg|png|css|js|ico)(.*){
               root /;
               expires 30d;
               add_header Nginx-Cache "$upstream_cache_status";

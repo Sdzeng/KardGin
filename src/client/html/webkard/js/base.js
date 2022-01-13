@@ -1,6 +1,6 @@
 var basejs = {
-    requestDomain: "http://localhost:20191",
-    // requestDomain: "http://www.upzsq.com",
+    // requestDomain: "http://localhost:20191",
+    requestDomain: "https://www.upzsq.com",
     defaults: {
         type: "POST",
         async: true,
