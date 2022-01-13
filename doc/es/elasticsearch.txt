@@ -223,6 +223,7 @@ cd  /usr/www/client
 cd /etc/nginx/
 vi nginx.conf
 
+http配置：
   server_name  www.upzsq.com;
   root         /usr/www/client;
   index home.html home.htm;
@@ -237,8 +238,79 @@ vi nginx.conf
     proxy_cache_bypass $http_upgrade;
   }
 
+https配置：
+server {
+	listen 80;
+	listen [::]:80;
 
+  location / {
+    rewrite ^.*/(.*) https://www.upzsq.com/$1 permanent;
+  }
+}
 
+server {
+        listen 443 ssl default_server;
+        listen [::]:443 ssl default_server;
+        server_name upzsq.com;
+        ssl on;
+        root         /usr/www/client;
+        index home.html home.htm;
+        ssl_certificate   /usr/www/client/cert/www.upzsq.com.crt;
+        ssl_certificate_key  /usr/www/client/cert/www.upzsq.com.key;
+        ssl_session_timeout 5m;
+        ssl_ciphers ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP;
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_prefer_server_ciphers on;
+        
+        #请求api
+        location ~* /api/(.*){
+            proxy_pass http://localhost:20191;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection keep-alive;
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+        }
+
+        #缓存htm页面，可以缓存伪静态【这是亮点！】
+        location ~ .*\.htm$ {
+              root /;
+              #浏览器过期时间设置4小时
+              expires 4h;
+              #在header中插入缓存状态，命中缓存为HIT，没命中则为MISS
+              add_header Nginx-Cache "$upstream_cache_status";
+        }
+
+        #图片缓存设置，如果不是使用了Nginx缩略图功能，这个可以不用，效果不明显
+        location ~ .*\.(gif|jpg|png|css|js|ico)(.*){
+              root /;
+              expires 30d;
+              add_header Nginx-Cache "$upstream_cache_status";
+        }
+
+        #缩略图
+        location ~* (.*)/image/(.*/)?(.+)_(\d+)x(\d+)\.(gif|jpg|png|css|js|ico)$ {
+            root /;
+            set $image_prepath $1;
+            set $image_backpath $2;
+            set $image_name $3;
+            set $image_w $4;
+            set $image_h $5;  
+            set $image_type $6; 
+            # set $demins "_$2x$3";
+            image_filter resize $image_w $image_h;
+            image_filter crop $image_w $image_h;
+            image_filter_buffer 2M;
+            image_filter_jpeg_quality 85;  # Adjust to your preferences.
+              
+            image_filter_interlace on;
+           rewrite ^(.*)/media/(.*)$ $image_prepath/media/$image_backpath$image_name.$image_type break;
+        }
+
+     	 
+   }
+
+  
 
 1、打包；
 在VS /src/client文件夹下，执行下列命令
