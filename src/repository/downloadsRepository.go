@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"encoding/json"
+	"kard/src/global/variable"
 	"kard/src/model"
 	"kard/src/model/dto"
 	"time"
@@ -79,4 +81,21 @@ func (repository *DownloadsRepository) TryCreate(esIndex, razor string, taskDto 
 	}
 
 	return isCreate, dl.Id, err
+}
+
+func (repository *DownloadsRepository) Update(id int32, name string) bool {
+	if !repository.IsEnable {
+		return false
+	}
+
+	now := time.Now()
+	info := model.Downloads{Name: name, UpdateTime: now}
+	result := repository.DB.Model(&model.Downloads{BaseModel: model.BaseModel{Id: id}}).Updates(info)
+
+	if result.Error != nil {
+		json, _ := json.Marshal(info)
+		variable.ZapLog.Sugar().Errorf("更新名称失败%v err=%v", json, result.Error)
+		return false
+	}
+	return true
 }

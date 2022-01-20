@@ -183,6 +183,7 @@ func (obj *A4KRazor) CompletionData(storeFunc func(taskDto *dto.TaskDto), downlo
 	wg := &sync.WaitGroup{}
 	for _, downloadId := range downloadIds {
 		download := downloadRepository.KFirst(downloadId)
+		delDownloadPathIds := downloadPathsRepository.KFindIdByDownloadId(downloadId)
 		refers := downloadRefersRepository.KFind(downloadId)
 		referArr := []string{}
 		for _, refer := range refers {
@@ -192,7 +193,8 @@ func (obj *A4KRazor) CompletionData(storeFunc func(taskDto *dto.TaskDto), downlo
 			referArr = append(referArr, refer.Refer)
 		}
 
-		delDownloadPathIds := downloadPathsRepository.KFindIdByDownloadId(downloadId)
+		download.Name = helper.ReplaceTitle(download.Name)
+		downloadRepository.Update(download.Id, download.Name)
 
 		taskDto := &dto.TaskDto{WorkType: variable.FecthInfo, DownloadId: downloadId,
 			InfoUrl:     download.InfoUrl,
