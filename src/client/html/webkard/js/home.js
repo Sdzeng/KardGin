@@ -167,20 +167,20 @@
                     texts="【"+searchHitDto.texts.join("】【")+"】"
                 }
 
-                var pick="";
-                switch(index%1024){
-                    case 0:pick="🍑🍓🥝";break;
-                    case 1:pick="🎄🎃";break;
-                    case 2:pick="🍕";break;
-                    // case 0:pick="🍑🍓🥝";break;
-                    // case 1:pick="🎅🎄🎃";break;
-                    // case 2:pick="🍕🧁🍵";break;
-                    // case 3:pick="🍉";break;
-                    // case 4:pick="🎅";break;
-                    // case 5:pick="🥝";break;
-                    // case 6:pick="🎄";break;
-                    // case 7:pick="🎃";break;
-                }
+                var pick="🍑";
+                // switch(index%1024){
+                //     case 0:pick="🍑🍓🥝";break;
+                //     case 1:pick="🎄🎃";break;
+                //     case 2:pick="🍕";break;
+                //     // case 0:pick="🍑🍓🥝";break;
+                //     // case 1:pick="🎅🎄🎃";break;
+                //     // case 2:pick="🍕🧁🍵";break;
+                //     // case 3:pick="🍉";break;
+                //     // case 4:pick="🎅";break;
+                //     // case 5:pick="🥝";break;
+                //     // case 6:pick="🎄";break;
+                //     // case 7:pick="🎃";break;
+                // }
                 var creationTime=pick+" "+basejs.getDateDiff(basejs.getDateTimeStamp(searchHitDto.create_time));
 
                 resultRowHtml += _this.template.searchResultRow.format({
