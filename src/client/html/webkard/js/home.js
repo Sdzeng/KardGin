@@ -23,9 +23,9 @@
             "<div class='result-info'>" +
             "<div class='result-title'><a href='#{detailPage}'>#{title}</a></div>" +
             "<div class='result-subtitle'><a href='#{detailPage}'>又名：#{subtitle}</a></div>" +
-            "<div class='result-tab'><span class='subtitls-startat'>下面片段摘自 #{startAt}</span><span class='subtitls-lan'>#{lan}</span></div>" +
+            // "<div class='result-tab'><span class='subtitls-startat'>下面片段摘自 #{startAt}</span><span class='subtitls-lan'>#{lan}</span></div>" +
             "<div class='result-content'><a href='#{detailPage}' class='essay-content'>#{texts}</a></div>" +
-            "<div class='result-footer'>#{creationTime}更新</div>" +
+            "<div class='result-footer'><span class='subtitls-startat'>上面片段摘自 #{startAt}</span><span class='subtitls-lan'>#{lan}</span><span class='subtitls-creation'>#{creationTime}更新</span></div>" +
             "</div>" +
             "</div >" +
             "</div >")
@@ -167,7 +167,7 @@
                     texts="【"+searchHitDto.texts.join("】【")+"】"
                 }
 
-                var pick="🍑";
+                var pick="";
                 // switch(index%1024){
                 //     case 0:pick="🍑🍓🥝";break;
                 //     case 1:pick="🎄🎃";break;
